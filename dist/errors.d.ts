@@ -1,0 +1,10 @@
+export declare function controllerNotExist(path: string): Error;
+export declare function loadControllerFail(name: string, innerError: Error): Error;
+export declare function canntGetControlName(url: string): Error;
+export declare function canntGetActionName(url: string): Error;
+export declare function configNotExists(path: string): Error;
+export declare function postDataNotJSON(data: string): Error;
+export declare function actionNotExists(action: string, controller: string): Error;
+export declare function parameterRequired(name: string): Error;
+export declare function controlAreaNotExists(name: string): Error;
+export declare function arugmentNull(name: string): Error;

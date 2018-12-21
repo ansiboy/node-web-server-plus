@@ -1,0 +1,25 @@
+{
+  "name": "maishu-node-mvc",
+  "version": "1.0.0",
+  "description": "基于 nodejs 的 MVC 框架",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ansiboy/node-mvc.git"
+  },
+  "author": "mai.shu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ansiboy/node-mvc/issues"
+  },
+  "homepage": "https://github.com/ansiboy/node-mvc#readme",
+  "devDependencies": {
+    "@types/node": "^10.12.18"
+  },
+  "dependencies": {
+    "is-class": "0.0.5"
+  }
+}
