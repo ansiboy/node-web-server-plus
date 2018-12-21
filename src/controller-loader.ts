@@ -92,7 +92,7 @@ export class ControllerLoader {
         return controller
     }
 
-    getAction(virtualPath: string) {
+    getAction(virtualPath: string): Function {
 
         let action = this.actions[virtualPath]
         if (action != null) {

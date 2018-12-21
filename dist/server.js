@@ -12,20 +12,9 @@ const http = require("http");
 const errors = require("./errors");
 const url = require("url");
 const querystring = require("querystring");
-const fs = require("fs");
-const path = require("path");
 const controller_loader_1 = require("./controller-loader");
-const isClass = require('is-class');
-const ROOT_PATH = "../";
-const DEFAULT_AREA = 'default';
-class WebServer {
-    constructor(server) {
-        this.server = server;
-    }
-}
-exports.WebServer = WebServer;
 function startServer(config) {
-    let controllerLoader = new controller_loader_1.ControllerLoader(config.areas || {}, ROOT_PATH);
+    let controllerLoader = new controller_loader_1.ControllerLoader(config.areas || {}, config.rootPath || "./");
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
         setHeaders(res);
         if (req.method == 'OPTIONS') {
@@ -40,20 +29,6 @@ function startServer(config) {
             let data = yield pareseActionArgument(req);
             let actionResult = yield action(data, req, res);
             outputResult(actionResult, res);
-            // let arr = path.split('/').filter(o => o)
-            // let area: string, controllerName: string, actionName: string
-            // if (arr.length <= 2) {
-            //     [controllerName, actionName] = arr;
-            //     area = DEFAULT_AREA;
-            // }
-            // else {
-            //     [area, controllerName, actionName] = arr
-            // }
-            // if (!controllerName)
-            //     throw errors.canntGetControlName(requestUrl)
-            // if (!actionName)
-            //     throw errors.canntGetActionName(requestUrl)
-            // await executeAction(config, area, controllerName, actionName, req, res)
         }
         catch (err) {
             outputError(err, res);
@@ -62,8 +37,7 @@ function startServer(config) {
     server.on('error', (err) => {
         console.log(err);
     });
-    // return server
-    server.listen(config.host.port, config.host.bind_ip);
+    server.listen(config.port, config.bindIP);
 }
 exports.startServer = startServer;
 function setHeaders(res) {
@@ -82,81 +56,6 @@ function pareseActionArgument(req) {
         dataPromise = getPostObject(req);
     }
     return dataPromise;
-}
-function executeAction(config, areaName, controllerName, actionName, req, res) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let areas = config.areas || {};
-        let controllers;
-        let area = areas[areaName];
-        if (typeof area == 'string') {
-            controllers = {};
-            let controllerPhysicalPath = path.join(__dirname, ROOT_PATH, areas[areaName]);
-            let files = fs.readdirSync(controllerPhysicalPath);
-            files.forEach(fileName => {
-                let arr = fileName.split('.');
-                if (arr[arr.length - 1] == null || arr[arr.length - 1].toLowerCase() != 'js')
-                    return;
-                //========================
-                // 去掉末尾的文件扩展名
-                arr.pop();
-                //========================
-                fileName = arr.join('.');
-                controllers[fileName] = path.join(areas[areaName], fileName);
-            });
-        }
-        else {
-            controllers = area;
-        }
-        if (controllers == null)
-            throw errors.controlAreaNotExists(areaName);
-        let controllerPath = controllers[controllerName];
-        if (!controllerPath) {
-            throw errors.controllerNotExist(controllerName);
-        }
-        controllerPath = path.join(ROOT_PATH, controllers[controllerName]);
-        let controller;
-        try {
-            let mod = require(controllerPath);
-            console.assert(mod != null);
-            controller = mod.default || mod;
-            let controller_type = typeof (controller);
-            if (controller_type == 'function') {
-                controller = isClass(controller) ? new controller(req, res) : controller(req, res);
-            }
-        }
-        catch (err) {
-            throw errors.loadControllerFail(controllerName, err);
-        }
-        let action = controller[actionName];
-        if (action == null) {
-            console.log(`Action '${actionName}' is not exists in '${controllerName}'`);
-            throw errors.actionNotExists(actionName, controllerName);
-        }
-        let dataPromise;
-        if (req.method == 'GET') {
-            let queryData = getQueryObject(req);
-            dataPromise = Promise.resolve(queryData);
-        }
-        else {
-            dataPromise = getPostObject(req);
-        }
-        let data = yield dataPromise;
-        try {
-            let result = action.apply(controller, [data, req, res]);
-            if (result.then != null && result.catch != null) {
-                result.then(r => {
-                    outputResult(r, res);
-                }).catch(e => {
-                    outputError(e, res);
-                });
-                return;
-            }
-            outputResult(result, res);
-        }
-        catch (err) {
-            outputError(err, res);
-        }
-    });
 }
 /**
  *
@@ -238,9 +137,6 @@ function outputError(err, res) {
         err.name = err.name.substr(4);
     }
     let outputObject = errorOutputObject(err);
-    // if (err.innerError) {
-    //     outputObject['innerError'] = err.innerError
-    // }
     let str = JSON.stringify(outputObject);
     res.write(str);
     res.end();

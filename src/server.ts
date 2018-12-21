@@ -2,20 +2,12 @@ import http = require('http')
 import errors = require('./errors');
 import url = require('url');
 import querystring = require('querystring');
-import * as fs from 'fs'
-import * as path from 'path'
 import { ControllerLoader } from './controller-loader';
 
-const isClass = require('is-class')
-const ROOT_PATH = "../"
-const DEFAULT_AREA = 'default'
-
-
 export interface Config {
-    host?: {
-        port: number,
-        bind_ip: string
-    },
+    port: number,
+    bindIP?: string,
+    rootPath?: string,
     areas?: {
         [area: string]: string | {
             [controller: string]: string
@@ -23,16 +15,8 @@ export interface Config {
     }
 }
 
-export class WebServer {
-    private server: http.Server;
-    constructor(server: http.Server) {
-        this.server = server;
-    }
-
-}
-
 export function startServer(config: Config) {
-    let controllerLoader = new ControllerLoader(config.areas || {}, ROOT_PATH)
+    let controllerLoader = new ControllerLoader(config.areas || {}, config.rootPath || "./")
     let server = http.createServer(async (req, res) => {
 
         setHeaders(res)
@@ -50,23 +34,6 @@ export function startServer(config: Config) {
             let data = await pareseActionArgument(req)
             let actionResult = await action(data, req, res)
             outputResult(actionResult, res)
-            // let arr = path.split('/').filter(o => o)
-            // let area: string, controllerName: string, actionName: string
-            // if (arr.length <= 2) {
-            //     [controllerName, actionName] = arr;
-            //     area = DEFAULT_AREA;
-            // }
-            // else {
-            //     [area, controllerName, actionName] = arr
-            // }
-
-            // if (!controllerName)
-            //     throw errors.canntGetControlName(requestUrl)
-
-            // if (!actionName)
-            //     throw errors.canntGetActionName(requestUrl)
-
-            // await executeAction(config, area, controllerName, actionName, req, res)
         }
         catch (err) {
             outputError(err, res)
@@ -77,10 +44,7 @@ export function startServer(config: Config) {
         console.log(err)
     })
 
-    // return server
-
-    server.listen(config.host.port, config.host.bind_ip)
-
+    server.listen(config.port, config.bindIP)
 }
 
 
@@ -102,91 +66,6 @@ function pareseActionArgument(req: http.IncomingMessage) {
     }
 
     return dataPromise
-}
-
-async function executeAction(config: Config, areaName: string, controllerName: string, actionName: string, req: http.IncomingMessage, res: http.ServerResponse) {
-    let areas = config.areas || {}
-    let controllers: { [controller: string]: string };
-
-    let area = areas[areaName]
-    if (typeof area == 'string') {
-        controllers = {}
-        let controllerPhysicalPath: string = path.join(__dirname, ROOT_PATH, areas[areaName] as any as string)
-        let files = fs.readdirSync(controllerPhysicalPath)
-
-        files.forEach(fileName => {
-            let arr = fileName.split('.')
-            if (arr[arr.length - 1] == null || arr[arr.length - 1].toLowerCase() != 'js')
-                return
-
-            //========================
-            // 去掉末尾的文件扩展名
-            arr.pop()
-            //========================
-
-            fileName = arr.join('.')
-            controllers[fileName] = path.join(areas[areaName] as any as string, fileName)
-        })
-    }
-    else {
-        controllers = area
-    }
-
-    if (controllers == null)
-        throw errors.controlAreaNotExists(areaName)
-
-    let controllerPath = controllers[controllerName]
-    if (!controllerPath) {
-        throw errors.controllerNotExist(controllerName)
-    }
-
-    controllerPath = path.join(ROOT_PATH, controllers[controllerName])
-    let controller: any
-    try {
-        let mod = require(controllerPath);
-        console.assert(mod != null)
-        controller = mod.default || mod
-        let controller_type = typeof (controller)
-        if (controller_type == 'function') {
-            controller = isClass(controller) ? new controller(req, res) : controller(req, res)
-        }
-    }
-    catch (err) {
-        throw errors.loadControllerFail(controllerName, err)
-    }
-
-    let action = controller[actionName] as Function;
-    if (action == null) {
-        console.log(`Action '${actionName}' is not exists in '${controllerName}'`);
-        throw errors.actionNotExists(actionName, controllerName);
-    }
-
-    let dataPromise: Promise<any>;
-    if (req.method == 'GET') {
-        let queryData = getQueryObject(req);
-        dataPromise = Promise.resolve(queryData);
-    }
-    else {
-        dataPromise = getPostObject(req);
-    }
-
-    let data = await dataPromise
-    try {
-        let result = action.apply(controller, [data, req, res]) as Promise<any>
-        if (result.then != null && result.catch != null) {
-            result.then(r => {
-                outputResult(r, res)
-            }).catch(e => {
-                outputError(e, res)
-            })
-
-            return
-        }
-        outputResult(result, res)
-    }
-    catch (err) {
-        outputError(err, res)
-    }
 }
 
 /**
@@ -282,9 +161,6 @@ function outputError(err: Error, res: http.ServerResponse) {
     }
 
     let outputObject = errorOutputObject(err)
-    // if (err.innerError) {
-    //     outputObject['innerError'] = err.innerError
-    // }
     let str = JSON.stringify(outputObject);
     res.write(str);
     res.end();
