@@ -15,8 +15,14 @@ export interface Config {
     }
 }
 
-export function startServer(config: Config) {
+export interface Callbacks {
+    actionBeforeExecute?: (path: string, req: http.IncomingMessage) => void,
+    actionAfterExecute?: (path: string, req: http.IncomingMessage) => void,
+}
+
+export function startServer(config: Config, callbacks?: Callbacks) {
     let controllerLoader = new ControllerLoader(config.areas || {}, config.rootPath || "./")
+    callbacks = callbacks || {}
     let server = http.createServer(async (req, res) => {
 
         setHeaders(res)
@@ -32,7 +38,14 @@ export function startServer(config: Config) {
 
             let action = controllerLoader.getAction(path)
             let data = await pareseActionArgument(req)
+            if (callbacks.actionBeforeExecute)
+                callbacks.actionBeforeExecute(path, req)
+
             let actionResult = await action(data, req, res)
+
+            if (callbacks.actionAfterExecute)
+                callbacks.actionAfterExecute(path, req)
+
             outputResult(actionResult, res)
         }
         catch (err) {

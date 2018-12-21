@@ -1,3 +1,5 @@
+/// <reference types="node" />
+import http = require('http');
 export interface Config {
     port: number;
     bindIP?: string;
@@ -8,7 +10,11 @@ export interface Config {
         };
     };
 }
-export declare function startServer(config: Config): void;
+export interface Callbacks {
+    actionBeforeExecute?: (path: string, req: http.IncomingMessage) => void;
+    actionAfterExecute?: (path: string, req: http.IncomingMessage) => void;
+}
+export declare function startServer(config: Config, callbacks?: Callbacks): void;
 export declare const contentTypes: {
     application_json: string;
     text_plain: string;

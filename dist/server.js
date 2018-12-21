@@ -13,8 +13,9 @@ const errors = require("./errors");
 const url = require("url");
 const querystring = require("querystring");
 const controller_loader_1 = require("./controller-loader");
-function startServer(config) {
+function startServer(config, callbacks) {
     let controllerLoader = new controller_loader_1.ControllerLoader(config.areas || {}, config.rootPath || "./");
+    callbacks = callbacks || {};
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
         setHeaders(res);
         if (req.method == 'OPTIONS') {
@@ -27,7 +28,11 @@ function startServer(config) {
             let path = urlInfo.pathname || '';
             let action = controllerLoader.getAction(path);
             let data = yield pareseActionArgument(req);
+            if (callbacks.actionBeforeExecute)
+                callbacks.actionBeforeExecute(path, req);
             let actionResult = yield action(data, req, res);
+            if (callbacks.actionAfterExecute)
+                callbacks.actionAfterExecute(path, req);
             outputResult(actionResult, res);
         }
         catch (err) {
