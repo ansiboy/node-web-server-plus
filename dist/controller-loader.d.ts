@@ -1,10 +1,8 @@
-import { Config } from './server';
 export declare class ControllerLoader {
-    private areaControllers;
-    private rootPath;
     private actions;
-    constructor(areas: Config['areas'], rootPath: string);
-    private initAreas;
+    constructor(controller_directories: string[], root_path: string);
+    private joinPaths;
+    private getControllerPaths;
     private loadController;
     getAction(virtualPath: string): Function;
 }

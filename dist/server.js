@@ -14,7 +14,8 @@ const url = require("url");
 const querystring = require("querystring");
 const controller_loader_1 = require("./controller-loader");
 function startServer(config, callbacks) {
-    let controllerLoader = new controller_loader_1.ControllerLoader(config.areas || {}, config.rootPath || "./");
+    config.controller_directories = config.controller_directories || ['modules'];
+    let controllerLoader = new controller_loader_1.ControllerLoader(config.controller_directories, config.root_path);
     callbacks = callbacks || {};
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
         setHeaders(res);
@@ -23,6 +24,22 @@ function startServer(config, callbacks) {
             return;
         }
         try {
+            //=====================================================================
+            // 处理 URL 转发
+            if (config.proxy) {
+                for (let key in config.proxy) {
+                    let regex = new RegExp(key);
+                    let arr = regex.exec(req.url);
+                    if (arr != null && arr.length > 0) {
+                        let targetUrl = req.url.replace(/\$(\d+)/, (match, number) => {
+                            return typeof arr[number] != 'undefined' ? arr[number] : match;
+                        });
+                        proxyRequest(targetUrl, req, res);
+                        return;
+                    }
+                }
+            }
+            //=====================================================================
             let requestUrl = req.url || '';
             let urlInfo = url.parse(requestUrl);
             let path = urlInfo.pathname || '';
@@ -42,7 +59,7 @@ function startServer(config, callbacks) {
     server.on('error', (err) => {
         console.log(err);
     });
-    server.listen(config.port, config.bindIP);
+    server.listen(config.port, config.bind_ip);
 }
 exports.startServer = startServer;
 function setHeaders(res) {
@@ -132,10 +149,13 @@ function outputResult(result, res) {
     res.end(contentResult.data);
 }
 function outputError(err, res) {
-    console.assert(err != null, 'error is null');
+    if (err == null) {
+        err = new Error(`Unkonwn error because original error is null.`);
+        err.name = 'nullError';
+    }
     const defaultErrorStatusCode = 600;
     res.setHeader("content-type", exports.contentTypes.application_json);
-    res.statusCode = defaultErrorStatusCode;
+    res.statusCode = err.statusCode || defaultErrorStatusCode;
     res.statusMessage = err.name; // statusMessage 不能为中文，否则会出现 invalid chartset 的异常
     if (/^\d\d\d\s/.test(err.name)) {
         res.statusCode = Number.parseInt(err.name.substr(0, 3));
@@ -161,4 +181,56 @@ class ContentResult {
     }
 }
 exports.ContentResult = ContentResult;
+function proxyRequest(targetUrl, req, res) {
+    let request = createTargetResquest(targetUrl, req, res);
+    request.on('error', function (err) {
+        outputError(err, res);
+    });
+    req.on('data', (data) => {
+        request.write(data);
+    });
+    req.on('end', () => {
+        request.end();
+    });
+}
+function createTargetResquest(targetUrl, req, res) {
+    let u = url.parse(targetUrl);
+    let { protocol, host, port, path } = u;
+    let headers = req.headers;
+    let request = http.request({
+        protocol, host, port, path,
+        method: req.method,
+        headers: headers,
+    }, (response) => {
+        console.assert(response != null);
+        // const StatusCodeGenerateToken = 666; // 生成 Token
+        // if (response.statusCode == StatusCodeGenerateToken) {
+        //     let responseContent: string;
+        //     let contentType = response.headers['content-type'] as string;
+        //     response.on('data', (data: ArrayBuffer) => {
+        //         responseContent = data.toString();
+        //     })
+        //     response.on('end', () => {
+        //         Token.create(responseContent, contentType)
+        //             .then((o: Token) => {
+        //                 res.setHeader("content-type", "application/json");
+        //                 var obj = JSON.stringify({ token: o.id });
+        //                 res.write(obj);
+        //                 res.end();
+        //             }).catch(err => {
+        //                 outputError(res, err);
+        //             })
+        //     })
+        // }
+        // else {
+        for (var key in response.headers) {
+            res.setHeader(key, response.headers[key]);
+        }
+        res.statusCode = response.statusCode;
+        res.statusMessage = response.statusMessage;
+        response.pipe(res);
+        // }
+    });
+    return request;
+}
 //# sourceMappingURL=server.js.map

@@ -6,13 +6,12 @@ import { ControllerLoader } from './controller-loader';
 
 export interface Config {
     port: number,
-    bindIP?: string,
-    rootPath?: string,
-    areas?: {
-        [area: string]: string | {
-            [controller: string]: string
-        }
-    }
+    bind_ip?: string,
+    root_path: string,
+    proxy?: {
+        [path_pattern: string]: string
+    },
+    controller_directories?: string[]
 }
 
 export interface Callbacks {
@@ -21,7 +20,9 @@ export interface Callbacks {
 }
 
 export function startServer(config: Config, callbacks?: Callbacks) {
-    let controllerLoader = new ControllerLoader(config.areas || {}, config.rootPath || "./")
+
+    config.controller_directories = config.controller_directories || ['modules']
+    let controllerLoader = new ControllerLoader(config.controller_directories, config.root_path)
     callbacks = callbacks || {}
     let server = http.createServer(async (req, res) => {
 
@@ -32,6 +33,22 @@ export function startServer(config: Config, callbacks?: Callbacks) {
         }
         try {
 
+            //=====================================================================
+            // 处理 URL 转发
+            if (config.proxy) {
+                for (let key in config.proxy) {
+                    let regex = new RegExp(key)
+                    let arr = regex.exec(req.url)
+                    if (arr != null && arr.length > 0) {
+                        let targetUrl = req.url.replace(/\$(\d+)/, (match, number) => {
+                            return typeof arr[number] != 'undefined' ? arr[number] : match;
+                        })
+                        proxyRequest(targetUrl, req, res)
+                        return
+                    }
+                }
+            }
+            //=====================================================================
             let requestUrl = req.url || ''
             let urlInfo = url.parse(requestUrl);
             let path = urlInfo.pathname || '';
@@ -57,7 +74,7 @@ export function startServer(config: Config, callbacks?: Callbacks) {
         console.log(err)
     })
 
-    server.listen(config.port, config.bindIP)
+    server.listen(config.port, config.bind_ip)
 }
 
 
@@ -160,12 +177,15 @@ function outputResult(result: object | null, res: http.ServerResponse) {
 }
 
 function outputError(err: Error, res: http.ServerResponse) {
-    console.assert(err != null, 'error is null');
+    if (err == null) {
+        err = new Error(`Unkonwn error because original error is null.`)
+        err.name = 'nullError'
+    }
 
     const defaultErrorStatusCode = 600;
 
     res.setHeader("content-type", contentTypes.application_json);
-    res.statusCode = defaultErrorStatusCode;
+    res.statusCode = err.statusCode || defaultErrorStatusCode;
     res.statusMessage = err.name;      // statusMessage 不能为中文，否则会出现 invalid chartset 的异常
 
     if (/^\d\d\d\s/.test(err.name)) {
@@ -197,5 +217,67 @@ export class ContentResult {
         this.contentType = contentType
         this.statusCode = statusCode == null ? 200 : statusCode
     }
+}
+
+function proxyRequest(targetUrl: string, req, res) {
+    let request = createTargetResquest(targetUrl, req, res);
+
+    request.on('error', function (err) {
+        outputError(err, res);
+    })
+
+    req.on('data', (data) => {
+        request.write(data);
+    })
+    req.on('end', () => {
+        request.end();
+    })
+}
+
+function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse) {
+
+    let u = url.parse(targetUrl)
+    let { protocol, host, port, path } = u
+    let headers: any = req.headers;
+    let request = http.request(
+        {
+            protocol, host, port, path,
+            method: req.method,
+            headers: headers,
+        },
+        (response) => {
+            console.assert(response != null);
+
+            // const StatusCodeGenerateToken = 666; // 生成 Token
+            // if (response.statusCode == StatusCodeGenerateToken) {
+            //     let responseContent: string;
+            //     let contentType = response.headers['content-type'] as string;
+            //     response.on('data', (data: ArrayBuffer) => {
+            //         responseContent = data.toString();
+            //     })
+            //     response.on('end', () => {
+            //         Token.create(responseContent, contentType)
+            //             .then((o: Token) => {
+            //                 res.setHeader("content-type", "application/json");
+            //                 var obj = JSON.stringify({ token: o.id });
+            //                 res.write(obj);
+            //                 res.end();
+            //             }).catch(err => {
+            //                 outputError(res, err);
+            //             })
+            //     })
+            // }
+            // else {
+            for (var key in response.headers) {
+                res.setHeader(key, response.headers[key]);
+            }
+            res.statusCode = response.statusCode;
+            res.statusMessage = response.statusMessage
+            response.pipe(res);
+            // }
+        },
+    );
+
+    return request;
 }
 

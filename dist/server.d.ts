@@ -2,13 +2,12 @@
 import http = require('http');
 export interface Config {
     port: number;
-    bindIP?: string;
-    rootPath?: string;
-    areas?: {
-        [area: string]: string | {
-            [controller: string]: string;
-        };
+    bind_ip?: string;
+    root_path: string;
+    proxy?: {
+        [path_pattern: string]: string;
     };
+    controller_directories?: string[];
 }
 export interface Callbacks {
     actionBeforeExecute?: (path: string, req: http.IncomingMessage) => void;

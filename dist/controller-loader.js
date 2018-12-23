@@ -4,101 +4,103 @@ const errors = require("./errors");
 const fs = require("fs");
 const path = require("path");
 const isClass = require("is-class");
-const DEFAULT_AREA_NAME = 'default';
-const DEFAULT_CONTROLLER_NAME = 'home';
+const attributes_1 = require("./attributes");
 const DEFAULT_ACTION_NAME = 'index';
-const DEFAULT_AREA_PATH = 'modules';
 class ControllerLoader {
-    constructor(areas, rootPath) {
-        this.areaControllers = {};
+    constructor(controller_directories, root_path) {
         this.actions = {};
-        if (!areas)
+        if (controller_directories == null || controller_directories.length == 0)
             throw errors.arugmentNull('areas');
-        if (!rootPath)
-            throw errors.arugmentNull('rootPath');
-        this.rootPath = rootPath;
-        this.initAreas(areas, rootPath);
-        areas[DEFAULT_AREA_NAME] = areas[DEFAULT_AREA_NAME] || DEFAULT_AREA_PATH;
-        for (let areaName in areas) {
-            let controllerPaths = areas[areaName];
-            let controllers = this.areaControllers[areaName] = {};
-            for (let controllerName in controllerPaths) {
-                let controllerPath = controllerPaths[controllerName];
-                controllers[controllerName] = this.loadController(controllerPath);
+        let controllerPaths = {};
+        controller_directories.forEach(dir => {
+            dir = path.join(root_path, dir);
+            if (!fs.existsSync(dir)) {
+                throw errors.controllerDirectoryNotExists(dir);
             }
+            controllerPaths[dir] = this.getControllerPaths(dir);
+        });
+        let controllers = {};
+        for (let dir in controllerPaths) {
+            controllerPaths[dir].forEach(controllerPath => {
+                controllers[controllerPath] = this.loadController(controllerPath, dir);
+            });
         }
+        attributes_1.controllerDefines.forEach(c => {
+            console.assert(c.path);
+            c.actionDefines.forEach(a => {
+                let actionPath = a.path || this.joinPaths(c.path, a.method.name);
+                this.actions[actionPath] = { controllerType: c.type, memberName: a.method.name };
+            });
+            let defaultActionPath = this.joinPaths(c.path, DEFAULT_ACTION_NAME);
+            if (c.actionDefines[defaultActionPath] == null && c.type.prototype[DEFAULT_ACTION_NAME] != null) {
+                this.actions[defaultActionPath] = { controllerType: c.type, memberName: defaultActionPath };
+            }
+        });
     }
-    initAreas(areas, ROOT_PATH) {
-        areas[DEFAULT_AREA_NAME] = areas[DEFAULT_AREA_NAME] || DEFAULT_AREA_PATH;
-        for (let name in areas) {
-            let area = areas[name];
-            if (typeof area == 'string') {
-                let areaPath = area;
-                let areaFullPath = path.join(__dirname, ROOT_PATH, areas[name]);
-                areas[name] = area = {};
-                let files = fs.readdirSync(areaFullPath);
-                files.forEach(fileName => {
-                    let arr = fileName.split('.');
-                    if (area.length < 2 || arr[arr.length - 1] == null || arr[arr.length - 1].toLowerCase() != 'js')
-                        return;
-                    //========================
-                    // 去掉末尾的文件扩展名
-                    arr.pop();
-                    //========================
-                    fileName = arr.join('.');
-                    area[fileName] = path.join(areaPath, fileName);
-                });
-                area[DEFAULT_CONTROLLER_NAME] = area[DEFAULT_CONTROLLER_NAME] || path.join(areaPath, DEFAULT_CONTROLLER_NAME);
-            }
-            else if (typeof area == 'object') {
-                area[DEFAULT_CONTROLLER_NAME] = area[DEFAULT_CONTROLLER_NAME] || path.join(DEFAULT_AREA_PATH, DEFAULT_CONTROLLER_NAME);
-            }
-            else {
-                throw innerErrors.invalidAreaType(name, typeof area);
-            }
-        }
+    joinPaths(path1, path2) {
+        if (path1 == null)
+            throw errors.arugmentNull('path1');
+        if (path2 == null)
+            throw errors.arugmentNull('path2');
+        let p = path.join(path1, path2);
+        p = p.replace(/\\/g, '/');
+        return p;
     }
-    loadController(controllerPath) {
-        let controllerPhysicalPath = path.join(this.rootPath, controllerPath);
-        let mod = require(controllerPhysicalPath);
-        console.assert(mod != null);
-        let ctrl = mod.default || mod;
-        let controller_type = typeof (ctrl);
-        let controller;
-        if (controller_type == 'function') {
-            controller = isClass(ctrl) ? new ctrl() : ctrl();
+    getControllerPaths(dir) {
+        let controllerPaths = [];
+        let dirs = [];
+        dirs.push(dir);
+        while (dirs.length > 0) {
+            let item = dirs.pop();
+            let files = fs.readdirSync(item);
+            files.forEach(f => {
+                let p = path.join(item, f);
+                let state = fs.lstatSync(p);
+                if (state.isDirectory()) {
+                    dirs.push(p);
+                }
+                else if (state.isFile() && p.endsWith('.js')) {
+                    // 去掉 .js 后缀
+                    controllerPaths.push(p.substring(0, p.length - 3));
+                }
+            });
         }
-        else if (controller_type == 'object') {
-            controller = ctrl;
+        return controllerPaths;
+    }
+    loadController(controllerPath, dir) {
+        let ctrl;
+        try {
+            let mod = require(controllerPath);
+            console.assert(mod != null);
+            ctrl = mod.default || mod;
         }
-        else {
-            throw innerErrors.invalidControllerTypeByPath(controllerPhysicalPath, controller_type);
+        catch (err) {
+            throw innerErrors.loadControllerFail(controllerPath, err);
         }
-        return controller;
+        if (!isClass(ctrl)) {
+            throw innerErrors.controllerIsNotClass(controllerPath);
+        }
+        console.assert(attributes_1.controllerDefines != null);
+        let controllerDefine = attributes_1.controllerDefines.filter(o => o.type == ctrl)[0];
+        if (!controllerDefine.path) {
+            controllerDefine.path = path.join('/', path.relative(dir, controllerPath));
+        }
     }
     getAction(virtualPath) {
-        let action = this.actions[virtualPath];
-        if (action != null) {
-            return action;
+        if (!virtualPath)
+            throw errors.arugmentNull('virtualPath');
+        // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
+        virtualPath = virtualPath.replace(/\/+/g, '/');
+        // 去掉路径末尾的 / ，例如：/shop/test/ 变为 /shop/test
+        if (virtualPath[virtualPath.length - 1] == '/')
+            virtualPath = virtualPath.substr(0, virtualPath.length - 1);
+        let actionInfo = this.actions[virtualPath];
+        if (actionInfo == null) {
+            throw innerErrors.actionNotExists(virtualPath);
         }
-        let arr = virtualPath.split('/').filter(o => o);
-        if (arr.length > 3) {
-            throw innerErrors.parsePathFail(virtualPath);
-        }
-        arr.reverse();
-        let [actionName, controllerName, arreaName] = Object.assign([DEFAULT_ACTION_NAME, DEFAULT_CONTROLLER_NAME, DEFAULT_AREA_NAME], arr);
-        this.areaControllers[arreaName] = this.areaControllers[arreaName] || {};
-        let controller = this.areaControllers[arreaName][controllerName];
-        if (controller == null) {
-            throw innerErrors.controllerNotExist(controllerName, virtualPath);
-        }
-        action = controller[actionName];
-        if (action == null) {
-            console.log(`Action '${actionName}' is not exists in '${controllerName}'`);
-            throw innerErrors.actionNotExists(actionName, controllerName);
-        }
-        action.bind(controller);
-        this.actions[virtualPath] = action;
+        let controller = new actionInfo.controllerType();
+        let action = controller[actionInfo.memberName];
+        console.assert(action != null);
         return action;
     }
 }
@@ -120,23 +122,31 @@ let innerErrors = {
         let error = new Error(`Controller ${path} type must be function or object, actual is ${actualType}.`);
         return error;
     },
-    loadControllerFail(name, innerError) {
-        let msg = `Load controller '${name}' fail.`;
+    loadControllerFail(path, innerError) {
+        let msg = `Load controller '${path}' fail.`;
         let error = new Error(msg);
         error.name = innerErrors.loadControllerFail.name;
         error.innerError = innerError;
         return error;
     },
-    actionNotExists(action, controller) {
-        let msg = `Action '${action}' is not exists in controller '${controller}'`;
+    actionNotExists(path) {
+        let msg = `Action '${path}' is not exists.`;
         let error = new Error(msg);
         error.name = innerErrors.actionNotExists.name;
+        error.statusCode = 404;
         return error;
     },
     controllerNotExist(controllerName, virtualPath) {
         let msg = `Control ${controllerName} is not exists, path is ${virtualPath}.`;
         let error = new Error(msg);
-        error.name = errors.controllerNotExist.name;
+        error.name = innerErrors.controllerNotExist.name;
+        error.statusCode = 404;
+        return error;
+    },
+    controllerIsNotClass(controllerName) {
+        let msg = `Control ${controllerName} is not a class.`;
+        let error = new Error(msg);
+        error.name = innerErrors.controllerIsNotClass.name;
         return error;
     }
 };
