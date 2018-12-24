@@ -36,8 +36,8 @@ class ControllerLoader {
                 this.actions[defaultActionPath] = { controllerType: c.type, memberName: DEFAULT_ACTION_NAME };
             }
         });
-        console.log(attributes_1.controllerDefines);
-        console.log(this.actions);
+        // console.log(controllerDefines)
+        // console.log(this.actions)
     }
     joinPaths(path1, path2) {
         if (path1 == null)

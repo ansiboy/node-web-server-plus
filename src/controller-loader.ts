@@ -42,8 +42,8 @@ export class ControllerLoader {
             }
         })
 
-        console.log(controllerDefines)
-        console.log(this.actions)
+        // console.log(controllerDefines)
+        // console.log(this.actions)
 
     }
 
