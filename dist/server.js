@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const http = require("http");
-const errors = require("./errors");
 const url = require("url");
 const querystring = require("querystring");
 const controller_loader_1 = require("./controller-loader");
@@ -109,10 +108,13 @@ function getPostObject(request) {
     if (length <= 0)
         return Promise.resolve({});
     return new Promise((reslove, reject) => {
+        var text = "";
         request.on('data', (data) => {
-            let text = data.toString();
+            text = text + data.toString();
+        });
+        request.on('end', () => {
+            let obj;
             try {
-                let obj;
                 if (contentType.indexOf('application/json') >= 0) {
                     obj = JSON.parse(text);
                 }
@@ -121,13 +123,31 @@ function getPostObject(request) {
                 }
                 reslove(obj);
             }
-            catch (exc) {
-                let err = errors.postDataNotJSON(text);
-                console.assert(err != null);
+            catch (err) {
                 reject(err);
             }
         });
     });
+    // return new Promise((reslove, reject) => {
+    //     request.on('data', (data: { toString: () => string }) => {
+    //         let text = data.toString();
+    //         try {
+    //             let obj;
+    //             if (contentType.indexOf('application/json') >= 0) {
+    //                 obj = JSON.parse(text)
+    //             }
+    //             else {
+    //                 obj = querystring.parse(text);
+    //             }
+    //             reslove(obj);
+    //         }
+    //         catch (exc) {
+    //             let err = errors.postDataNotJSON(text);
+    //             console.assert(err != null);
+    //             reject(err);
+    //         }
+    //     });
+    // });
 }
 exports.contentTypes = {
     application_json: 'application/json',

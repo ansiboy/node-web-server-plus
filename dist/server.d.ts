@@ -19,8 +19,8 @@ export declare const contentTypes: {
     text_plain: string;
 };
 export declare class ContentResult {
-    data: string;
+    data: string | Buffer;
     statusCode: number;
     contentType: string;
-    constructor(data: string, contentType: string, statusCode?: number);
+    constructor(data: string | Buffer, contentType: string, statusCode?: number);
 }

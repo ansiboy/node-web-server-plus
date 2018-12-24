@@ -132,26 +132,48 @@ function getPostObject(request: http.IncomingMessage): Promise<any> {
         return Promise.resolve({});
 
     return new Promise((reslove, reject) => {
+        var text = "";
         request.on('data', (data: { toString: () => string }) => {
-            let text = data.toString();
+            text = text + data.toString();
+        });
+
+        request.on('end', () => {
+            let obj;
             try {
-                let obj;
                 if (contentType.indexOf('application/json') >= 0) {
                     obj = JSON.parse(text)
                 }
                 else {
                     obj = querystring.parse(text);
                 }
-
                 reslove(obj);
             }
-            catch (exc) {
-                let err = errors.postDataNotJSON(text);
-                console.assert(err != null);
+            catch (err) {
                 reject(err);
             }
-        });
+        })
     });
+    // return new Promise((reslove, reject) => {
+    //     request.on('data', (data: { toString: () => string }) => {
+    //         let text = data.toString();
+    //         try {
+    //             let obj;
+    //             if (contentType.indexOf('application/json') >= 0) {
+    //                 obj = JSON.parse(text)
+    //             }
+    //             else {
+    //                 obj = querystring.parse(text);
+    //             }
+
+    //             reslove(obj);
+    //         }
+    //         catch (exc) {
+    //             let err = errors.postDataNotJSON(text);
+    //             console.assert(err != null);
+    //             reject(err);
+    //         }
+    //     });
+    // });
 }
 
 export const contentTypes = {
@@ -209,10 +231,10 @@ function errorOutputObject(err: Error) {
 }
 
 export class ContentResult {
-    data: string
+    data: string | Buffer
     statusCode: number
     contentType: string
-    constructor(data: string, contentType: string, statusCode?: number) {
+    constructor(data: string | Buffer, contentType: string, statusCode?: number) {
         this.data = data
         this.contentType = contentType
         this.statusCode = statusCode == null ? 200 : statusCode

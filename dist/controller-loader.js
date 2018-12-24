@@ -26,7 +26,7 @@ class ControllerLoader {
             });
         }
         attributes_1.controllerDefines.forEach(c => {
-            console.assert(c.path);
+            console.assert((c.path || '') != '');
             c.actionDefines.forEach(a => {
                 let actionPath = a.path || this.joinPaths(c.path, a.memberName);
                 this.actions[actionPath] = { controllerType: c.type, memberName: a.memberName };
