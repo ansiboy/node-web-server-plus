@@ -28,14 +28,16 @@ class ControllerLoader {
         attributes_1.controllerDefines.forEach(c => {
             console.assert(c.path);
             c.actionDefines.forEach(a => {
-                let actionPath = a.path || this.joinPaths(c.path, a.method.name);
-                this.actions[actionPath] = { controllerType: c.type, memberName: a.method.name };
+                let actionPath = a.path || this.joinPaths(c.path, a.memberName);
+                this.actions[actionPath] = { controllerType: c.type, memberName: a.memberName };
             });
             let defaultActionPath = this.joinPaths(c.path, DEFAULT_ACTION_NAME);
             if (c.actionDefines[defaultActionPath] == null && c.type.prototype[DEFAULT_ACTION_NAME] != null) {
-                this.actions[defaultActionPath] = { controllerType: c.type, memberName: defaultActionPath };
+                this.actions[defaultActionPath] = { controllerType: c.type, memberName: DEFAULT_ACTION_NAME };
             }
         });
+        console.log(attributes_1.controllerDefines);
+        console.log(this.actions);
     }
     joinPaths(path1, path2) {
         if (path1 == null)
@@ -75,6 +77,7 @@ class ControllerLoader {
             ctrl = mod.default || mod;
         }
         catch (err) {
+            console.error(err);
             throw innerErrors.loadControllerFail(controllerPath, err);
         }
         if (!isClass(ctrl)) {
@@ -91,8 +94,8 @@ class ControllerLoader {
             throw errors.arugmentNull('virtualPath');
         // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
         virtualPath = virtualPath.replace(/\/+/g, '/');
-        // 去掉路径末尾的 / ，例如：/shop/test/ 变为 /shop/test
-        if (virtualPath[virtualPath.length - 1] == '/')
+        // 去掉路径末尾的 / ，例如：/shop/test/ 变为 /shop/test, 如果路径 / 则保持不变
+        if (virtualPath[virtualPath.length - 1] == '/' && virtualPath.length > 1)
             virtualPath = virtualPath.substr(0, virtualPath.length - 1);
         let actionInfo = this.actions[virtualPath];
         if (actionInfo == null) {

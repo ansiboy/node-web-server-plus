@@ -5,4 +5,5 @@ exports.startServer = server_1.startServer;
 var attributes_1 = require("./attributes");
 exports.controller = attributes_1.controller;
 exports.action = attributes_1.action;
+exports.register = attributes_1.register;
 //# sourceMappingURL=index.js.map

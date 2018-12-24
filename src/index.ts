@@ -1,2 +1,2 @@
 export { startServer } from './server'
-export { controller, action } from './attributes'
+export { controller, action, register } from './attributes'
