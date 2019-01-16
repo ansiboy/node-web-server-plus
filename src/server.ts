@@ -79,10 +79,10 @@ export function startServer(config: Config, callbacks?: Callbacks) {
 
 
 function setHeaders(res: http.ServerResponse) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Type', 'application/json;charset=utf-8');
-    res.setHeader('Access-Control-Allow-Headers', '*');
-    res.setHeader('Access-Control-Allow-Methods', `POST, GET, OPTIONS, PUT, DELETE`);
+    // res.setHeader('Access-Control-Allow-Headers', '*');
+    // res.setHeader('Access-Control-Allow-Methods', `POST, GET, OPTIONS, PUT, DELETE`);
 }
 
 function pareseActionArgument(req: http.IncomingMessage) {
@@ -153,27 +153,6 @@ function getPostObject(request: http.IncomingMessage): Promise<any> {
             }
         })
     });
-    // return new Promise((reslove, reject) => {
-    //     request.on('data', (data: { toString: () => string }) => {
-    //         let text = data.toString();
-    //         try {
-    //             let obj;
-    //             if (contentType.indexOf('application/json') >= 0) {
-    //                 obj = JSON.parse(text)
-    //             }
-    //             else {
-    //                 obj = querystring.parse(text);
-    //             }
-
-    //             reslove(obj);
-    //         }
-    //         catch (exc) {
-    //             let err = errors.postDataNotJSON(text);
-    //             console.assert(err != null);
-    //             reject(err);
-    //         }
-    //     });
-    // });
 }
 
 export const contentTypes = {
@@ -184,8 +163,8 @@ export const contentTypes = {
 function outputResult(result: object | null, res: http.ServerResponse) {
     result = result === undefined ? null : result
     let contentResult: ContentResult
-    if (result instanceof ContentResult) {
-        contentResult = result
+    if (isContentResult(result)) {
+        contentResult = result as ContentResult
     }
     else {
         contentResult = typeof result == 'string' ?
@@ -196,6 +175,14 @@ function outputResult(result: object | null, res: http.ServerResponse) {
     res.setHeader("content-type", contentResult.contentType || contentTypes.text_plain);
     res.statusCode = contentResult.statusCode || 200;
     res.end(contentResult.data);
+}
+
+function isContentResult(result: object) {
+    let r = result as ContentResult
+    if (r.contentType !== undefined && r.data !== undefined)
+        return true
+
+    return false
 }
 
 function outputError(err: Error, res: http.ServerResponse) {
