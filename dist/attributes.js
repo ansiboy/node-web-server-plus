@@ -2,10 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const errors = require("./errors");
 const constants_1 = require("./constants");
+let actionsToRegister = [];
 exports.controllerDefines = [];
 function controller(path) {
     return function (constructor) {
-        registerController(constructor, path);
+        let controllerDefine = registerController(constructor, path);
+        let items = actionsToRegister.filter(o => o.controllerType = constructor);
+        for (let i = 0; i < items.length; i++) {
+            registerAction(controllerDefine, items[i].memberName, items[i].path);
+        }
+        actionsToRegister = actionsToRegister.filter(o => o.controllerType != constructor);
         return constructor;
     };
 }
@@ -13,15 +19,15 @@ exports.controller = controller;
 function action(path) {
     return function (target, propertyKey, descriptor) {
         let memberName = descriptor.value.name;
-        registerAction(target.constructor, memberName, path);
+        actionsToRegister.push({ controllerType: target.constructor, memberName, path });
     };
 }
 exports.action = action;
 function register(type, path) {
-    registerController(type, path);
+    let controllerDefine = registerController(type, path);
     let obj = {
         action(member, path) {
-            registerAction(type, member, path);
+            registerAction(controllerDefine, member, path);
             return obj;
         }
     };
@@ -30,34 +36,22 @@ function register(type, path) {
 exports.register = register;
 function registerController(type, path) {
     if (!path) {
-        // const controllerSuffix = 'Controller'
         path = type.name.endsWith(constants_1.controllerSuffix) ?
             type.name.substring(0, type.name.length - constants_1.controllerSuffix.length) : type.name;
     }
     if (path && path[0] != '/')
         path = '/' + path;
     let controllerDefine = exports.controllerDefines.filter(o => o.type == type)[0];
-    if (controllerDefine == null) {
-        controllerDefine = { type: type, actionDefines: [], path };
-        exports.controllerDefines.push(controllerDefine);
-    }
-    else {
-        controllerDefine.path = path;
-    }
+    if (controllerDefine != null)
+        throw errors.controlRegister(type);
+    controllerDefine = { type: type, actionDefines: [], path };
+    exports.controllerDefines.push(controllerDefine);
     return controllerDefine;
 }
-function registerAction(controllerType, memberName, path) {
+function registerAction(controllerDefine, memberName, path) {
+    if (controllerDefine == null)
+        throw errors.arugmentNull('controllerDefine');
     console.assert(typeof memberName == 'string');
-    let controllerDefine = exports.controllerDefines.filter(o => o.type == controllerType)[0];
-    if (controllerDefine == null) {
-        controllerDefine = registerController(controllerType);
-    }
     controllerDefine.actionDefines.push({ memberName: memberName, path });
-}
-function checkValidPath(path) {
-    if (!path)
-        throw errors.arugmentNull('path');
-    if (path[0] != '/')
-        throw new Error(`Path must starts with '/', actual is '${path}'`);
 }
 //# sourceMappingURL=attributes.js.map
