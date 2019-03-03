@@ -3,17 +3,18 @@ import * as fs from 'fs'
 import * as path from 'path'
 import isClass = require('is-class')
 import { controllerDefines, ControllerType } from './attributes';
+import { DEFAULT_ACTION_NAME } from './constants';
 
-const DEFAULT_ACTION_NAME = 'index';
+
 export class ControllerLoader {
     private actions: { [path: string]: { controllerType: ControllerType<any>, memberName: string, } } = {}
 
-    constructor(controller_directories: string[], root_path: string) {
-        if (controller_directories == null || controller_directories.length == 0) throw errors.arugmentNull('areas')
+    constructor(controller_directories: string[]) {
+        if (controller_directories == null || controller_directories.length == 0)
+            throw errors.arugmentNull('areas')
 
         let controllerPaths: { [dir: string]: string[] } = {}
         controller_directories.forEach(dir => {
-            dir = path.join(root_path, dir)
             if (!fs.existsSync(dir)) {
                 throw errors.controllerDirectoryNotExists(dir)
             }
@@ -32,7 +33,16 @@ export class ControllerLoader {
         controllerDefines.forEach(c => {
             console.assert((c.path || '') != '')
             c.actionDefines.forEach(a => {
-                let actionPath = a.path || this.joinPaths(c.path, a.memberName)
+                let actionPath: string// = a.path || this.joinPaths(c.path, a.memberName)
+                if (!a.path) {
+                    actionPath = this.joinPaths(c.path, a.memberName)
+                }
+                else if (a.path[0] == '/') {
+                    actionPath = a.path
+                }
+                else {
+                    actionPath = this.joinPaths(c.path, a.path)
+                }
                 this.actions[actionPath] = { controllerType: c.type, memberName: a.memberName }
             })
 
@@ -79,28 +89,28 @@ export class ControllerLoader {
     }
 
     private loadController(controllerPath: string, dir: string): void {
-
-        let ctrl: any
-
         try {
             let mod = require(controllerPath);
             console.assert(mod != null)
-            ctrl = mod.default || mod
+            let propertyNames = Object.getOwnPropertyNames(mod)
+            for (let i = 0; i < propertyNames.length; i++) {
+                let ctrl = mod[propertyNames[i]]
+                if (!isClass(ctrl)) {
+                    continue
+                }
+
+                //TODO: 检查控制器是否重复
+                console.assert(controllerDefines != null)
+                let controllerDefine = controllerDefines.filter(o => o.type == ctrl)[0]
+                if (controllerDefine && !controllerDefine.path) {
+                    controllerDefine.path = path.join('/', path.relative(dir, controllerPath))
+                }
+            }
         }
         catch (err) {
             console.error(err)
             throw innerErrors.loadControllerFail(controllerPath, err)
         }
-
-        if (!isClass(ctrl)) {
-            throw innerErrors.controllerIsNotClass(controllerPath)
-        }
-        console.assert(controllerDefines != null)
-        let controllerDefine = controllerDefines.filter(o => o.type == ctrl)[0]
-        if (!controllerDefine.path) {
-            controllerDefine.path = path.join('/', path.relative(dir, controllerPath))
-        }
-
     }
 
     getAction(virtualPath: string): Function {

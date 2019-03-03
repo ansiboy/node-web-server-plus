@@ -4,7 +4,7 @@ interface ActionDefine {
 }
 interface ControllerDefine {
     type: ControllerType<any>;
-    path?: string;
+    path: string;
     actionDefines: ActionDefine[];
 }
 export declare type ControllerType<T> = {

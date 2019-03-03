@@ -5,15 +5,14 @@ const fs = require("fs");
 const path = require("path");
 const isClass = require("is-class");
 const attributes_1 = require("./attributes");
-const DEFAULT_ACTION_NAME = 'index';
+const constants_1 = require("./constants");
 class ControllerLoader {
-    constructor(controller_directories, root_path) {
+    constructor(controller_directories) {
         this.actions = {};
         if (controller_directories == null || controller_directories.length == 0)
             throw errors.arugmentNull('areas');
         let controllerPaths = {};
         controller_directories.forEach(dir => {
-            dir = path.join(root_path, dir);
             if (!fs.existsSync(dir)) {
                 throw errors.controllerDirectoryNotExists(dir);
             }
@@ -28,12 +27,21 @@ class ControllerLoader {
         attributes_1.controllerDefines.forEach(c => {
             console.assert((c.path || '') != '');
             c.actionDefines.forEach(a => {
-                let actionPath = a.path || this.joinPaths(c.path, a.memberName);
+                let actionPath; // = a.path || this.joinPaths(c.path, a.memberName)
+                if (!a.path) {
+                    actionPath = this.joinPaths(c.path, a.memberName);
+                }
+                else if (a.path[0] == '/') {
+                    actionPath = a.path;
+                }
+                else {
+                    actionPath = this.joinPaths(c.path, a.path);
+                }
                 this.actions[actionPath] = { controllerType: c.type, memberName: a.memberName };
             });
-            let defaultActionPath = this.joinPaths(c.path, DEFAULT_ACTION_NAME);
-            if (c.actionDefines[defaultActionPath] == null && c.type.prototype[DEFAULT_ACTION_NAME] != null) {
-                this.actions[defaultActionPath] = { controllerType: c.type, memberName: DEFAULT_ACTION_NAME };
+            let defaultActionPath = this.joinPaths(c.path, constants_1.DEFAULT_ACTION_NAME);
+            if (c.actionDefines[defaultActionPath] == null && c.type.prototype[constants_1.DEFAULT_ACTION_NAME] != null) {
+                this.actions[defaultActionPath] = { controllerType: c.type, memberName: constants_1.DEFAULT_ACTION_NAME };
             }
         });
         // console.log(controllerDefines)
@@ -70,23 +78,26 @@ class ControllerLoader {
         return controllerPaths;
     }
     loadController(controllerPath, dir) {
-        let ctrl;
         try {
             let mod = require(controllerPath);
             console.assert(mod != null);
-            ctrl = mod.default || mod;
+            let propertyNames = Object.getOwnPropertyNames(mod);
+            for (let i = 0; i < propertyNames.length; i++) {
+                let ctrl = mod[propertyNames[i]];
+                if (!isClass(ctrl)) {
+                    continue;
+                }
+                //TODO: 检查控制器是否重复
+                console.assert(attributes_1.controllerDefines != null);
+                let controllerDefine = attributes_1.controllerDefines.filter(o => o.type == ctrl)[0];
+                if (controllerDefine && !controllerDefine.path) {
+                    controllerDefine.path = path.join('/', path.relative(dir, controllerPath));
+                }
+            }
         }
         catch (err) {
             console.error(err);
             throw innerErrors.loadControllerFail(controllerPath, err);
-        }
-        if (!isClass(ctrl)) {
-            throw innerErrors.controllerIsNotClass(controllerPath);
-        }
-        console.assert(attributes_1.controllerDefines != null);
-        let controllerDefine = attributes_1.controllerDefines.filter(o => o.type == ctrl)[0];
-        if (!controllerDefine.path) {
-            controllerDefine.path = path.join('/', path.relative(dir, controllerPath));
         }
     }
     getAction(virtualPath) {

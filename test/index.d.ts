@@ -1,1 +1,1 @@
-declare const startServer: any;
+export {};

@@ -19,4 +19,18 @@ function controllerDirectoryNotExists(dir) {
     return error;
 }
 exports.controllerDirectoryNotExists = controllerDirectoryNotExists;
+function controlRegister(type) {
+    let msg = `Controller ${type.name} is register.`;
+    let error = new Error(msg);
+    error.name = controlRegister.name;
+    return error;
+}
+exports.controlRegister = controlRegister;
+function controllerDirectoriesNull() {
+    let msg = `Controller directories can not null or empty.`;
+    let error = new Error(msg);
+    error.name = controllerDirectoriesNull.name;
+    return error;
+}
+exports.controllerDirectoriesNull = controllerDirectoriesNull;
 //# sourceMappingURL=errors.js.map

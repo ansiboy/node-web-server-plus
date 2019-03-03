@@ -1,12 +1,11 @@
-const { startServer } = require('../dist/index');
-startServer({
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const index_1 = require("../dist/index");
+const path = require("path");
+index_1.startServer({
     port: 1234,
-    root_path: __dirname,
-    /** 控制器的文件夹，默认为根目录下的 modules
-     controller_directories = []
-     */
+    controllerDirectories: [path.join(__dirname, 'modules')]
 });
-
 // http.request({
 //     path: ''
 // })

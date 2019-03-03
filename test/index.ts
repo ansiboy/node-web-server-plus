@@ -1,8 +1,8 @@
-const { startServer } = require('../dist/index')
-
+import { startServer } from '../dist/index'
+import path = require('path')
 startServer({
     port: 1234,
-    rootPath: __dirname,
+    controllerDirectories: [path.join(__dirname, 'modules')]
 })
 
 // http.request({

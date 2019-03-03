@@ -1,5 +1,6 @@
 
 import * as errors from './errors'
+import { controllerSuffix } from './constants';
 
 interface ActionDefine {
     // method: Function,
@@ -9,7 +10,7 @@ interface ActionDefine {
 
 interface ControllerDefine {
     type: ControllerType<any>,
-    path?: string,
+    path: string,
     actionDefines: ActionDefine[]
 }
 
@@ -17,7 +18,6 @@ export type ControllerType<T> = { new(): T }
 export let controllerDefines: ControllerDefine[] = []
 
 export function controller<T extends { new(...args: any[]): any }>(path?: string) {
-    checkValidPath(path)
     return function (constructor: T) {
         registerController(constructor, path)
 
@@ -26,7 +26,6 @@ export function controller<T extends { new(...args: any[]): any }>(path?: string
 }
 
 export function action(path?: string) {
-    checkValidPath(path)
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         let memberName = descriptor.value.name
         registerAction<any>(target.constructor, memberName, path)
@@ -46,12 +45,23 @@ export function register<T>(type: ControllerType<T>, path?: string) {
 }
 
 function registerController<T>(type: ControllerType<T>, path?: string) {
+    if (!path) {
+        // const controllerSuffix = 'Controller'
+        path = type.name.endsWith(controllerSuffix) ?
+            type.name.substring(0, type.name.length - controllerSuffix.length) : type.name
+    }
+
+    if (path && path[0] != '/')
+        path = '/' + path
+
     let controllerDefine = controllerDefines.filter(o => o.type == type)[0]
     if (controllerDefine == null) {
-        controllerDefine = { type: type, actionDefines: [] }
+        controllerDefine = { type: type, actionDefines: [], path }
         controllerDefines.push(controllerDefine)
     }
-    controllerDefine.path = path
+    else {
+        controllerDefine.path = path
+    }
     return controllerDefine
 }
 

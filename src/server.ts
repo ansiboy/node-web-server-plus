@@ -3,15 +3,17 @@ import errors = require('./errors');
 import url = require('url');
 import querystring = require('querystring');
 import { ControllerLoader } from './controller-loader';
+import path = require('path')
+// import { DEFAULT_CONTROL_DIR } from './constants';
 
 export interface Config {
     port: number,
-    bind_ip?: string,
-    root_path: string,
+    bindIP?: string,
+    // root_path: string,
     proxy?: {
         [path_pattern: string]: string
     },
-    controller_directories?: string[]
+    controllerDirectories: string[]
 }
 
 export interface Callbacks {
@@ -19,10 +21,44 @@ export interface Callbacks {
     actionAfterExecute?: (path: string, req: http.IncomingMessage) => void,
 }
 
-export function startServer(config: Config, callbacks?: Callbacks) {
+export class Server {
+    private controllerLoader: ControllerLoader;
 
-    config.controller_directories = config.controller_directories || ['modules']
-    let controllerLoader = new ControllerLoader(config.controller_directories, config.root_path)
+    constructor(config: { controllerDirectories: string[] }) {
+        if (config.controllerDirectories == null || config.controllerDirectories.length == 0)
+            throw errors.controllerDirectoriesNull()
+
+        this.controllerLoader = new ControllerLoader(config.controllerDirectories)
+    }
+
+    async serve(req: http.IncomingMessage, res: http.ServerResponse) {
+        try {
+            let requestUrl = req.url || ''
+            let urlInfo = url.parse(requestUrl);
+            let path = urlInfo.pathname || '';
+
+            let action = this.controllerLoader.getAction(path)
+            let data = await pareseActionArgument(req)
+            // if (callbacks.actionBeforeExecute)
+            //     callbacks.actionBeforeExecute(path, req)
+
+            let actionResult = await action(data, req, res)
+
+            // if (callbacks.actionAfterExecute)
+            //     callbacks.actionAfterExecute(path, req)
+
+            outputResult(actionResult, res)
+        }
+        catch (err) {
+            outputError(err, res)
+        }
+    }
+}
+
+export function startServer(config: Config, callbacks?: Callbacks) {
+    // let defaultControllersPath = path.join(__dirname, DEFAULT_CONTROL_DIR)
+    config.controllerDirectories = config.controllerDirectories || []
+    let controllerLoader = new ControllerLoader(config.controllerDirectories)
     callbacks = callbacks || {}
     let server = http.createServer(async (req, res) => {
 
@@ -74,7 +110,7 @@ export function startServer(config: Config, callbacks?: Callbacks) {
         console.log(err)
     })
 
-    server.listen(config.port, config.bind_ip)
+    server.listen(config.port, config.bindIP)
 }
 
 

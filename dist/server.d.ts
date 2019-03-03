@@ -2,16 +2,22 @@
 import http = require('http');
 export interface Config {
     port: number;
-    bind_ip?: string;
-    root_path: string;
+    bindIP?: string;
     proxy?: {
         [path_pattern: string]: string;
     };
-    controller_directories?: string[];
+    controllerDirectories: string[];
 }
 export interface Callbacks {
     actionBeforeExecute?: (path: string, req: http.IncomingMessage) => void;
     actionAfterExecute?: (path: string, req: http.IncomingMessage) => void;
+}
+export declare class Server {
+    private controllerLoader;
+    constructor(config: {
+        controllerDirectories: string[];
+    });
+    serve(req: http.IncomingMessage, res: http.ServerResponse): Promise<void>;
 }
 export declare function startServer(config: Config, callbacks?: Callbacks): void;
 export declare const contentTypes: {

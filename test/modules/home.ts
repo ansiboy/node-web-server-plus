@@ -1,4 +1,5 @@
 import { controller, action } from '../../dist/index'
+
 @controller()
 class HomeController {
     @action("/")

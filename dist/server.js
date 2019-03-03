@@ -9,12 +9,42 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const http = require("http");
+const errors = require("./errors");
 const url = require("url");
 const querystring = require("querystring");
 const controller_loader_1 = require("./controller-loader");
+class Server {
+    constructor(config) {
+        if (config.controllerDirectories == null || config.controllerDirectories.length == 0)
+            throw errors.controllerDirectoriesNull();
+        this.controllerLoader = new controller_loader_1.ControllerLoader(config.controllerDirectories);
+    }
+    serve(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                let requestUrl = req.url || '';
+                let urlInfo = url.parse(requestUrl);
+                let path = urlInfo.pathname || '';
+                let action = this.controllerLoader.getAction(path);
+                let data = yield pareseActionArgument(req);
+                // if (callbacks.actionBeforeExecute)
+                //     callbacks.actionBeforeExecute(path, req)
+                let actionResult = yield action(data, req, res);
+                // if (callbacks.actionAfterExecute)
+                //     callbacks.actionAfterExecute(path, req)
+                outputResult(actionResult, res);
+            }
+            catch (err) {
+                outputError(err, res);
+            }
+        });
+    }
+}
+exports.Server = Server;
 function startServer(config, callbacks) {
-    config.controller_directories = config.controller_directories || ['modules'];
-    let controllerLoader = new controller_loader_1.ControllerLoader(config.controller_directories, config.root_path);
+    // let defaultControllersPath = path.join(__dirname, DEFAULT_CONTROL_DIR)
+    config.controllerDirectories = config.controllerDirectories || [];
+    let controllerLoader = new controller_loader_1.ControllerLoader(config.controllerDirectories);
     callbacks = callbacks || {};
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
         setHeaders(res);
@@ -58,14 +88,14 @@ function startServer(config, callbacks) {
     server.on('error', (err) => {
         console.log(err);
     });
-    server.listen(config.port, config.bind_ip);
+    server.listen(config.port, config.bindIP);
 }
 exports.startServer = startServer;
 function setHeaders(res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Type', 'application/json;charset=utf-8');
-    res.setHeader('Access-Control-Allow-Headers', '*');
-    res.setHeader('Access-Control-Allow-Methods', `POST, GET, OPTIONS, PUT, DELETE`);
+    // res.setHeader('Access-Control-Allow-Headers', '*');
+    // res.setHeader('Access-Control-Allow-Methods', `POST, GET, OPTIONS, PUT, DELETE`);
 }
 function pareseActionArgument(req) {
     let dataPromise;
@@ -128,26 +158,6 @@ function getPostObject(request) {
             }
         });
     });
-    // return new Promise((reslove, reject) => {
-    //     request.on('data', (data: { toString: () => string }) => {
-    //         let text = data.toString();
-    //         try {
-    //             let obj;
-    //             if (contentType.indexOf('application/json') >= 0) {
-    //                 obj = JSON.parse(text)
-    //             }
-    //             else {
-    //                 obj = querystring.parse(text);
-    //             }
-    //             reslove(obj);
-    //         }
-    //         catch (exc) {
-    //             let err = errors.postDataNotJSON(text);
-    //             console.assert(err != null);
-    //             reject(err);
-    //         }
-    //     });
-    // });
 }
 exports.contentTypes = {
     application_json: 'application/json',
@@ -156,7 +166,7 @@ exports.contentTypes = {
 function outputResult(result, res) {
     result = result === undefined ? null : result;
     let contentResult;
-    if (result instanceof ContentResult) {
+    if (isContentResult(result)) {
         contentResult = result;
     }
     else {
@@ -167,6 +177,12 @@ function outputResult(result, res) {
     res.setHeader("content-type", contentResult.contentType || exports.contentTypes.text_plain);
     res.statusCode = contentResult.statusCode || 200;
     res.end(contentResult.data);
+}
+function isContentResult(result) {
+    let r = result;
+    if (r.contentType !== undefined && r.data !== undefined)
+        return true;
+    return false;
 }
 function outputError(err, res) {
     if (err == null) {
