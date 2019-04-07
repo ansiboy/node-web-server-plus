@@ -2,9 +2,9 @@ import http = require('http')
 import errors = require('./errors');
 import url = require('url');
 import querystring = require('querystring');
-import { ControllerLoader } from './controller-loader';
 import path = require('path')
-// import { DEFAULT_CONTROL_DIR } from './constants';
+import { ControllerLoader } from './controller-loader';
+import nodeStatic = require('node-static')
 
 export interface Config {
     port: number,
@@ -13,7 +13,8 @@ export interface Config {
     proxy?: {
         [path_pattern: string]: string
     },
-    controllerDirectories: string[]
+    controllerDirectories: string[],
+    staticFileDirectory?: string
 }
 
 export interface Callbacks {
@@ -21,45 +22,60 @@ export interface Callbacks {
     actionAfterExecute?: (path: string, req: http.IncomingMessage) => void,
 }
 
-export class Server {
-    private controllerLoader: ControllerLoader;
+// export class Server {
+//     private controllerLoader: ControllerLoader;
+//     private fileServer: nodeStatic.Server;
 
-    constructor(config: { controllerDirectories: string[] }) {
-        if (config.controllerDirectories == null || config.controllerDirectories.length == 0)
-            throw errors.controllerDirectoriesNull()
+//     constructor(config: { controllerDirectories: string[], staticFilePath?: string }) {
+//         if (config.controllerDirectories == null || config.controllerDirectories.length == 0)
+//             throw errors.controllerDirectoriesNull()
 
-        this.controllerLoader = new ControllerLoader(config.controllerDirectories)
-    }
+//         this.controllerLoader = new ControllerLoader(config.controllerDirectories)
+//         if (config.staticFilePath) {
+//             this.fileServer = new nodeStatic.Server(config.staticFilePath)
+//         }
+//     }
 
-    async serve(req: http.IncomingMessage, res: http.ServerResponse) {
-        try {
-            let requestUrl = req.url || ''
-            let urlInfo = url.parse(requestUrl);
-            let path = urlInfo.pathname || '';
+//     async serve(req: http.IncomingMessage, res: http.ServerResponse) {
+//         try {
+//             let requestUrl = req.url || ''
+//             let urlInfo = url.parse(requestUrl);
+//             let pathname = urlInfo.pathname || '';
 
-            let action = this.controllerLoader.getAction(path)
-            let data = await pareseActionArgument(req)
-            // if (callbacks.actionBeforeExecute)
-            //     callbacks.actionBeforeExecute(path, req)
+//             let parsedPath = path.parse(pathname)
+//             if (parsedPath.ext && this.fileServer) {
+//                 this.fileServer.serve(req, res)
+//                 return
+//             }
 
-            let actionResult = await action(data, req, res)
+//             let action = this.controllerLoader.getAction(pathname)
+//             let data = await pareseActionArgument(req)
+//             // if (callbacks.actionBeforeExecute)
+//             //     callbacks.actionBeforeExecute(path, req)
 
-            // if (callbacks.actionAfterExecute)
-            //     callbacks.actionAfterExecute(path, req)
+//             let actionResult = await action(data, req, res)
 
-            outputResult(actionResult, res)
-        }
-        catch (err) {
-            outputError(err, res)
-        }
-    }
-}
+//             // if (callbacks.actionAfterExecute)
+//             //     callbacks.actionAfterExecute(path, req)
+
+//             outputResult(actionResult, res)
+//         }
+//         catch (err) {
+//             outputError(err, res)
+//         }
+//     }
+// }
 
 export function startServer(config: Config, callbacks?: Callbacks) {
-    // let defaultControllersPath = path.join(__dirname, DEFAULT_CONTROL_DIR)
     config.controllerDirectories = config.controllerDirectories || []
     let controllerLoader = new ControllerLoader(config.controllerDirectories)
     callbacks = callbacks || {}
+
+    let fileServer: nodeStatic.Server
+    if (config.staticFileDirectory) {
+        fileServer = new nodeStatic.Server(config.staticFileDirectory)
+    }
+
     let server = http.createServer(async (req, res) => {
 
         setHeaders(res)
@@ -87,17 +103,23 @@ export function startServer(config: Config, callbacks?: Callbacks) {
             //=====================================================================
             let requestUrl = req.url || ''
             let urlInfo = url.parse(requestUrl);
-            let path = urlInfo.pathname || '';
+            let pathName = urlInfo.pathname || '';
 
-            let action = controllerLoader.getAction(path)
+            let parsedPath = path.parse(pathName)
+            if (parsedPath.ext && fileServer) {
+                fileServer.serve(req, res)
+                return
+            }
+
+            let action = controllerLoader.getAction(pathName)
             let data = await pareseActionArgument(req)
             if (callbacks.actionBeforeExecute)
-                callbacks.actionBeforeExecute(path, req)
+                callbacks.actionBeforeExecute(pathName, req)
 
             let actionResult = await action(data, req, res)
 
             if (callbacks.actionAfterExecute)
-                callbacks.actionAfterExecute(path, req)
+                callbacks.actionAfterExecute(pathName, req)
 
             outputResult(actionResult, res)
         }

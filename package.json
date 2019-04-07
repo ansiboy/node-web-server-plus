@@ -19,6 +19,8 @@
   "devDependencies": {},
   "dependencies": {
     "@types/node": "^10.12.18",
-    "is-class": "0.0.5"
+    "@types/node-static": "^0.7.3",
+    "is-class": "0.0.5",
+    "node-static": "^0.7.11"
   }
 }

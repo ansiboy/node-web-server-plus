@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import http = require('http');
 export interface Config {
     port: number;
@@ -7,17 +6,11 @@ export interface Config {
         [path_pattern: string]: string;
     };
     controllerDirectories: string[];
+    staticFileDirectory?: string;
 }
 export interface Callbacks {
     actionBeforeExecute?: (path: string, req: http.IncomingMessage) => void;
     actionAfterExecute?: (path: string, req: http.IncomingMessage) => void;
-}
-export declare class Server {
-    private controllerLoader;
-    constructor(config: {
-        controllerDirectories: string[];
-    });
-    serve(req: http.IncomingMessage, res: http.ServerResponse): Promise<void>;
 }
 export declare function startServer(config: Config, callbacks?: Callbacks): void;
 export declare const contentTypes: {
