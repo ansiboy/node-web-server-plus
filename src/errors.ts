@@ -33,3 +33,10 @@ export function controllerDirectoriesNull() {
     return error
 }
 
+export function unexpectedNullValue(name: string) {
+    let msg = `Unexpected null value.`
+    let error = new Error(msg)
+    error.name = unexpectedNullValue.name
+    return error
+}
+

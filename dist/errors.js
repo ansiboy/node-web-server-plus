@@ -33,4 +33,11 @@ function controllerDirectoriesNull() {
     return error;
 }
 exports.controllerDirectoriesNull = controllerDirectoriesNull;
+function unexpectedNullValue() {
+    let msg = `Unexpected null value.`;
+    let error = new Error(msg);
+    error.name = unexpectedNullValue.name;
+    return error;
+}
+exports.unexpectedNullValue = unexpectedNullValue;
 //# sourceMappingURL=errors.js.map

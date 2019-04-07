@@ -16,6 +16,6 @@ export declare function controller<T extends {
 }>(path?: string): (constructor: T) => T;
 export declare function action(path?: string): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
 export declare function register<T>(type: ControllerType<T>, path?: string): {
-    action(member: keyof T, path?: string): any;
+    action(member: keyof T, path?: string | undefined): any;
 };
 export {};

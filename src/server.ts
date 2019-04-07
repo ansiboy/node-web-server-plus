@@ -90,9 +90,13 @@ export function startServer(config: Config, callbacks?: Callbacks) {
             if (config.proxy) {
                 for (let key in config.proxy) {
                     let regex = new RegExp(key)
-                    let arr = regex.exec(req.url)
+                    let reqUrl = req.url || ''
+                    let arr = regex.exec(reqUrl)
                     if (arr != null && arr.length > 0) {
-                        let targetUrl = req.url.replace(/\$(\d+)/, (match, number) => {
+
+                        let targetUrl = reqUrl.replace(/\$(\d+)/, (match, number) => {
+                            if (arr == null) throw errors.unexpectedNullValue('arr')
+
                             return typeof arr[number] != 'undefined' ? arr[number] : match;
                         })
                         proxyRequest(targetUrl, req, res)
@@ -113,6 +117,7 @@ export function startServer(config: Config, callbacks?: Callbacks) {
 
             let action = controllerLoader.getAction(pathName)
             let data = await pareseActionArgument(req)
+            if (!callbacks) throw errors.unexpectedNullValue('callbacks')
             if (callbacks.actionBeforeExecute)
                 callbacks.actionBeforeExecute(pathName, req)
 
@@ -235,7 +240,10 @@ function outputResult(result: object | null, res: http.ServerResponse) {
     res.end(contentResult.data);
 }
 
-function isContentResult(result: object) {
+function isContentResult(result: object | null) {
+    if (result == null)
+        return false
+
     let r = result as ContentResult
     if (r.contentType !== undefined && r.data !== undefined)
         return true
@@ -269,7 +277,7 @@ function outputError(err: Error, res: http.ServerResponse) {
 function errorOutputObject(err: Error) {
     let outputObject = { message: err.message, name: err.name, stack: err.stack };
     if (err.innerError) {
-        outputObject['innerError'] = errorOutputObject(err.innerError)
+        (outputObject as any)['innerError'] = errorOutputObject(err.innerError)
     }
 
     return outputObject
@@ -286,7 +294,7 @@ export class ContentResult {
     }
 }
 
-function proxyRequest(targetUrl: string, req, res) {
+function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse) {
     let request = createTargetResquest(targetUrl, req, res);
 
     request.on('error', function (err) {
@@ -336,10 +344,10 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
             // }
             // else {
             for (var key in response.headers) {
-                res.setHeader(key, response.headers[key]);
+                res.setHeader(key, response.headers[key] || '');
             }
-            res.statusCode = response.statusCode;
-            res.statusMessage = response.statusMessage
+            res.statusCode = response.statusCode || 200;
+            res.statusMessage = response.statusMessage || ''
             response.pipe(res);
             // }
         },

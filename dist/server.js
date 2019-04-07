@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const http = require("http");
+const errors = require("./errors");
 const url = require("url");
 const querystring = require("querystring");
 const path = require("path");
@@ -69,9 +70,12 @@ function startServer(config, callbacks) {
             if (config.proxy) {
                 for (let key in config.proxy) {
                     let regex = new RegExp(key);
-                    let arr = regex.exec(req.url);
+                    let reqUrl = req.url || '';
+                    let arr = regex.exec(reqUrl);
                     if (arr != null && arr.length > 0) {
-                        let targetUrl = req.url.replace(/\$(\d+)/, (match, number) => {
+                        let targetUrl = reqUrl.replace(/\$(\d+)/, (match, number) => {
+                            if (arr == null)
+                                throw errors.unexpectedNullValue();
                             return typeof arr[number] != 'undefined' ? arr[number] : match;
                         });
                         proxyRequest(targetUrl, req, res);
@@ -195,6 +199,8 @@ function outputResult(result, res) {
     res.end(contentResult.data);
 }
 function isContentResult(result) {
+    if (result == null)
+        return false;
     let r = result;
     if (r.contentType !== undefined && r.data !== undefined)
         return true;
