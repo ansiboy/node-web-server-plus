@@ -5,7 +5,6 @@ const fs = require("fs");
 const path = require("path");
 const isClass = require("is-class");
 const attributes_1 = require("./attributes");
-const constants_1 = require("./constants");
 class ControllerLoader {
     constructor(controller_directories) {
         this.actions = {};
@@ -18,34 +17,27 @@ class ControllerLoader {
             }
             controllerPaths[dir] = this.getControllerPaths(dir);
         });
-        let controllers = {};
         for (let dir in controllerPaths) {
             controllerPaths[dir].forEach(controllerPath => {
-                controllers[controllerPath] = this.loadController(controllerPath, dir);
+                this.loadController(controllerPath, dir);
             });
         }
         attributes_1.controllerDefines.forEach(c => {
             console.assert((c.path || '') != '');
             c.actionDefines.forEach(a => {
-                let actionPath; // = a.path || this.joinPaths(c.path, a.memberName)
-                if (!a.path) {
-                    actionPath = this.joinPaths(c.path, a.memberName);
+                let actionPaths = a.paths || [];
+                if (actionPaths.length == 0) {
+                    actionPaths.push(this.joinPaths(c.path, a.memberName));
                 }
-                else if (a.path[0] == '/') {
-                    actionPath = a.path;
+                for (let i = 0; i < actionPaths.length; i++) {
+                    let actionPath = actionPaths[i];
+                    if (actionPath[0] != '/') {
+                        actionPath = this.joinPaths(c.path, actionPath);
+                    }
+                    this.actions[actionPath] = { controllerType: c.type, memberName: a.memberName };
                 }
-                else {
-                    actionPath = this.joinPaths(c.path, a.path);
-                }
-                this.actions[actionPath] = { controllerType: c.type, memberName: a.memberName };
             });
-            let defaultActionPath = this.joinPaths(c.path, constants_1.DEFAULT_ACTION_NAME);
-            if (c.actionDefines[defaultActionPath] == null && c.type.prototype[constants_1.DEFAULT_ACTION_NAME] != null) {
-                this.actions[defaultActionPath] = { controllerType: c.type, memberName: constants_1.DEFAULT_ACTION_NAME };
-            }
         });
-        // console.log(controllerDefines)
-        // console.log(this.actions)
     }
     joinPaths(path1, path2) {
         if (path1 == null)

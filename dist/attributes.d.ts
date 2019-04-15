@@ -1,6 +1,7 @@
+import "reflect-metadata";
 interface ActionDefine {
     memberName: string;
-    path?: string;
+    paths: string[];
 }
 interface ControllerDefine {
     type: ControllerType<any>;
@@ -13,9 +14,9 @@ export declare type ControllerType<T> = {
 export declare let controllerDefines: ControllerDefine[];
 export declare function controller<T extends {
     new (...args: any[]): any;
-}>(path?: string): (constructor: T) => T;
-export declare function action(path?: string): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
+}>(path?: string): (constructor: T) => void;
+export declare function action(...paths: string[]): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
 export declare function register<T>(type: ControllerType<T>, path?: string): {
-    action(member: keyof T, path?: string | undefined): any;
+    action(member: keyof T, paths?: string[] | undefined): any;
 };
 export {};

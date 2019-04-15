@@ -33,11 +33,18 @@ function controllerDirectoriesNull() {
     return error;
 }
 exports.controllerDirectoriesNull = controllerDirectoriesNull;
-function unexpectedNullValue() {
+function unexpectedNullValue(name) {
     let msg = `Unexpected null value.`;
     let error = new Error(msg);
     error.name = unexpectedNullValue.name;
     return error;
 }
 exports.unexpectedNullValue = unexpectedNullValue;
+function onlyOneAction(methodName) {
+    let msg = `Method can only define one action, method '${methodName}' is deined.`;
+    let error = new Error(msg);
+    error.name = onlyOneAction.name;
+    return error;
+}
+exports.onlyOneAction = onlyOneAction;
 //# sourceMappingURL=errors.js.map

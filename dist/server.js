@@ -15,44 +15,21 @@ const querystring = require("querystring");
 const path = require("path");
 const controller_loader_1 = require("./controller-loader");
 const nodeStatic = require("node-static");
-// export class Server {
-//     private controllerLoader: ControllerLoader;
-//     private fileServer: nodeStatic.Server;
-//     constructor(config: { controllerDirectories: string[], staticFilePath?: string }) {
-//         if (config.controllerDirectories == null || config.controllerDirectories.length == 0)
-//             throw errors.controllerDirectoriesNull()
-//         this.controllerLoader = new ControllerLoader(config.controllerDirectories)
-//         if (config.staticFilePath) {
-//             this.fileServer = new nodeStatic.Server(config.staticFilePath)
-//         }
-//     }
-//     async serve(req: http.IncomingMessage, res: http.ServerResponse) {
-//         try {
-//             let requestUrl = req.url || ''
-//             let urlInfo = url.parse(requestUrl);
-//             let pathname = urlInfo.pathname || '';
-//             let parsedPath = path.parse(pathname)
-//             if (parsedPath.ext && this.fileServer) {
-//                 this.fileServer.serve(req, res)
-//                 return
-//             }
-//             let action = this.controllerLoader.getAction(pathname)
-//             let data = await pareseActionArgument(req)
-//             // if (callbacks.actionBeforeExecute)
-//             //     callbacks.actionBeforeExecute(path, req)
-//             let actionResult = await action(data, req, res)
-//             // if (callbacks.actionAfterExecute)
-//             //     callbacks.actionAfterExecute(path, req)
-//             outputResult(actionResult, res)
-//         }
-//         catch (err) {
-//             outputError(err, res)
-//         }
-//     }
-// }
+const DefaultControllerPath = 'controllers';
+const DefaultStaticFileDirectory = 'public';
 function startServer(config, callbacks) {
-    config.controllerDirectories = config.controllerDirectories || [];
-    let controllerLoader = new controller_loader_1.ControllerLoader(config.controllerDirectories);
+    if (!config)
+        throw errors.arugmentNull('config');
+    if (!config.controllerDirectory)
+        config.controllerDirectory = DefaultControllerPath;
+    if (!config.staticFileDirectory)
+        config.staticFileDirectory = DefaultStaticFileDirectory;
+    if (!path.isAbsolute(config.controllerDirectory))
+        config.controllerDirectory = path.join(__dirname, config.controllerDirectory);
+    if (!path.isAbsolute(config.staticFileDirectory))
+        config.staticFileDirectory = path.join(__dirname, config.staticFileDirectory);
+    // config.controllerDirectories = config.controllerDirectory ? [config.controllerDirectory] || []
+    let controllerLoader = new controller_loader_1.ControllerLoader([config.controllerDirectory]);
     callbacks = callbacks || {};
     let fileServer;
     if (config.staticFileDirectory) {
@@ -75,7 +52,7 @@ function startServer(config, callbacks) {
                     if (arr != null && arr.length > 0) {
                         let targetUrl = reqUrl.replace(/\$(\d+)/, (match, number) => {
                             if (arr == null)
-                                throw errors.unexpectedNullValue();
+                                throw errors.unexpectedNullValue('arr');
                             return typeof arr[number] != 'undefined' ? arr[number] : match;
                         });
                         proxyRequest(targetUrl, req, res);
@@ -94,6 +71,8 @@ function startServer(config, callbacks) {
             }
             let action = controllerLoader.getAction(pathName);
             let data = yield pareseActionArgument(req);
+            if (!callbacks)
+                throw errors.unexpectedNullValue('callbacks');
             if (callbacks.actionBeforeExecute)
                 callbacks.actionBeforeExecute(pathName, req);
             let actionResult = yield action(data, req, res);
@@ -282,10 +261,10 @@ function createTargetResquest(targetUrl, req, res) {
         // }
         // else {
         for (var key in response.headers) {
-            res.setHeader(key, response.headers[key]);
+            res.setHeader(key, response.headers[key] || '');
         }
-        res.statusCode = response.statusCode;
-        res.statusMessage = response.statusMessage;
+        res.statusCode = response.statusCode || 200;
+        res.statusMessage = response.statusMessage || '';
         response.pipe(res);
         // }
     });

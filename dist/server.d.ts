@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import http = require('http');
 export interface Config {
     port: number;
@@ -5,7 +6,7 @@ export interface Config {
     proxy?: {
         [path_pattern: string]: string;
     };
-    controllerDirectories: string[];
+    controllerDirectory?: string;
     staticFileDirectory?: string;
 }
 export interface Callbacks {
