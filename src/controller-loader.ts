@@ -3,8 +3,6 @@ import * as fs from 'fs'
 import * as path from 'path'
 import isClass = require('is-class')
 import { controllerDefines, ControllerType } from './attributes';
-import { DEFAULT_ACTION_NAME } from './constants';
-
 
 export class ControllerLoader {
     private actions: { [path: string]: { controllerType: ControllerType<any>, memberName: string, } } = {}
@@ -22,10 +20,9 @@ export class ControllerLoader {
             controllerPaths[dir] = this.getControllerPaths(dir)
         })
 
-        let controllers = {}
         for (let dir in controllerPaths) {
             controllerPaths[dir].forEach(controllerPath => {
-                controllers[controllerPath] = this.loadController(controllerPath, dir)
+                this.loadController(controllerPath, dir)
 
             })
         }
@@ -33,28 +30,21 @@ export class ControllerLoader {
         controllerDefines.forEach(c => {
             console.assert((c.path || '') != '')
             c.actionDefines.forEach(a => {
-                let actionPath: string// = a.path || this.joinPaths(c.path, a.memberName)
-                if (!a.path) {
-                    actionPath = this.joinPaths(c.path, a.memberName)
+
+                let actionPaths = a.paths || []
+                if (actionPaths.length == 0) {
+                    actionPaths.push(this.joinPaths(c.path, a.memberName))
                 }
-                else if (a.path[0] == '/') {
-                    actionPath = a.path
+                for (let i = 0; i < actionPaths.length; i++) {
+                    let actionPath: string = actionPaths[i]
+                    if (actionPath[0] != '/') {
+                        actionPath = this.joinPaths(c.path, actionPath)
+                    }
+
+                    this.actions[actionPath] = { controllerType: c.type, memberName: a.memberName }
                 }
-                else {
-                    actionPath = this.joinPaths(c.path, a.path)
-                }
-                this.actions[actionPath] = { controllerType: c.type, memberName: a.memberName }
             })
-
-            let defaultActionPath = this.joinPaths(c.path, DEFAULT_ACTION_NAME)
-            if (c.actionDefines[defaultActionPath] == null && c.type.prototype[DEFAULT_ACTION_NAME] != null) {
-                this.actions[defaultActionPath] = { controllerType: c.type, memberName: DEFAULT_ACTION_NAME }
-            }
         })
-
-        // console.log(controllerDefines)
-        // console.log(this.actions)
-
     }
 
     private joinPaths(path1: string, path2: string) {
@@ -66,14 +56,14 @@ export class ControllerLoader {
     }
 
     private getControllerPaths(dir: string) {
-        let controllerPaths = []
+        let controllerPaths: string[] = []
         let dirs: string[] = []
         dirs.push(dir)
         while (dirs.length > 0) {
             let item = dirs.pop()
-            let files = fs.readdirSync(item)
+            let files = fs.readdirSync(item as string)
             files.forEach(f => {
-                let p = path.join(item, f)
+                let p = path.join(item as string, f)
                 let state = fs.lstatSync(p)
                 if (state.isDirectory()) {
                     dirs.push(p)
@@ -168,7 +158,7 @@ let innerErrors = {
         error.statusCode = 404
         return error;
     },
-    controllerNotExist(controllerName, virtualPath) {
+    controllerNotExist(controllerName: string, virtualPath: string) {
         let msg = `Control ${controllerName} is not exists, path is ${virtualPath}.`
         let error = new Error(msg)
         error.name = innerErrors.controllerNotExist.name

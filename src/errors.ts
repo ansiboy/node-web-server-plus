@@ -40,3 +40,10 @@ export function unexpectedNullValue(name: string) {
     return error
 }
 
+export function onlyOneAction(methodName: string) {
+    let msg = `Method can only define one action, method '${methodName}' is deined.`
+    let error = new Error(msg)
+    error.name = onlyOneAction.name
+    return error
+}
+
