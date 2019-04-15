@@ -47,3 +47,10 @@ export function onlyOneAction(methodName: string) {
     return error
 }
 
+export function rootPathNull() {
+    let msg = `Root path of config is null or emtpy.`
+    let error = new Error(msg)
+    error.name = rootPathNull.name
+    return error
+}
+

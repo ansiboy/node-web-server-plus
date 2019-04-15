@@ -11,11 +11,10 @@ const DefaultStaticFileDirectory = 'public'
 export interface Config {
     port: number,
     bindIP?: string,
-    // root_path: string,
+    rootPath: string,
     proxy?: {
         [path_pattern: string]: string
     },
-    // controllerDirectories: string[],
     controllerDirectory?: string,
     staticFileDirectory?: string
 }
@@ -27,6 +26,8 @@ export interface Callbacks {
 
 export function startServer(config: Config, callbacks?: Callbacks) {
     if (!config) throw errors.arugmentNull('config')
+    if(!config.rootPath) throw errors.rootPathNull()
+
     if (!config.controllerDirectory)
         config.controllerDirectory = DefaultControllerPath
 
@@ -34,12 +35,11 @@ export function startServer(config: Config, callbacks?: Callbacks) {
         config.staticFileDirectory = DefaultStaticFileDirectory
 
     if (!path.isAbsolute(config.controllerDirectory))
-        config.controllerDirectory = path.join(__dirname, config.controllerDirectory)
+        config.controllerDirectory = path.join(config.rootPath, config.controllerDirectory)
 
     if (!path.isAbsolute(config.staticFileDirectory))
-        config.staticFileDirectory = path.join(__dirname, config.staticFileDirectory)
+        config.staticFileDirectory = path.join(config.rootPath, config.staticFileDirectory)
 
-    // config.controllerDirectories = config.controllerDirectory ? [config.controllerDirectory] || []
     let controllerLoader = new ControllerLoader([config.controllerDirectory])
     callbacks = callbacks || {}
 
