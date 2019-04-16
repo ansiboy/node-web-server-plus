@@ -20,15 +20,16 @@ const DefaultStaticFileDirectory = 'public';
 function startServer(config, callbacks) {
     if (!config)
         throw errors.arugmentNull('config');
+    if (!config.rootPath)
+        throw errors.rootPathNull();
     if (!config.controllerDirectory)
         config.controllerDirectory = DefaultControllerPath;
     if (!config.staticFileDirectory)
         config.staticFileDirectory = DefaultStaticFileDirectory;
     if (!path.isAbsolute(config.controllerDirectory))
-        config.controllerDirectory = path.join(__dirname, config.controllerDirectory);
+        config.controllerDirectory = path.join(config.rootPath, config.controllerDirectory);
     if (!path.isAbsolute(config.staticFileDirectory))
-        config.staticFileDirectory = path.join(__dirname, config.staticFileDirectory);
-    // config.controllerDirectories = config.controllerDirectory ? [config.controllerDirectory] || []
+        config.staticFileDirectory = path.join(config.rootPath, config.staticFileDirectory);
     let controllerLoader = new controller_loader_1.ControllerLoader([config.controllerDirectory]);
     callbacks = callbacks || {};
     let fileServer;

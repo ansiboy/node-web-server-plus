@@ -47,4 +47,11 @@ function onlyOneAction(methodName) {
     return error;
 }
 exports.onlyOneAction = onlyOneAction;
+function rootPathNull() {
+    let msg = `Root path of config is null or emtpy.`;
+    let error = new Error(msg);
+    error.name = rootPathNull.name;
+    return error;
+}
+exports.rootPathNull = rootPathNull;
 //# sourceMappingURL=errors.js.map

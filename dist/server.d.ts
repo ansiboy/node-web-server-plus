@@ -3,6 +3,7 @@ import http = require('http');
 export interface Config {
     port: number;
     bindIP?: string;
+    rootPath: string;
     proxy?: {
         [path_pattern: string]: string;
     };
