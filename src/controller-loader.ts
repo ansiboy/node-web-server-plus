@@ -103,7 +103,7 @@ export class ControllerLoader {
         }
     }
 
-    getAction(virtualPath: string): Function {
+    getAction(virtualPath: string): { action: Function | null, controller: object | null } {
         if (!virtualPath) throw errors.arugmentNull('virtualPath')
 
         // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
@@ -115,14 +115,29 @@ export class ControllerLoader {
 
         let actionInfo = this.actions[virtualPath]
         if (actionInfo == null) {
-            throw innerErrors.actionNotExists(virtualPath)
+            // throw innerErrors.actionNotExists(virtualPath)
+            return { action: null, controller: null }
         }
 
         let controller = new actionInfo.controllerType()
         let action = controller[actionInfo.memberName]
         console.assert(action != null)
 
-        return action
+        return { action, controller }
+    }
+
+    isActionExists(virtualPath: string): boolean {
+        if (!virtualPath) throw errors.arugmentNull('virtualPath')
+
+        // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
+        virtualPath = virtualPath.replace(/\/+/g, '/')
+
+        // 去掉路径末尾的 / ，例如：/shop/test/ 变为 /shop/test, 如果路径 / 则保持不变
+        if (virtualPath[virtualPath.length - 1] == '/' && virtualPath.length > 1)
+            virtualPath = virtualPath.substr(0, virtualPath.length - 1)
+
+        let actionInfo = this.actions[virtualPath]
+        return actionInfo != null
     }
 }
 

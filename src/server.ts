@@ -5,6 +5,7 @@ import querystring = require('querystring');
 import path = require('path')
 import { ControllerLoader } from './controller-loader';
 import nodeStatic = require('node-static')
+import { ActionResult, ContentResult, contentTypes } from './action-results';
 
 const DefaultControllerPath = 'controllers'
 const DefaultStaticFileDirectory = 'public'
@@ -82,19 +83,24 @@ export function startServer(config: Config, callbacks?: Callbacks) {
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
 
-            let parsedPath = path.parse(pathName)
-            if (parsedPath.ext && fileServer) {
+            // let parsedPath = path.parse(pathName)
+            // if (parsedPath.ext && fileServer) {
+            //     fileServer.serve(req, res)
+            //     return
+            // }
+
+            let { action, controller } = controllerLoader.getAction(pathName)
+            if (action == null) {
                 fileServer.serve(req, res)
                 return
             }
-
-            let action = controllerLoader.getAction(pathName)
+            
             let data = await pareseActionArgument(req)
             if (!callbacks) throw errors.unexpectedNullValue('callbacks')
             if (callbacks.actionBeforeExecute)
                 callbacks.actionBeforeExecute(pathName, req)
 
-            let actionResult = action(data, req, res)
+            let actionResult = action.apply(controller, [data, req, res])
             let p = actionResult as Promise<any>
             if (p.then && p.catch) {
                 p.then(r => {
@@ -193,34 +199,36 @@ function getPostObject(request: http.IncomingMessage): Promise<any> {
     });
 }
 
-export const contentTypes = {
-    application_json: 'application/json',
-    text_plain: 'text/plain',
-}
+// export const contentTypes = {
+//     application_json: 'application/json',
+//     text_plain: 'text/plain',
+// }
 
 function outputResult(result: object | null, res: http.ServerResponse) {
     result = result === undefined ? null : result
-    let contentResult: ContentResult
+    let contentResult: ActionResult
     if (isContentResult(result)) {
-        contentResult = result as ContentResult
+        contentResult = result as ActionResult
     }
     else {
         contentResult = typeof result == 'string' ?
-            new ContentResult(result, contentTypes.text_plain, 200) :
-            new ContentResult(JSON.stringify(result), contentTypes.application_json, 200)
+            new ContentResult(result, contentTypes.textPlain, 200) :
+            new ContentResult(JSON.stringify(result), contentTypes.applicationJSON, 200)
     }
 
-    res.setHeader("content-type", contentResult.contentType || contentTypes.text_plain);
-    res.statusCode = contentResult.statusCode || 200;
-    res.end(contentResult.data);
+    // res.setHeader("content-type", contentResult.contentType || contentTypes.text_plain);
+    // res.statusCode = contentResult.statusCode || 200;
+    // res.end(contentResult.data);
+    contentResult.execute(res)
+    res.end()
 }
 
 function isContentResult(result: object | null) {
     if (result == null)
         return false
 
-    let r = result as ContentResult
-    if (r.contentType !== undefined && r.data !== undefined)
+    let r = result as ActionResult
+    if (r.execute !== undefined)
         return true
 
     return false
@@ -234,7 +242,7 @@ function outputError(err: Error, res: http.ServerResponse) {
 
     const defaultErrorStatusCode = 600;
 
-    res.setHeader("content-type", contentTypes.application_json);
+    res.setHeader("content-type", contentTypes.applicationJSON);
     res.statusCode = err.statusCode || defaultErrorStatusCode;
     res.statusMessage = err.name;      // statusMessage 不能为中文，否则会出现 invalid chartset 的异常
 
@@ -258,16 +266,16 @@ function errorOutputObject(err: Error) {
     return outputObject
 }
 
-export class ContentResult {
-    data: string | Buffer
-    statusCode: number
-    contentType: string
-    constructor(data: string | Buffer, contentType: string, statusCode?: number) {
-        this.data = data
-        this.contentType = contentType
-        this.statusCode = statusCode == null ? 200 : statusCode
-    }
-}
+// export class ContentResult {
+//     data: string | Buffer
+//     statusCode: number
+//     contentType: string
+//     constructor(data: string | Buffer, contentType: string, statusCode?: number) {
+//         this.data = data
+//         this.contentType = contentType
+//         this.statusCode = statusCode == null ? 200 : statusCode
+//     }
+// }
 
 function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse) {
     let request = createTargetResquest(targetUrl, req, res);
