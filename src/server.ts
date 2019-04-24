@@ -26,7 +26,7 @@ export interface Callbacks {
 
 export function startServer(config: Config, callbacks?: Callbacks) {
     if (!config) throw errors.arugmentNull('config')
-    if(!config.rootPath) throw errors.rootPathNull()
+    if (!config.rootPath) throw errors.rootPathNull()
 
     if (!config.controllerDirectory)
         config.controllerDirectory = DefaultControllerPath
@@ -50,7 +50,8 @@ export function startServer(config: Config, callbacks?: Callbacks) {
 
     let server = http.createServer(async (req, res) => {
 
-        setHeaders(res)
+        // setHeaders(res)
+        // res.setHeader('Content-Type', 'application/json;charset=utf-8');
         if (req.method == 'OPTIONS') {
             res.end()
             return
@@ -93,7 +94,17 @@ export function startServer(config: Config, callbacks?: Callbacks) {
             if (callbacks.actionBeforeExecute)
                 callbacks.actionBeforeExecute(pathName, req)
 
-            let actionResult = await action(data, req, res)
+            let actionResult = action(data, req, res)
+            let p = actionResult as Promise<any>
+            if (p.then && p.catch) {
+                p.then(r => {
+                    outputResult(r, res)
+                }).catch(err => {
+                    outputError(err, res)
+                })
+                return
+            }
+
 
             if (callbacks.actionAfterExecute)
                 callbacks.actionAfterExecute(pathName, req)
@@ -110,14 +121,6 @@ export function startServer(config: Config, callbacks?: Callbacks) {
     })
 
     server.listen(config.port, config.bindIP)
-}
-
-
-function setHeaders(res: http.ServerResponse) {
-    // res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Content-Type', 'application/json;charset=utf-8');
-    // res.setHeader('Access-Control-Allow-Headers', '*');
-    // res.setHeader('Access-Control-Allow-Methods', `POST, GET, OPTIONS, PUT, DELETE`);
 }
 
 function pareseActionArgument(req: http.IncomingMessage) {
