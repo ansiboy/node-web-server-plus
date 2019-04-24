@@ -4,5 +4,9 @@ export declare class ControllerLoader {
     private joinPaths;
     private getControllerPaths;
     private loadController;
-    getAction(virtualPath: string): Function;
+    getAction(virtualPath: string): {
+        action: Function | null;
+        controller: object | null;
+    };
+    isActionExists(virtualPath: string): boolean;
 }

@@ -15,6 +15,7 @@ const querystring = require("querystring");
 const path = require("path");
 const controller_loader_1 = require("./controller-loader");
 const nodeStatic = require("node-static");
+const action_results_1 = require("./action-results");
 const DefaultControllerPath = 'controllers';
 const DefaultStaticFileDirectory = 'public';
 function startServer(config, callbacks) {
@@ -37,7 +38,8 @@ function startServer(config, callbacks) {
         fileServer = new nodeStatic.Server(config.staticFileDirectory);
     }
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
-        setHeaders(res);
+        // setHeaders(res)
+        // res.setHeader('Content-Type', 'application/json;charset=utf-8');
         if (req.method == 'OPTIONS') {
             res.end();
             return;
@@ -65,18 +67,31 @@ function startServer(config, callbacks) {
             let requestUrl = req.url || '';
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
-            let parsedPath = path.parse(pathName);
-            if (parsedPath.ext && fileServer) {
+            // let parsedPath = path.parse(pathName)
+            // if (parsedPath.ext && fileServer) {
+            //     fileServer.serve(req, res)
+            //     return
+            // }
+            let { action, controller } = controllerLoader.getAction(pathName);
+            if (action == null) {
                 fileServer.serve(req, res);
                 return;
             }
-            let action = controllerLoader.getAction(pathName);
             let data = yield pareseActionArgument(req);
             if (!callbacks)
                 throw errors.unexpectedNullValue('callbacks');
             if (callbacks.actionBeforeExecute)
                 callbacks.actionBeforeExecute(pathName, req);
-            let actionResult = yield action(data, req, res);
+            let actionResult = action.apply(controller, [data, req, res]);
+            let p = actionResult;
+            if (p.then && p.catch) {
+                p.then(r => {
+                    outputResult(r, res);
+                }).catch(err => {
+                    outputError(err, res);
+                });
+                return;
+            }
             if (callbacks.actionAfterExecute)
                 callbacks.actionAfterExecute(pathName, req);
             outputResult(actionResult, res);
@@ -91,12 +106,6 @@ function startServer(config, callbacks) {
     server.listen(config.port, config.bindIP);
 }
 exports.startServer = startServer;
-function setHeaders(res) {
-    // res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Content-Type', 'application/json;charset=utf-8');
-    // res.setHeader('Access-Control-Allow-Headers', '*');
-    // res.setHeader('Access-Control-Allow-Methods', `POST, GET, OPTIONS, PUT, DELETE`);
-}
 function pareseActionArgument(req) {
     let dataPromise;
     if (req.method == 'GET') {
@@ -159,10 +168,10 @@ function getPostObject(request) {
         });
     });
 }
-exports.contentTypes = {
-    application_json: 'application/json',
-    text_plain: 'text/plain',
-};
+// export const contentTypes = {
+//     application_json: 'application/json',
+//     text_plain: 'text/plain',
+// }
 function outputResult(result, res) {
     result = result === undefined ? null : result;
     let contentResult;
@@ -171,18 +180,20 @@ function outputResult(result, res) {
     }
     else {
         contentResult = typeof result == 'string' ?
-            new ContentResult(result, exports.contentTypes.text_plain, 200) :
-            new ContentResult(JSON.stringify(result), exports.contentTypes.application_json, 200);
+            new action_results_1.ContentResult(result, action_results_1.contentTypes.textPlain, 200) :
+            new action_results_1.ContentResult(JSON.stringify(result), action_results_1.contentTypes.applicationJSON, 200);
     }
-    res.setHeader("content-type", contentResult.contentType || exports.contentTypes.text_plain);
-    res.statusCode = contentResult.statusCode || 200;
-    res.end(contentResult.data);
+    // res.setHeader("content-type", contentResult.contentType || contentTypes.text_plain);
+    // res.statusCode = contentResult.statusCode || 200;
+    // res.end(contentResult.data);
+    contentResult.execute(res);
+    res.end();
 }
 function isContentResult(result) {
     if (result == null)
         return false;
     let r = result;
-    if (r.contentType !== undefined && r.data !== undefined)
+    if (r.execute !== undefined)
         return true;
     return false;
 }
@@ -192,7 +203,7 @@ function outputError(err, res) {
         err.name = 'nullError';
     }
     const defaultErrorStatusCode = 600;
-    res.setHeader("content-type", exports.contentTypes.application_json);
+    res.setHeader("content-type", action_results_1.contentTypes.applicationJSON);
     res.statusCode = err.statusCode || defaultErrorStatusCode;
     res.statusMessage = err.name; // statusMessage 不能为中文，否则会出现 invalid chartset 的异常
     if (/^\d\d\d\s/.test(err.name)) {
@@ -211,14 +222,16 @@ function errorOutputObject(err) {
     }
     return outputObject;
 }
-class ContentResult {
-    constructor(data, contentType, statusCode) {
-        this.data = data;
-        this.contentType = contentType;
-        this.statusCode = statusCode == null ? 200 : statusCode;
-    }
-}
-exports.ContentResult = ContentResult;
+// export class ContentResult {
+//     data: string | Buffer
+//     statusCode: number
+//     contentType: string
+//     constructor(data: string | Buffer, contentType: string, statusCode?: number) {
+//         this.data = data
+//         this.contentType = contentType
+//         this.statusCode = statusCode == null ? 200 : statusCode
+//     }
+// }
 function proxyRequest(targetUrl, req, res) {
     let request = createTargetResquest(targetUrl, req, res);
     request.on('error', function (err) {
