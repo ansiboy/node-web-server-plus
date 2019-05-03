@@ -83,12 +83,6 @@ export function startServer(config: Config, callbacks?: Callbacks) {
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
 
-            // let parsedPath = path.parse(pathName)
-            // if (parsedPath.ext && fileServer) {
-            //     fileServer.serve(req, res)
-            //     return
-            // }
-
             let { action, controller } = controllerLoader.getAction(pathName)
             if (action == null) {
                 fileServer.serve(req, res)
@@ -199,11 +193,6 @@ function getPostObject(request: http.IncomingMessage): Promise<any> {
     });
 }
 
-// export const contentTypes = {
-//     application_json: 'application/json',
-//     text_plain: 'text/plain',
-// }
-
 function outputResult(result: object | null, res: http.ServerResponse) {
     result = result === undefined ? null : result
     let contentResult: ActionResult
@@ -216,9 +205,6 @@ function outputResult(result: object | null, res: http.ServerResponse) {
             new ContentResult(JSON.stringify(result), contentTypes.applicationJSON, 200)
     }
 
-    // res.setHeader("content-type", contentResult.contentType || contentTypes.text_plain);
-    // res.statusCode = contentResult.statusCode || 200;
-    // res.end(contentResult.data);
     contentResult.execute(res)
     res.end()
 }
@@ -266,17 +252,6 @@ function errorOutputObject(err: Error) {
     return outputObject
 }
 
-// export class ContentResult {
-//     data: string | Buffer
-//     statusCode: number
-//     contentType: string
-//     constructor(data: string | Buffer, contentType: string, statusCode?: number) {
-//         this.data = data
-//         this.contentType = contentType
-//         this.statusCode = statusCode == null ? 200 : statusCode
-//     }
-// }
-
 function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse) {
     let request = createTargetResquest(targetUrl, req, res);
 
@@ -306,33 +281,12 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
         (response) => {
             console.assert(response != null);
 
-            // const StatusCodeGenerateToken = 666; // 生成 Token
-            // if (response.statusCode == StatusCodeGenerateToken) {
-            //     let responseContent: string;
-            //     let contentType = response.headers['content-type'] as string;
-            //     response.on('data', (data: ArrayBuffer) => {
-            //         responseContent = data.toString();
-            //     })
-            //     response.on('end', () => {
-            //         Token.create(responseContent, contentType)
-            //             .then((o: Token) => {
-            //                 res.setHeader("content-type", "application/json");
-            //                 var obj = JSON.stringify({ token: o.id });
-            //                 res.write(obj);
-            //                 res.end();
-            //             }).catch(err => {
-            //                 outputError(res, err);
-            //             })
-            //     })
-            // }
-            // else {
             for (var key in response.headers) {
                 res.setHeader(key, response.headers[key] || '');
             }
             res.statusCode = response.statusCode || 200;
             res.statusMessage = response.statusMessage || ''
             response.pipe(res);
-            // }
         },
     );
 
