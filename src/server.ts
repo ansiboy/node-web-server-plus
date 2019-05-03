@@ -20,12 +20,7 @@ export interface Config {
     staticFileDirectory?: string
 }
 
-export interface Callbacks {
-    actionBeforeExecute?: (path: string, req: http.IncomingMessage) => void,
-    actionAfterExecute?: (path: string, req: http.IncomingMessage) => void,
-}
-
-export function startServer(config: Config, callbacks?: Callbacks) {
+export function startServer(config: Config) {
     if (!config) throw errors.arugmentNull('config')
     if (!config.rootPath) throw errors.rootPathNull()
 
@@ -42,7 +37,6 @@ export function startServer(config: Config, callbacks?: Callbacks) {
         config.staticFileDirectory = path.join(config.rootPath, config.staticFileDirectory)
 
     let controllerLoader = new ControllerLoader([config.controllerDirectory])
-    callbacks = callbacks || {}
 
     let fileServer: nodeStatic.Server
     if (config.staticFileDirectory) {
@@ -51,8 +45,6 @@ export function startServer(config: Config, callbacks?: Callbacks) {
 
     let server = http.createServer(async (req, res) => {
 
-        // setHeaders(res)
-        // res.setHeader('Content-Type', 'application/json;charset=utf-8');
         if (req.method == 'OPTIONS') {
             res.end()
             return
@@ -90,10 +82,6 @@ export function startServer(config: Config, callbacks?: Callbacks) {
             }
             
             let data = await pareseActionArgument(req)
-            if (!callbacks) throw errors.unexpectedNullValue('callbacks')
-            if (callbacks.actionBeforeExecute)
-                callbacks.actionBeforeExecute(pathName, req)
-
             let actionResult = action.apply(controller, [data, req, res])
             let p = actionResult as Promise<any>
             if (p.then && p.catch) {
@@ -104,10 +92,6 @@ export function startServer(config: Config, callbacks?: Callbacks) {
                 })
                 return
             }
-
-
-            if (callbacks.actionAfterExecute)
-                callbacks.actionAfterExecute(pathName, req)
 
             outputResult(actionResult, res)
         }
