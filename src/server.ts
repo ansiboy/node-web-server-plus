@@ -6,6 +6,7 @@ import path = require('path')
 import { ControllerLoader } from './controller-loader';
 import nodeStatic = require('node-static')
 import { ActionResult, ContentResult, contentTypes } from './action-results';
+import { metaKeys, ActionParameterDecoder, createParameterDecorator } from './attributes';
 
 const DefaultControllerPath = 'controllers'
 const DefaultStaticFileDirectory = 'public'
@@ -50,7 +51,6 @@ export function startServer(config: Config) {
             return
         }
         try {
-
             //=====================================================================
             // 处理 URL 转发
             if (config.proxy) {
@@ -76,24 +76,12 @@ export function startServer(config: Config) {
             let pathName = urlInfo.pathname || '';
 
             let { action, controller } = controllerLoader.getAction(pathName)
-            if (action == null) {
+            if (action == null || controller == null) {
                 fileServer.serve(req, res)
                 return
             }
-            
-            let data = await pareseActionArgument(req)
-            let actionResult = action.apply(controller, [data, req, res])
-            let p = actionResult as Promise<any>
-            if (p.then && p.catch) {
-                p.then(r => {
-                    outputResult(r, res)
-                }).catch(err => {
-                    outputError(err, res)
-                })
-                return
-            }
 
-            outputResult(actionResult, res)
+            executeAction(controller, action, req, res)
         }
         catch (err) {
             outputError(err, res)
@@ -107,75 +95,118 @@ export function startServer(config: Config) {
     server.listen(config.port, config.bindIP)
 }
 
-function pareseActionArgument(req: http.IncomingMessage) {
-    let dataPromise: Promise<any>;
-    if (req.method == 'GET') {
-        let queryData = getQueryObject(req);
-        dataPromise = Promise.resolve(queryData);
-    }
-    else {
-        dataPromise = getPostObject(req);
-    }
+async function executeAction(controller: object, action: Function, req: http.IncomingMessage, res: http.ServerResponse) {
 
-    return dataPromise
-}
+    let parameters: object[] = []
 
-/**
- * 
- * @param request 获取 QueryString 里的对象
- */
-function getQueryObject(request: http.IncomingMessage): { [key: string]: any } {
-    let contentType = request.headers['content-type'] as string;
-    let obj: { [key: string]: any } = {};
-    if (contentType != null && contentType.indexOf('application/json') >= 0) {
-        let arr = (request.url || '').split('?');
-        let str = arr[1]
-        if (str != null) {
-            str = decodeURI(str);
-            obj = JSON.parse(str);  //TODO：异常处理
-        }
+    let parameterDecoders: (ActionParameterDecoder<any> & { parameterValue?: any })[] = []
+    let r = Reflect.getMetadata(metaKeys.parameter, controller, action.name)
+    if (Array.isArray(r)) {
+        parameterDecoders = r
     }
-    else {
-        let urlInfo = url.parse(request.url || '');
-        let { search } = urlInfo;
-        if (search) {
-            obj = querystring.parse(search.substr(1));
-        }
+    else if (r != null) {
+        parameterDecoders[0] = r
     }
 
-    return obj;
-}
+    for (let i = 0; i < parameterDecoders.length; i++) {
+        let metaData = parameterDecoders[i]
+        // if (metaData.parameterIndex <= 0)
+        //     throw errors.actionParameterIndexIncorrect()
 
+        let parameterValue = await metaData.createParameter(req)
+        parameters[metaData.parameterIndex] = parameterValue
+    }
 
-function getPostObject(request: http.IncomingMessage): Promise<any> {
-    let length = request.headers['content-length'] || 0;
-    let contentType = request.headers['content-type'] as string;
-    if (length <= 0)
-        return Promise.resolve({});
-
-    return new Promise((reslove, reject) => {
-        var text = "";
-        request.on('data', (data: { toString: () => string }) => {
-            text = text + data.toString();
-        });
-
-        request.on('end', () => {
-            let obj;
-            try {
-                if (contentType.indexOf('application/json') >= 0) {
-                    obj = JSON.parse(text)
+    let actionResult = action.apply(controller, parameters)
+    let p = actionResult as Promise<any>
+    if (p.then && p.catch) {
+        p.then(r => {
+            outputResult(r, res)
+        }).catch(err => {
+            outputError(err, res)
+        }).finally(() => {
+            for (let i = 0; i < parameterDecoders.length; i++) {
+                let d = parameterDecoders[i]
+                if (d.disposeParameter) {
+                    d.disposeParameter(d.parameterValue)
                 }
-                else {
-                    obj = querystring.parse(text);
-                }
-                reslove(obj);
-            }
-            catch (err) {
-                reject(err);
             }
         })
-    });
+        return
+    }
+
+    outputResult(actionResult, res)
 }
+
+// function pareseActionArgument(req: http.IncomingMessage) {
+//     let dataPromise: Promise<any>;
+//     if (req.method == 'GET') {
+//         let queryData = getQueryObject(req);
+//         dataPromise = Promise.resolve(queryData);
+//     }
+//     else {
+//         dataPromise = getPostObject(req);
+//     }
+
+//     return dataPromise
+// }
+
+// /**
+//  * 
+//  * @param request 获取 QueryString 里的对象
+//  */
+// function getQueryObject(request: http.IncomingMessage): { [key: string]: any } {
+//     let contentType = request.headers['content-type'] as string;
+//     let obj: { [key: string]: any } = {};
+//     if (contentType != null && contentType.indexOf('application/json') >= 0) {
+//         let arr = (request.url || '').split('?');
+//         let str = arr[1]
+//         if (str != null) {
+//             str = decodeURI(str);
+//             obj = JSON.parse(str);  //TODO：异常处理
+//         }
+//     }
+//     else {
+//         let urlInfo = url.parse(request.url || '');
+//         let { search } = urlInfo;
+//         if (search) {
+//             obj = querystring.parse(search.substr(1));
+//         }
+//     }
+
+//     return obj;
+// }
+
+
+// function getPostObject(request: http.IncomingMessage): Promise<any> {
+//     let length = request.headers['content-length'] || 0;
+//     let contentType = request.headers['content-type'] as string;
+//     if (length <= 0)
+//         return Promise.resolve({});
+
+//     return new Promise((reslove, reject) => {
+//         var text = "";
+//         request.on('data', (data: { toString: () => string }) => {
+//             text = text + data.toString();
+//         });
+
+//         request.on('end', () => {
+//             let obj;
+//             try {
+//                 if (contentType.indexOf('application/json') >= 0) {
+//                     obj = JSON.parse(text)
+//                 }
+//                 else {
+//                     obj = querystring.parse(text);
+//                 }
+//                 reslove(obj);
+//             }
+//             catch (err) {
+//                 reject(err);
+//             }
+//         })
+//     });
+// }
 
 function outputResult(result: object | null, res: http.ServerResponse) {
     result = result === undefined ? null : result
@@ -276,4 +307,79 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
 
     return request;
 }
+
+export let formData = (function () {
+
+    function getPostObject(request: http.IncomingMessage): Promise<any> {
+        let length = request.headers['content-length'] || 0;
+        let contentType = request.headers['content-type'] as string;
+        if (length <= 0)
+            return Promise.resolve({});
+
+        return new Promise((reslove, reject) => {
+            var text = "";
+            request.on('data', (data: { toString: () => string }) => {
+                text = text + data.toString();
+            });
+
+            request.on('end', () => {
+                let obj;
+                try {
+                    if (contentType.indexOf('application/json') >= 0) {
+                        obj = JSON.parse(text)
+                    }
+                    else {
+                        obj = querystring.parse(text);
+                    }
+                    reslove(obj);
+                }
+                catch (err) {
+                    reject(err);
+                }
+            })
+        });
+    }
+
+    /**
+     * 
+     * @param request 获取 QueryString 里的对象
+     */
+    function getQueryObject(request: http.IncomingMessage): { [key: string]: any } {
+        let contentType = request.headers['content-type'] as string;
+        let obj: { [key: string]: any } = {};
+        if (contentType != null && contentType.indexOf('application/json') >= 0) {
+            let arr = (request.url || '').split('?');
+            let str = arr[1]
+            if (str != null) {
+                str = decodeURI(str);
+                obj = JSON.parse(str);  //TODO：异常处理
+            }
+        }
+        else {
+            let urlInfo = url.parse(request.url || '');
+            let { search } = urlInfo;
+            if (search) {
+                obj = querystring.parse(search.substr(1));
+            }
+        }
+
+        return obj;
+    }
+
+
+
+    return createParameterDecorator<any>(async (req) => {
+        if (req.method == 'GET') {
+            let queryData = getQueryObject(req);
+            // dataPromise = Promise.resolve(queryData);
+            return queryData
+        }
+        else {
+            let data = await getPostObject(req);
+            return data
+        }
+
+    })
+
+})()
 
