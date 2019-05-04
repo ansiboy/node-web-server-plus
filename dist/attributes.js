@@ -4,7 +4,16 @@ const errors = require("./errors");
 const constants_1 = require("./constants");
 require("reflect-metadata");
 const actionMetaKey = Symbol('action');
+const parameterMetaKey = Symbol('parameter');
+exports.metaKeys = {
+    action: actionMetaKey,
+    parameter: parameterMetaKey
+};
 exports.controllerDefines = [];
+/**
+ * 标记一个类是否为控制器
+ * @param path 路径
+ */
 function controller(path) {
     return function (constructor) {
         let controllerDefine = registerController(constructor, path);
@@ -15,17 +24,13 @@ function controller(path) {
                 registerAction(controllerDefine, metadata.memberName, metadata.paths);
             }
         }
-        //let actionMetaDatas = Reflect.getOwnMetadata(actionMetaKey, constructor)
-        // let controllerDefine = registerController(constructor, path)
-        // let items = actionsToRegister.filter(o => o.controllerType = constructor)
-        // for (let i = 0; i < items.length; i++) {
-        //     registerAction(controllerDefine, items[i].memberName, items[i].path)
-        // }
-        // actionsToRegister = actionsToRegister.filter(o => o.controllerType != constructor)
-        // return constructor
     };
 }
 exports.controller = controller;
+/**
+ * 标记一个方法是否为 Action
+ * @param paths 路径
+ */
 function action(...paths) {
     return function (target, propertyKey, descriptor) {
         let memberName = descriptor.value.name;
@@ -35,7 +40,6 @@ function action(...paths) {
         if (actionDefine)
             throw errors.onlyOneAction(propertyKey);
         Reflect.defineMetadata(actionMetaKey, obj, controllerType, propertyKey);
-        // actionsToRegister.push({ controllerType: target.constructor, memberName, path })
     };
 }
 exports.action = action;
@@ -62,7 +66,6 @@ function registerController(type, path) {
         throw errors.controlRegister(type);
     controllerDefine = { type: type, actionDefines: [], path };
     exports.controllerDefines.push(controllerDefine);
-    // Reflect.getMetadataKeys()
     return controllerDefine;
 }
 function registerAction(controllerDefine, memberName, paths) {
@@ -71,4 +74,15 @@ function registerAction(controllerDefine, memberName, paths) {
     console.assert(typeof memberName == 'string');
     controllerDefine.actionDefines.push({ memberName: memberName, paths });
 }
+function createParameterDecorator(createParameter, disposeParameter) {
+    return function (target, propertyKey, parameterIndex) {
+        let p = {
+            createParameter,
+            disposeParameter,
+            parameterIndex
+        };
+        Reflect.defineMetadata(parameterMetaKey, p, target, propertyKey);
+    };
+}
+exports.createParameterDecorator = createParameterDecorator;
 //# sourceMappingURL=attributes.js.map

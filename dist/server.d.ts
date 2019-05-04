@@ -1,5 +1,3 @@
-/// <reference types="node" />
-import http = require('http');
 export interface Config {
     port: number;
     bindIP?: string;
@@ -10,8 +8,5 @@ export interface Config {
     controllerDirectory?: string;
     staticFileDirectory?: string;
 }
-export interface Callbacks {
-    actionBeforeExecute?: (path: string, req: http.IncomingMessage) => void;
-    actionAfterExecute?: (path: string, req: http.IncomingMessage) => void;
-}
-export declare function startServer(config: Config, callbacks?: Callbacks): void;
+export declare function startServer(config: Config): void;
+export declare let formData: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;

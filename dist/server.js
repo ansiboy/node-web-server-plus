@@ -16,9 +16,10 @@ const path = require("path");
 const controller_loader_1 = require("./controller-loader");
 const nodeStatic = require("node-static");
 const action_results_1 = require("./action-results");
+const attributes_1 = require("./attributes");
 const DefaultControllerPath = 'controllers';
 const DefaultStaticFileDirectory = 'public';
-function startServer(config, callbacks) {
+function startServer(config) {
     if (!config)
         throw errors.arugmentNull('config');
     if (!config.rootPath)
@@ -32,14 +33,11 @@ function startServer(config, callbacks) {
     if (!path.isAbsolute(config.staticFileDirectory))
         config.staticFileDirectory = path.join(config.rootPath, config.staticFileDirectory);
     let controllerLoader = new controller_loader_1.ControllerLoader([config.controllerDirectory]);
-    callbacks = callbacks || {};
     let fileServer;
     if (config.staticFileDirectory) {
         fileServer = new nodeStatic.Server(config.staticFileDirectory);
     }
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
-        // setHeaders(res)
-        // res.setHeader('Content-Type', 'application/json;charset=utf-8');
         if (req.method == 'OPTIONS') {
             res.end();
             return;
@@ -67,34 +65,12 @@ function startServer(config, callbacks) {
             let requestUrl = req.url || '';
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
-            // let parsedPath = path.parse(pathName)
-            // if (parsedPath.ext && fileServer) {
-            //     fileServer.serve(req, res)
-            //     return
-            // }
             let { action, controller } = controllerLoader.getAction(pathName);
-            if (action == null) {
+            if (action == null || controller == null) {
                 fileServer.serve(req, res);
                 return;
             }
-            let data = yield pareseActionArgument(req);
-            if (!callbacks)
-                throw errors.unexpectedNullValue('callbacks');
-            if (callbacks.actionBeforeExecute)
-                callbacks.actionBeforeExecute(pathName, req);
-            let actionResult = action.apply(controller, [data, req, res]);
-            let p = actionResult;
-            if (p.then && p.catch) {
-                p.then(r => {
-                    outputResult(r, res);
-                }).catch(err => {
-                    outputError(err, res);
-                });
-                return;
-            }
-            if (callbacks.actionAfterExecute)
-                callbacks.actionAfterExecute(pathName, req);
-            outputResult(actionResult, res);
+            executeAction(controller, action, req, res);
         }
         catch (err) {
             outputError(err, res);
@@ -106,71 +82,105 @@ function startServer(config, callbacks) {
     server.listen(config.port, config.bindIP);
 }
 exports.startServer = startServer;
-function pareseActionArgument(req) {
-    let dataPromise;
-    if (req.method == 'GET') {
-        let queryData = getQueryObject(req);
-        dataPromise = Promise.resolve(queryData);
-    }
-    else {
-        dataPromise = getPostObject(req);
-    }
-    return dataPromise;
-}
-/**
- *
- * @param request 获取 QueryString 里的对象
- */
-function getQueryObject(request) {
-    let contentType = request.headers['content-type'];
-    let obj = {};
-    if (contentType != null && contentType.indexOf('application/json') >= 0) {
-        let arr = (request.url || '').split('?');
-        let str = arr[1];
-        if (str != null) {
-            str = decodeURI(str);
-            obj = JSON.parse(str); //TODO：异常处理
+function executeAction(controller, action, req, res) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let parameters = [];
+        let parameterDecoders = [];
+        let r = Reflect.getMetadata(attributes_1.metaKeys.parameter, controller, action.name);
+        if (Array.isArray(r)) {
+            parameterDecoders = r;
         }
-    }
-    else {
-        let urlInfo = url.parse(request.url || '');
-        let { search } = urlInfo;
-        if (search) {
-            obj = querystring.parse(search.substr(1));
+        else if (r != null) {
+            parameterDecoders[0] = r;
         }
-    }
-    return obj;
-}
-function getPostObject(request) {
-    let length = request.headers['content-length'] || 0;
-    let contentType = request.headers['content-type'];
-    if (length <= 0)
-        return Promise.resolve({});
-    return new Promise((reslove, reject) => {
-        var text = "";
-        request.on('data', (data) => {
-            text = text + data.toString();
-        });
-        request.on('end', () => {
-            let obj;
-            try {
-                if (contentType.indexOf('application/json') >= 0) {
-                    obj = JSON.parse(text);
+        for (let i = 0; i < parameterDecoders.length; i++) {
+            let metaData = parameterDecoders[i];
+            // if (metaData.parameterIndex <= 0)
+            //     throw errors.actionParameterIndexIncorrect()
+            let parameterValue = yield metaData.createParameter(req);
+            parameters[metaData.parameterIndex] = parameterValue;
+        }
+        let actionResult = action.apply(controller, parameters);
+        let p = actionResult;
+        if (p.then && p.catch) {
+            p.then(r => {
+                outputResult(r, res);
+            }).catch(err => {
+                outputError(err, res);
+            }).finally(() => {
+                for (let i = 0; i < parameterDecoders.length; i++) {
+                    let d = parameterDecoders[i];
+                    if (d.disposeParameter) {
+                        d.disposeParameter(d.parameterValue);
+                    }
                 }
-                else {
-                    obj = querystring.parse(text);
-                }
-                reslove(obj);
-            }
-            catch (err) {
-                reject(err);
-            }
-        });
+            });
+            return;
+        }
+        outputResult(actionResult, res);
     });
 }
-// export const contentTypes = {
-//     application_json: 'application/json',
-//     text_plain: 'text/plain',
+// function pareseActionArgument(req: http.IncomingMessage) {
+//     let dataPromise: Promise<any>;
+//     if (req.method == 'GET') {
+//         let queryData = getQueryObject(req);
+//         dataPromise = Promise.resolve(queryData);
+//     }
+//     else {
+//         dataPromise = getPostObject(req);
+//     }
+//     return dataPromise
+// }
+// /**
+//  * 
+//  * @param request 获取 QueryString 里的对象
+//  */
+// function getQueryObject(request: http.IncomingMessage): { [key: string]: any } {
+//     let contentType = request.headers['content-type'] as string;
+//     let obj: { [key: string]: any } = {};
+//     if (contentType != null && contentType.indexOf('application/json') >= 0) {
+//         let arr = (request.url || '').split('?');
+//         let str = arr[1]
+//         if (str != null) {
+//             str = decodeURI(str);
+//             obj = JSON.parse(str);  //TODO：异常处理
+//         }
+//     }
+//     else {
+//         let urlInfo = url.parse(request.url || '');
+//         let { search } = urlInfo;
+//         if (search) {
+//             obj = querystring.parse(search.substr(1));
+//         }
+//     }
+//     return obj;
+// }
+// function getPostObject(request: http.IncomingMessage): Promise<any> {
+//     let length = request.headers['content-length'] || 0;
+//     let contentType = request.headers['content-type'] as string;
+//     if (length <= 0)
+//         return Promise.resolve({});
+//     return new Promise((reslove, reject) => {
+//         var text = "";
+//         request.on('data', (data: { toString: () => string }) => {
+//             text = text + data.toString();
+//         });
+//         request.on('end', () => {
+//             let obj;
+//             try {
+//                 if (contentType.indexOf('application/json') >= 0) {
+//                     obj = JSON.parse(text)
+//                 }
+//                 else {
+//                     obj = querystring.parse(text);
+//                 }
+//                 reslove(obj);
+//             }
+//             catch (err) {
+//                 reject(err);
+//             }
+//         })
+//     });
 // }
 function outputResult(result, res) {
     result = result === undefined ? null : result;
@@ -183,9 +193,6 @@ function outputResult(result, res) {
             new action_results_1.ContentResult(result, action_results_1.contentTypes.textPlain, 200) :
             new action_results_1.ContentResult(JSON.stringify(result), action_results_1.contentTypes.applicationJSON, 200);
     }
-    // res.setHeader("content-type", contentResult.contentType || contentTypes.text_plain);
-    // res.statusCode = contentResult.statusCode || 200;
-    // res.end(contentResult.data);
     contentResult.execute(res);
     res.end();
 }
@@ -222,16 +229,6 @@ function errorOutputObject(err) {
     }
     return outputObject;
 }
-// export class ContentResult {
-//     data: string | Buffer
-//     statusCode: number
-//     contentType: string
-//     constructor(data: string | Buffer, contentType: string, statusCode?: number) {
-//         this.data = data
-//         this.contentType = contentType
-//         this.statusCode = statusCode == null ? 200 : statusCode
-//     }
-// }
 function proxyRequest(targetUrl, req, res) {
     let request = createTargetResquest(targetUrl, req, res);
     request.on('error', function (err) {
@@ -254,34 +251,77 @@ function createTargetResquest(targetUrl, req, res) {
         headers: headers,
     }, (response) => {
         console.assert(response != null);
-        // const StatusCodeGenerateToken = 666; // 生成 Token
-        // if (response.statusCode == StatusCodeGenerateToken) {
-        //     let responseContent: string;
-        //     let contentType = response.headers['content-type'] as string;
-        //     response.on('data', (data: ArrayBuffer) => {
-        //         responseContent = data.toString();
-        //     })
-        //     response.on('end', () => {
-        //         Token.create(responseContent, contentType)
-        //             .then((o: Token) => {
-        //                 res.setHeader("content-type", "application/json");
-        //                 var obj = JSON.stringify({ token: o.id });
-        //                 res.write(obj);
-        //                 res.end();
-        //             }).catch(err => {
-        //                 outputError(res, err);
-        //             })
-        //     })
-        // }
-        // else {
         for (var key in response.headers) {
             res.setHeader(key, response.headers[key] || '');
         }
         res.statusCode = response.statusCode || 200;
         res.statusMessage = response.statusMessage || '';
         response.pipe(res);
-        // }
     });
     return request;
 }
+exports.formData = (function () {
+    function getPostObject(request) {
+        let length = request.headers['content-length'] || 0;
+        let contentType = request.headers['content-type'];
+        if (length <= 0)
+            return Promise.resolve({});
+        return new Promise((reslove, reject) => {
+            var text = "";
+            request.on('data', (data) => {
+                text = text + data.toString();
+            });
+            request.on('end', () => {
+                let obj;
+                try {
+                    if (contentType.indexOf('application/json') >= 0) {
+                        obj = JSON.parse(text);
+                    }
+                    else {
+                        obj = querystring.parse(text);
+                    }
+                    reslove(obj);
+                }
+                catch (err) {
+                    reject(err);
+                }
+            });
+        });
+    }
+    /**
+     *
+     * @param request 获取 QueryString 里的对象
+     */
+    function getQueryObject(request) {
+        let contentType = request.headers['content-type'];
+        let obj = {};
+        if (contentType != null && contentType.indexOf('application/json') >= 0) {
+            let arr = (request.url || '').split('?');
+            let str = arr[1];
+            if (str != null) {
+                str = decodeURI(str);
+                obj = JSON.parse(str); //TODO：异常处理
+            }
+        }
+        else {
+            let urlInfo = url.parse(request.url || '');
+            let { search } = urlInfo;
+            if (search) {
+                obj = querystring.parse(search.substr(1));
+            }
+        }
+        return obj;
+    }
+    return attributes_1.createParameterDecorator((req) => __awaiter(this, void 0, void 0, function* () {
+        if (req.method == 'GET') {
+            let queryData = getQueryObject(req);
+            // dataPromise = Promise.resolve(queryData);
+            return queryData;
+        }
+        else {
+            let data = yield getPostObject(req);
+            return data;
+        }
+    }));
+})();
 //# sourceMappingURL=server.js.map

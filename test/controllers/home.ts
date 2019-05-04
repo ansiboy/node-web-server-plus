@@ -1,14 +1,34 @@
-import { controller, action } from '../../dist/index'
+import { controller, action, createParameterDecorator, formData } from '../../dist/index'
+
+// function connection() {
+
+// }
+
+// function createParameterDecorator<T>(createParameter: () => T, disposeParameter: (parameter: T) => void) {
+//     return function (target: Object, propertyKey: string | symbol, parameterIndex: number) {
+
+//     }
+// }
+
+let connection = createParameterDecorator(
+    async function () {
+        debugger
+        return {}
+    },
+    function () {
+        debugger
+    }
+)
 
 @controller()
 class HomeController {
     @action("/")
-    index() {
+    index(@connection conn) {
         return 'home index'
     }
 
     @action()
-    test({ arg }) {
+    test(@formData { arg }) {
         return arg
     }
 }
