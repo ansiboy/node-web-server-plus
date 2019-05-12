@@ -101,14 +101,7 @@ async function executeAction(controller: object, action: Function, req: http.Inc
     let parameters: object[] = []
 
     let parameterDecoders: (ActionParameterDecoder<any> & { parameterValue?: any })[] = []
-    parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name)
-    // if (Array.isArray(r)) {
-    //     parameterDecoders = r
-    // }
-    // else if (r != null) {
-    //     parameterDecoders[0] = r
-    // }
-
+    parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name) || []
     for (let i = 0; i < parameterDecoders.length; i++) {
         let metaData = parameterDecoders[i]
         let parameterValue = await metaData.createParameter(req)

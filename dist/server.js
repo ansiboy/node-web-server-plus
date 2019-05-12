@@ -87,13 +87,7 @@ function executeAction(controller, action, req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         let parameters = [];
         let parameterDecoders = [];
-        parameterDecoders = Reflect.getMetadata(attributes_1.metaKeys.parameter, controller, action.name);
-        // if (Array.isArray(r)) {
-        //     parameterDecoders = r
-        // }
-        // else if (r != null) {
-        //     parameterDecoders[0] = r
-        // }
+        parameterDecoders = Reflect.getMetadata(attributes_1.metaKeys.parameter, controller, action.name) || [];
         for (let i = 0; i < parameterDecoders.length; i++) {
             let metaData = parameterDecoders[i];
             let parameterValue = yield metaData.createParameter(req);
