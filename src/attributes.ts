@@ -108,12 +108,16 @@ function registerAction<T>(controllerDefine: ControllerDefine, memberName: keyof
 
 export function createParameterDecorator<T>(createParameter: (req: http.IncomingMessage) => Promise<T>, disposeParameter?: (parameter: T) => void) {
     return function (target: Object, propertyKey: string | symbol, parameterIndex: number) {
+
+        let value: ActionParameterDecoder<T>[] = Reflect.getMetadata(metaKeys.parameter, target, propertyKey) || []
         let p: ActionParameterDecoder<T> = {
             createParameter,
             disposeParameter,
             parameterIndex
         }
-        Reflect.defineMetadata(parameterMetaKey, p, target, propertyKey)
+        value.push(p)
+
+        Reflect.defineMetadata(metaKeys.parameter, value, target, propertyKey)
     }
 }
 

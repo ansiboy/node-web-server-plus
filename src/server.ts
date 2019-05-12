@@ -4,7 +4,7 @@ import url = require('url');
 import querystring = require('querystring');
 import path = require('path')
 import { ControllerLoader } from './controller-loader';
-import nodeStatic = require('node-static')
+import nodeStatic = require('maishu-node-static')
 import { ActionResult, ContentResult, contentTypes } from './action-results';
 import { metaKeys, ActionParameterDecoder, createParameterDecorator } from './attributes';
 
@@ -14,11 +14,11 @@ export interface Config {
     port: number,
     bindIP?: string,
     rootPath: string,
-    proxy?: {
-        [path_pattern: string]: string
-    },
+    proxy?: { [path_pattern: string]: string },
+    requestUrlRewrite?: { [url_pattern: string]: string },
     controllerDirectory?: string,
-    staticFileDirectory?: string
+    staticRootDirectory?: string,
+    staticExternalDirectories?: string[]
 }
 
 export function startServer(config: Config) {
@@ -28,24 +28,23 @@ export function startServer(config: Config) {
     if (!config.controllerDirectory)
         config.controllerDirectory = DefaultControllerPath
 
-    if (!config.staticFileDirectory)
-        config.staticFileDirectory = DefaultStaticFileDirectory
+    if (!config.staticRootDirectory)
+        config.staticRootDirectory = DefaultStaticFileDirectory
 
     if (!path.isAbsolute(config.controllerDirectory))
         config.controllerDirectory = path.join(config.rootPath, config.controllerDirectory)
 
-    if (!path.isAbsolute(config.staticFileDirectory))
-        config.staticFileDirectory = path.join(config.rootPath, config.staticFileDirectory)
+    if (!path.isAbsolute(config.staticRootDirectory))
+        config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
 
     let controllerLoader = new ControllerLoader([config.controllerDirectory])
 
     let fileServer: nodeStatic.Server
-    if (config.staticFileDirectory) {
-        fileServer = new nodeStatic.Server(config.staticFileDirectory)
-    }
+    fileServer = new nodeStatic.Server(config.staticRootDirectory, {
+        externalPaths: config.staticExternalDirectories
+    })
 
     let server = http.createServer(async (req, res) => {
-
         if (req.method == 'OPTIONS') {
             res.end()
             return
@@ -93,6 +92,8 @@ export function startServer(config: Config) {
     })
 
     server.listen(config.port, config.bindIP)
+
+    return { staticServer: fileServer }
 }
 
 async function executeAction(controller: object, action: Function, req: http.IncomingMessage, res: http.ServerResponse) {
@@ -100,19 +101,16 @@ async function executeAction(controller: object, action: Function, req: http.Inc
     let parameters: object[] = []
 
     let parameterDecoders: (ActionParameterDecoder<any> & { parameterValue?: any })[] = []
-    let r = Reflect.getMetadata(metaKeys.parameter, controller, action.name)
-    if (Array.isArray(r)) {
-        parameterDecoders = r
-    }
-    else if (r != null) {
-        parameterDecoders[0] = r
-    }
+    parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name)
+    // if (Array.isArray(r)) {
+    //     parameterDecoders = r
+    // }
+    // else if (r != null) {
+    //     parameterDecoders[0] = r
+    // }
 
     for (let i = 0; i < parameterDecoders.length; i++) {
         let metaData = parameterDecoders[i]
-        // if (metaData.parameterIndex <= 0)
-        //     throw errors.actionParameterIndexIncorrect()
-
         let parameterValue = await metaData.createParameter(req)
         parameters[metaData.parameterIndex] = parameterValue
     }
@@ -137,76 +135,6 @@ async function executeAction(controller: object, action: Function, req: http.Inc
 
     outputResult(actionResult, res)
 }
-
-// function pareseActionArgument(req: http.IncomingMessage) {
-//     let dataPromise: Promise<any>;
-//     if (req.method == 'GET') {
-//         let queryData = getQueryObject(req);
-//         dataPromise = Promise.resolve(queryData);
-//     }
-//     else {
-//         dataPromise = getPostObject(req);
-//     }
-
-//     return dataPromise
-// }
-
-// /**
-//  * 
-//  * @param request 获取 QueryString 里的对象
-//  */
-// function getQueryObject(request: http.IncomingMessage): { [key: string]: any } {
-//     let contentType = request.headers['content-type'] as string;
-//     let obj: { [key: string]: any } = {};
-//     if (contentType != null && contentType.indexOf('application/json') >= 0) {
-//         let arr = (request.url || '').split('?');
-//         let str = arr[1]
-//         if (str != null) {
-//             str = decodeURI(str);
-//             obj = JSON.parse(str);  //TODO：异常处理
-//         }
-//     }
-//     else {
-//         let urlInfo = url.parse(request.url || '');
-//         let { search } = urlInfo;
-//         if (search) {
-//             obj = querystring.parse(search.substr(1));
-//         }
-//     }
-
-//     return obj;
-// }
-
-
-// function getPostObject(request: http.IncomingMessage): Promise<any> {
-//     let length = request.headers['content-length'] || 0;
-//     let contentType = request.headers['content-type'] as string;
-//     if (length <= 0)
-//         return Promise.resolve({});
-
-//     return new Promise((reslove, reject) => {
-//         var text = "";
-//         request.on('data', (data: { toString: () => string }) => {
-//             text = text + data.toString();
-//         });
-
-//         request.on('end', () => {
-//             let obj;
-//             try {
-//                 if (contentType.indexOf('application/json') >= 0) {
-//                     obj = JSON.parse(text)
-//                 }
-//                 else {
-//                     obj = querystring.parse(text);
-//                 }
-//                 reslove(obj);
-//             }
-//             catch (err) {
-//                 reject(err);
-//             }
-//         })
-//     });
-// }
 
 function outputResult(result: object | null, res: http.ServerResponse) {
     result = result === undefined ? null : result
@@ -308,6 +236,8 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
     return request;
 }
 
+
+let formDataParameterKey = Symbol("formData");
 export let formData = (function () {
 
     function getPostObject(request: http.IncomingMessage): Promise<any> {
