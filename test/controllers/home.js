@@ -33,7 +33,7 @@ let connection = index_1.createParameterDecorator(function () {
     debugger;
 });
 let HomeController = class HomeController {
-    index(conn) {
+    index(conn, data) {
         return 'home index';
     }
     test({ arg }) {
@@ -42,7 +42,7 @@ let HomeController = class HomeController {
 };
 __decorate([
     index_1.action("/"),
-    __param(0, connection)
+    __param(0, connection), __param(1, index_1.formData)
 ], HomeController.prototype, "index", null);
 __decorate([
     index_1.action(),

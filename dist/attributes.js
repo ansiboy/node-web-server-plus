@@ -76,12 +76,14 @@ function registerAction(controllerDefine, memberName, paths) {
 }
 function createParameterDecorator(createParameter, disposeParameter) {
     return function (target, propertyKey, parameterIndex) {
+        let value = Reflect.getMetadata(exports.metaKeys.parameter, target, propertyKey) || [];
         let p = {
             createParameter,
             disposeParameter,
             parameterIndex
         };
-        Reflect.defineMetadata(parameterMetaKey, p, target, propertyKey);
+        value.push(p);
+        Reflect.defineMetadata(exports.metaKeys.parameter, value, target, propertyKey);
     };
 }
 exports.createParameterDecorator = createParameterDecorator;

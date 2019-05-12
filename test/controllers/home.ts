@@ -23,7 +23,7 @@ let connection = createParameterDecorator(
 @controller()
 class HomeController {
     @action("/")
-    index(@connection conn) {
+    index(@connection conn,@formData data) {
         return 'home index'
     }
 

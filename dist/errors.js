@@ -54,10 +54,4 @@ function rootPathNull() {
     return error;
 }
 exports.rootPathNull = rootPathNull;
-// export function actionParameterIndexIncorrect() {
-//     let msg = `Action parameter index must greater zero.`
-//     let error = new Error(msg)
-//     error.name = actionParameterIndexIncorrect.name
-//     return error
-// }
 //# sourceMappingURL=errors.js.map
