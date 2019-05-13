@@ -100,7 +100,7 @@ async function executeAction(controller: object, action: Function, req: http.Inc
 
     let parameters: object[] = []
 
-    let parameterDecoders: (ActionParameterDecoder<any> & { parameterValue?: any })[] = []
+    let parameterDecoders: (ActionParameterDecoder<any>)[] = []//& { parameterValue?: any }
     parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name) || []
     for (let i = 0; i < parameterDecoders.length; i++) {
         let metaData = parameterDecoders[i]
@@ -119,7 +119,7 @@ async function executeAction(controller: object, action: Function, req: http.Inc
             for (let i = 0; i < parameterDecoders.length; i++) {
                 let d = parameterDecoders[i]
                 if (d.disposeParameter) {
-                    d.disposeParameter(d.parameterValue)
+                    d.disposeParameter(parameters[d.parameterIndex])
                 }
             }
         })

@@ -86,7 +86,7 @@ exports.startServer = startServer;
 function executeAction(controller, action, req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         let parameters = [];
-        let parameterDecoders = [];
+        let parameterDecoders = []; //& { parameterValue?: any }
         parameterDecoders = Reflect.getMetadata(attributes_1.metaKeys.parameter, controller, action.name) || [];
         for (let i = 0; i < parameterDecoders.length; i++) {
             let metaData = parameterDecoders[i];
@@ -104,7 +104,7 @@ function executeAction(controller, action, req, res) {
                 for (let i = 0; i < parameterDecoders.length; i++) {
                     let d = parameterDecoders[i];
                     if (d.disposeParameter) {
-                        d.disposeParameter(d.parameterValue);
+                        d.disposeParameter(parameters[d.parameterIndex]);
                     }
                 }
             });
