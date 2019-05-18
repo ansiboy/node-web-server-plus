@@ -38,10 +38,17 @@ export function startServer(config: Config) {
         config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
 
     let controllerLoader = new ControllerLoader([config.controllerDirectory])
+    let externalPaths = config.staticExternalDirectories || []
+    for (let i = 0; i < externalPaths.length; i++) {
+        if (!path.isAbsolute(externalPaths[i])) {
+            externalPaths[i] = path.join(config.rootPath, externalPaths[i]);
+        }
+        externalPaths[i] = path.normalize(externalPaths[i]);
+    }
 
     let fileServer: nodeStatic.Server
     fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-        externalPaths: config.staticExternalDirectories
+        externalPaths
     })
 
     let server = http.createServer(async (req, res) => {

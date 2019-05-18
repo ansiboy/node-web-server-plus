@@ -33,9 +33,16 @@ function startServer(config) {
     if (!path.isAbsolute(config.staticRootDirectory))
         config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory);
     let controllerLoader = new controller_loader_1.ControllerLoader([config.controllerDirectory]);
+    let externalPaths = config.staticExternalDirectories || [];
+    for (let i = 0; i < externalPaths.length; i++) {
+        if (!path.isAbsolute(externalPaths[i])) {
+            externalPaths[i] = path.join(config.rootPath, externalPaths[i]);
+        }
+        externalPaths[i] = path.normalize(externalPaths[i]);
+    }
     let fileServer;
     fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-        externalPaths: config.staticExternalDirectories
+        externalPaths
     });
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
         if (req.method == 'OPTIONS') {
