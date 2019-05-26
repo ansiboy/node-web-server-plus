@@ -7,3 +7,4 @@ export declare function controllerDirectoriesNull(): Error;
 export declare function unexpectedNullValue(name: string): Error;
 export declare function onlyOneAction(methodName: string): Error;
 export declare function rootPathNull(): Error;
+export declare function authenticateResultNull(): Error;

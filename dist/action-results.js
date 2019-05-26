@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const errors_1 = require("./errors");
+//; charset=UTF-8
+const encoding = 'UTF-8';
 exports.contentTypes = {
-    applicationJSON: 'application/json',
-    textPlain: 'text/plain',
+    applicationJSON: `application/json; charset=${encoding}`,
+    textPlain: `text/plain; charset=${encoding}`,
 };
 class ContentResult {
     constructor(content, contentType, statusCode) {

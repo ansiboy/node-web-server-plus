@@ -1,4 +1,5 @@
 import { controller, action, createParameterDecorator, formData } from '../../dist/index'
+import { ConnectionOptions } from 'tls';
 
 // function connection() {
 
@@ -21,9 +22,15 @@ let connection = createParameterDecorator(
 )
 
 @controller()
+/** 主页模块 */
 class HomeController {
+    /**
+     * 首页
+     * @param conn 数据库连接
+     * @param data 表单数据
+     */
     @action("/")
-    index(@connection conn,@formData data) {
+    index(@connection conn: ConnectionOptions, @formData data: Object) {
         return 'home index'
     }
 

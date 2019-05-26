@@ -1,4 +1,7 @@
+/// <reference types="node" />
+import http = require('http');
 import nodeStatic = require('maishu-node-static');
+import { ActionResult } from './action-results';
 export interface Config {
     port: number;
     bindIP?: string;
@@ -12,6 +15,9 @@ export interface Config {
     controllerDirectory?: string;
     staticRootDirectory?: string;
     staticExternalDirectories?: string[];
+    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{
+        errorResult: ActionResult;
+    }>;
 }
 export declare function startServer(config: Config): {
     staticServer: nodeStatic.Server;

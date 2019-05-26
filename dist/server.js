@@ -50,6 +50,15 @@ function startServer(config) {
             return;
         }
         try {
+            if (config.authenticate) {
+                let r = yield config.authenticate(req, res);
+                if (r == null)
+                    throw errors.authenticateResultNull();
+                if (r.errorResult) {
+                    outputResult(r.errorResult, res);
+                    return;
+                }
+            }
             //=====================================================================
             // 处理 URL 转发
             if (config.proxy) {

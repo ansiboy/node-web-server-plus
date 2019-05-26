@@ -54,4 +54,11 @@ function rootPathNull() {
     return error;
 }
 exports.rootPathNull = rootPathNull;
+function authenticateResultNull() {
+    let msg = `Authenticate result cannt null`;
+    let error = new Error(msg);
+    error.name = authenticateResultNull.name;
+    return error;
+}
+exports.authenticateResultNull = authenticateResultNull;
 //# sourceMappingURL=errors.js.map
