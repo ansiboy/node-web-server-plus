@@ -54,3 +54,10 @@ export function rootPathNull() {
     return error
 }
 
+export function authenticateResultNull(){
+    let msg = `Authenticate result cannt null`
+    let error = new Error(msg)
+    error.name = authenticateResultNull.name
+    return error
+}
+

@@ -1,9 +1,11 @@
 import http = require('http')
 import { arugmentNull } from './errors';
 
+//; charset=UTF-8
+const encoding = 'UTF-8'
 export const contentTypes = {
-    applicationJSON: 'application/json',
-    textPlain: 'text/plain',
+    applicationJSON: `application/json; charset=${encoding}`,
+    textPlain: `text/plain; charset=${encoding}`,
 }
 
 export interface ActionResult {
