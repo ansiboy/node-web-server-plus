@@ -18,6 +18,7 @@ export interface Config {
     authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{
         errorResult: ActionResult;
     }>;
+    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult>)[];
 }
 export declare function startServer(config: Config): {
     staticServer: nodeStatic.Server;

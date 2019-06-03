@@ -18,8 +18,9 @@ export interface Config {
     requestUrlRewrite?: { [url_pattern: string]: string },
     controllerDirectory?: string,
     staticRootDirectory?: string,
-    staticExternalDirectories?: string[]
-    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{ errorResult: ActionResult }>
+    staticExternalDirectories?: string[],
+    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{ errorResult: ActionResult }>,
+    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult>)[],
 }
 
 export function startServer(config: Config) {
@@ -67,6 +68,17 @@ export function startServer(config: Config) {
                 if (r.errorResult) {
                     outputResult(r.errorResult, res)
                     return
+                }
+            }
+
+            if (config.actionFilters) {
+                let actionFilters = config.actionFilters || []
+                for (let i = 0; i < actionFilters.length; i++) {
+                    let result = await actionFilters[i](req, res)
+                    if (result != null) {
+                        outputResult(result, res)
+                        return
+                    }
                 }
             }
 

@@ -59,6 +59,16 @@ function startServer(config) {
                     return;
                 }
             }
+            if (config.actionFilters) {
+                let actionFilters = config.actionFilters || [];
+                for (let i = 0; i < actionFilters.length; i++) {
+                    let result = yield actionFilters[i](req, res);
+                    if (result != null) {
+                        outputResult(result, res);
+                        return;
+                    }
+                }
+            }
             //=====================================================================
             // 处理 URL 转发
             if (config.proxy) {
