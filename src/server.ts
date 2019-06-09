@@ -90,8 +90,8 @@ export function startServer(config: Config) {
                     let reqUrl = req.url || ''
                     let arr = regex.exec(reqUrl)
                     if (arr != null && arr.length > 0) {
-
-                        let targetUrl = reqUrl.replace(/\$(\d+)/, (match, number) => {
+                        let targetUrl = config.proxy[key]
+                        targetUrl = targetUrl.replace(/\$(\d+)/, (match, number) => {
                             if (arr == null) throw errors.unexpectedNullValue('arr')
 
                             return typeof arr[number] != 'undefined' ? arr[number] : match;
@@ -238,11 +238,11 @@ function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.Se
 function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse) {
 
     let u = url.parse(targetUrl)
-    let { protocol, host, port, path } = u
+    let { protocol, hostname, port, path } = u
     let headers: any = req.headers;
     let request = http.request(
         {
-            protocol, host, port, path,
+            protocol, hostname, port, path,
             method: req.method,
             headers: headers,
         },
