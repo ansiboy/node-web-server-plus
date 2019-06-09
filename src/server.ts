@@ -82,6 +82,16 @@ export function startServer(config: Config) {
                 }
             }
 
+            let requestUrl = req.url || ''
+            let urlInfo = url.parse(requestUrl);
+            let pathName = urlInfo.pathname || '';
+
+            let { action, controller } = controllerLoader.getAction(pathName)
+            if (action != null && controller != null) {
+                executeAction(controller, action, req, res)
+                return
+            }
+
             //=====================================================================
             // 处理 URL 转发
             if (config.proxy) {
@@ -102,17 +112,9 @@ export function startServer(config: Config) {
                 }
             }
             //=====================================================================
-            let requestUrl = req.url || ''
-            let urlInfo = url.parse(requestUrl);
-            let pathName = urlInfo.pathname || '';
 
-            let { action, controller } = controllerLoader.getAction(pathName)
-            if (action == null || controller == null) {
-                fileServer.serve(req, res)
-                return
-            }
-
-            executeAction(controller, action, req, res)
+            fileServer.serve(req, res)
+            
         }
         catch (err) {
             outputError(err, res)
