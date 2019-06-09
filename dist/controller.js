@@ -10,6 +10,10 @@ class Controller {
         let r = new action_results_1.RedirectResult(targetUrl);
         return r;
     }
+    proxy(targetUrl) {
+        let r = new action_results_1.ProxyResut(targetUrl);
+        return r;
+    }
 }
 exports.Controller = Controller;
 //# sourceMappingURL=controller.js.map

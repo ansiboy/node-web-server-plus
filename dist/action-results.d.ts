@@ -5,7 +5,7 @@ export declare const contentTypes: {
     textPlain: string;
 };
 export interface ActionResult {
-    execute(res: http.ServerResponse): void;
+    execute(res: http.ServerResponse, req: http.IncomingMessage): void;
 }
 export declare class ContentResult implements ActionResult {
     private contentType;
@@ -18,4 +18,9 @@ export declare class RedirectResult implements ActionResult {
     private targetURL;
     constructor(targetURL: string);
     execute(res: http.ServerResponse): void;
+}
+export declare class ProxyResut implements ActionResult {
+    private targetURL;
+    constructor(targetURL: string);
+    execute(res: http.ServerResponse, req: http.IncomingMessage): void;
 }

@@ -55,7 +55,7 @@ function startServer(config) {
                 if (r == null)
                     throw errors.authenticateResultNull();
                 if (r.errorResult) {
-                    outputResult(r.errorResult, res);
+                    outputResult(r.errorResult, res, req);
                     return;
                 }
             }
@@ -64,10 +64,18 @@ function startServer(config) {
                 for (let i = 0; i < actionFilters.length; i++) {
                     let result = yield actionFilters[i](req, res);
                     if (result != null) {
-                        outputResult(result, res);
+                        outputResult(result, res, req);
                         return;
                     }
                 }
+            }
+            let requestUrl = req.url || '';
+            let urlInfo = url.parse(requestUrl);
+            let pathName = urlInfo.pathname || '';
+            let { action, controller } = controllerLoader.getAction(pathName);
+            if (action != null && controller != null) {
+                executeAction(controller, action, req, res);
+                return;
             }
             //=====================================================================
             // 处理 URL 转发
@@ -89,15 +97,7 @@ function startServer(config) {
                 }
             }
             //=====================================================================
-            let requestUrl = req.url || '';
-            let urlInfo = url.parse(requestUrl);
-            let pathName = urlInfo.pathname || '';
-            let { action, controller } = controllerLoader.getAction(pathName);
-            if (action == null || controller == null) {
-                fileServer.serve(req, res);
-                return;
-            }
-            executeAction(controller, action, req, res);
+            fileServer.serve(req, res);
         }
         catch (err) {
             outputError(err, res);
@@ -124,7 +124,7 @@ function executeAction(controller, action, req, res) {
         let p = actionResult;
         if (p.then && p.catch) {
             p.then(r => {
-                outputResult(r, res);
+                outputResult(r, res, req);
             }).catch(err => {
                 outputError(err, res);
             }).finally(() => {
@@ -137,10 +137,10 @@ function executeAction(controller, action, req, res) {
             });
             return;
         }
-        outputResult(actionResult, res);
+        outputResult(actionResult, res, req);
     });
 }
-function outputResult(result, res) {
+function outputResult(result, res, req) {
     result = result === undefined ? null : result;
     let contentResult;
     if (isContentResult(result)) {
@@ -151,7 +151,7 @@ function outputResult(result, res) {
             new action_results_1.ContentResult(result, action_results_1.contentTypes.textPlain, 200) :
             new action_results_1.ContentResult(JSON.stringify(result), action_results_1.contentTypes.applicationJSON, 200);
     }
-    contentResult.execute(res);
+    contentResult.execute(res, req);
     res.end();
 }
 function isContentResult(result) {

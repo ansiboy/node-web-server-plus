@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const httpProxy = require("http-proxy");
 const errors_1 = require("./errors");
+var proxy = httpProxy.createProxyServer();
 //; charset=UTF-8
 const encoding = 'UTF-8';
 exports.contentTypes = {
@@ -31,4 +33,13 @@ class RedirectResult {
     }
 }
 exports.RedirectResult = RedirectResult;
+class ProxyResut {
+    constructor(targetURL) {
+        this.targetURL = targetURL;
+    }
+    execute(res, req) {
+        proxy.web(req, res, { target: this.targetURL });
+    }
+}
+exports.ProxyResut = ProxyResut;
 //# sourceMappingURL=action-results.js.map
