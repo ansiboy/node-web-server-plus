@@ -19,9 +19,11 @@
   },
   "homepage": "https://github.com/ansiboy/node-mvc#readme",
   "devDependencies": {
+    "@types/http-proxy": "^1.17.0",
     "@types/node": "^10.12.18"
   },
   "dependencies": {
+    "http-proxy": "^1.17.0",
     "is-class": "0.0.5",
     "maishu-node-static": "^1.2.2",
     "mime": "^2.4.2",

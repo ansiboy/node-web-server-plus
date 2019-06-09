@@ -1,4 +1,4 @@
-import { ContentResult, RedirectResult } from "./action-results";
+import { ContentResult, RedirectResult, ProxyResut } from "./action-results";
 
 export class Controller {
     content(value: string, type?: string): ContentResult {
@@ -7,6 +7,10 @@ export class Controller {
     }
     redirect(targetUrl: string) {
         let r = new RedirectResult(targetUrl)
+        return r
+    }
+    proxy(targetUrl: string) {
+        let r = new ProxyResut(targetUrl)
         return r
     }
 }

@@ -1,6 +1,8 @@
 import http = require('http')
+import httpProxy = require('http-proxy')
 import { arugmentNull } from './errors';
 
+var proxy = httpProxy.createProxyServer()
 //; charset=UTF-8
 const encoding = 'UTF-8'
 export const contentTypes = {
@@ -9,7 +11,7 @@ export const contentTypes = {
 }
 
 export interface ActionResult {
-    execute(res: http.ServerResponse): void
+    execute(res: http.ServerResponse, req: http.IncomingMessage): void
 }
 
 export class ContentResult implements ActionResult {
@@ -41,6 +43,16 @@ export class RedirectResult implements ActionResult {
 
     execute(res: http.ServerResponse): void {
         res.writeHead(302, { 'Location': this.targetURL })
+    }
+}
+
+export class ProxyResut implements ActionResult {
+    private targetURL: string;
+    constructor(targetURL: string) {
+        this.targetURL = targetURL
+    }
+    execute(res: http.ServerResponse, req: http.IncomingMessage): void {
+        proxy.web(req, res, { target: this.targetURL })
     }
 
 }

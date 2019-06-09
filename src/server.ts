@@ -66,7 +66,7 @@ export function startServer(config: Config) {
                     throw errors.authenticateResultNull()
 
                 if (r.errorResult) {
-                    outputResult(r.errorResult, res)
+                    outputResult(r.errorResult, res, req)
                     return
                 }
             }
@@ -76,7 +76,7 @@ export function startServer(config: Config) {
                 for (let i = 0; i < actionFilters.length; i++) {
                     let result = await actionFilters[i](req, res)
                     if (result != null) {
-                        outputResult(result, res)
+                        outputResult(result, res, req)
                         return
                     }
                 }
@@ -144,7 +144,7 @@ async function executeAction(controller: object, action: Function, req: http.Inc
     let p = actionResult as Promise<any>
     if (p.then && p.catch) {
         p.then(r => {
-            outputResult(r, res)
+            outputResult(r, res, req)
         }).catch(err => {
             outputError(err, res)
         }).finally(() => {
@@ -158,10 +158,10 @@ async function executeAction(controller: object, action: Function, req: http.Inc
         return
     }
 
-    outputResult(actionResult, res)
+    outputResult(actionResult, res, req)
 }
 
-function outputResult(result: object | null, res: http.ServerResponse) {
+function outputResult(result: object | null, res: http.ServerResponse, req: http.IncomingMessage) {
     result = result === undefined ? null : result
     let contentResult: ActionResult
     if (isContentResult(result)) {
@@ -173,7 +173,7 @@ function outputResult(result: object | null, res: http.ServerResponse) {
             new ContentResult(JSON.stringify(result), contentTypes.applicationJSON, 200)
     }
 
-    contentResult.execute(res)
+    contentResult.execute(res, req)
     res.end()
 }
 
