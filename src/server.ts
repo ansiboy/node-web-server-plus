@@ -10,17 +10,25 @@ import { metaKeys, ActionParameterDecoder, createParameterDecorator } from './at
 
 const DefaultControllerPath = 'controllers'
 const DefaultStaticFileDirectory = 'public'
+
+interface ProxyItem {
+    targetUrl: string,
+    headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>)
+}
+
 export interface Config {
     port: number,
     bindIP?: string,
     rootPath: string,
-    proxy?: { [path_pattern: string]: string },
-    requestUrlRewrite?: { [url_pattern: string]: string },
+    proxy?: { [path_pattern: string]: string | ProxyItem },
     controllerDirectory?: string,
     staticRootDirectory?: string,
     staticExternalDirectories?: string[],
     authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{ errorResult: ActionResult }>,
     actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult>)[],
+
+    /** 设置默认的 Http Header */
+    headers?: { [name: string]: string }
 }
 
 export function startServer(config: Config) {
@@ -54,12 +62,16 @@ export function startServer(config: Config) {
     })
 
     let server = http.createServer(async (req, res) => {
+        if (config.headers) {
+            for (let key in config.headers) {
+                res.setHeader(key, config.headers[key])
+            }
+        }
         if (req.method == 'OPTIONS') {
             res.end()
             return
         }
         try {
-
             if (config.authenticate) {
                 let r = await config.authenticate(req, res)
                 if (r == null)
@@ -100,13 +112,36 @@ export function startServer(config: Config) {
                     let reqUrl = req.url || ''
                     let arr = regex.exec(reqUrl)
                     if (arr != null && arr.length > 0) {
-                        let targetUrl = config.proxy[key]
+                        let proxyItem: ProxyItem = typeof config.proxy[key] == 'object' ? config.proxy[key] as ProxyItem : { targetUrl: config.proxy[key] } as ProxyItem
+                        let targetUrl = proxyItem.targetUrl
                         targetUrl = targetUrl.replace(/\$(\d+)/, (match, number) => {
                             if (arr == null) throw errors.unexpectedNullValue('arr')
 
                             return typeof arr[number] != 'undefined' ? arr[number] : match;
                         })
-                        proxyRequest(targetUrl, req, res)
+                        let headers: { [key: string]: string } | undefined = undefined
+                        if (typeof proxyItem.headers == 'function') {
+                            let r = proxyItem.headers(req)
+                            let p = r as Promise<any>
+                            // let headers
+                            if (p != null && p.then && p.catch) {
+                                // p.then(d => {
+                                //     headers = d
+                                // }).catch(err => {
+                                //     outputError(err, res)
+                                //     return
+                                // })
+                                headers = await p
+                            }
+                            else {
+                                headers = r as { [key: string]: string }
+                            }
+                        }
+                        else if (typeof proxyItem.headers == 'object') {
+                            headers = proxyItem.headers
+                        }
+
+                        proxyRequest(targetUrl, req, res, headers)
                         return
                     }
                 }
@@ -114,7 +149,7 @@ export function startServer(config: Config) {
             //=====================================================================
 
             fileServer.serve(req, res)
-            
+
         }
         catch (err) {
             outputError(err, res)
@@ -144,18 +179,21 @@ async function executeAction(controller: object, action: Function, req: http.Inc
 
     let actionResult = action.apply(controller, parameters)
     let p = actionResult as Promise<any>
-    if (p.then && p.catch) {
-        p.then(r => {
-            outputResult(r, res, req)
-        }).catch(err => {
-            outputError(err, res)
-        }).finally(() => {
+    if (p != null && p.then && p.catch) {
+        let disposeParameter = () => {
             for (let i = 0; i < parameterDecoders.length; i++) {
                 let d = parameterDecoders[i]
                 if (d.disposeParameter) {
                     d.disposeParameter(parameters[d.parameterIndex])
                 }
             }
+        }
+        p.then(r => {
+            outputResult(r, res, req)
+            disposeParameter()
+        }).catch(err => {
+            outputError(err, res)
+            disposeParameter()
         })
         return
     }
@@ -222,8 +260,8 @@ function errorOutputObject(err: Error) {
     return outputObject
 }
 
-function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse) {
-    let request = createTargetResquest(targetUrl, req, res);
+function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: { [key: string]: string }) {
+    let request = createTargetResquest(targetUrl, req, res, headers);
 
     request.on('error', function (err) {
         outputError(err, res);
@@ -237,11 +275,13 @@ function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.Se
     })
 }
 
-function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse) {
+function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: { [key: string]: string }) {
 
     let u = url.parse(targetUrl)
     let { protocol, hostname, port, path } = u
-    let headers: any = req.headers;
+    // let headers: any = req.headers;
+    headers = headers || {}
+    headers = Object.assign(req.headers, headers)
     let request = http.request(
         {
             protocol, hostname, port, path,
@@ -264,7 +304,6 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
 }
 
 
-let formDataParameterKey = Symbol("formData");
 export let formData = (function () {
 
     function getPostObject(request: http.IncomingMessage): Promise<any> {
@@ -332,7 +371,11 @@ export let formData = (function () {
             return queryData
         }
         else {
+            let queryData = getQueryObject(req);
             let data = await getPostObject(req);
+
+            console.assert(queryData != null)
+            data = Object.assign(data, queryData)
             return data
         }
 
