@@ -45,6 +45,11 @@ function startServer(config) {
         externalPaths
     });
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
+        if (config.headers) {
+            for (let key in config.headers) {
+                res.setHeader(key, config.headers[key]);
+            }
+        }
         if (req.method == 'OPTIONS') {
             res.end();
             return;
@@ -85,13 +90,35 @@ function startServer(config) {
                     let reqUrl = req.url || '';
                     let arr = regex.exec(reqUrl);
                     if (arr != null && arr.length > 0) {
-                        let targetUrl = config.proxy[key];
+                        let proxyItem = typeof config.proxy[key] == 'object' ? config.proxy[key] : { targetUrl: config.proxy[key] };
+                        let targetUrl = proxyItem.targetUrl;
                         targetUrl = targetUrl.replace(/\$(\d+)/, (match, number) => {
                             if (arr == null)
                                 throw errors.unexpectedNullValue('arr');
                             return typeof arr[number] != 'undefined' ? arr[number] : match;
                         });
-                        proxyRequest(targetUrl, req, res);
+                        let headers = undefined;
+                        if (typeof proxyItem.headers == 'function') {
+                            let r = proxyItem.headers(req);
+                            let p = r;
+                            // let headers
+                            if (p != null && p.then && p.catch) {
+                                // p.then(d => {
+                                //     headers = d
+                                // }).catch(err => {
+                                //     outputError(err, res)
+                                //     return
+                                // })
+                                headers = yield p;
+                            }
+                            else {
+                                headers = r;
+                            }
+                        }
+                        else if (typeof proxyItem.headers == 'object') {
+                            headers = proxyItem.headers;
+                        }
+                        proxyRequest(targetUrl, req, res, headers);
                         return;
                     }
                 }
@@ -122,18 +149,21 @@ function executeAction(controller, action, req, res) {
         }
         let actionResult = action.apply(controller, parameters);
         let p = actionResult;
-        if (p.then && p.catch) {
-            p.then(r => {
-                outputResult(r, res, req);
-            }).catch(err => {
-                outputError(err, res);
-            }).finally(() => {
+        if (p != null && p.then && p.catch) {
+            let disposeParameter = () => {
                 for (let i = 0; i < parameterDecoders.length; i++) {
                     let d = parameterDecoders[i];
                     if (d.disposeParameter) {
                         d.disposeParameter(parameters[d.parameterIndex]);
                     }
                 }
+            };
+            p.then(r => {
+                outputResult(r, res, req);
+                disposeParameter();
+            }).catch(err => {
+                outputError(err, res);
+                disposeParameter();
             });
             return;
         }
@@ -187,8 +217,8 @@ function errorOutputObject(err) {
     }
     return outputObject;
 }
-function proxyRequest(targetUrl, req, res) {
-    let request = createTargetResquest(targetUrl, req, res);
+function proxyRequest(targetUrl, req, res, headers) {
+    let request = createTargetResquest(targetUrl, req, res, headers);
     request.on('error', function (err) {
         outputError(err, res);
     });
@@ -199,10 +229,12 @@ function proxyRequest(targetUrl, req, res) {
         request.end();
     });
 }
-function createTargetResquest(targetUrl, req, res) {
+function createTargetResquest(targetUrl, req, res, headers) {
     let u = url.parse(targetUrl);
     let { protocol, hostname, port, path } = u;
-    let headers = req.headers;
+    // let headers: any = req.headers;
+    headers = headers || {};
+    headers = Object.assign(req.headers, headers);
     let request = http.request({
         protocol, hostname, port, path,
         method: req.method,
@@ -218,7 +250,6 @@ function createTargetResquest(targetUrl, req, res) {
     });
     return request;
 }
-let formDataParameterKey = Symbol("formData");
 exports.formData = (function () {
     function getPostObject(request) {
         let length = request.headers['content-length'] || 0;
@@ -278,7 +309,10 @@ exports.formData = (function () {
             return queryData;
         }
         else {
+            let queryData = getQueryObject(req);
             let data = yield getPostObject(req);
+            console.assert(queryData != null);
+            data = Object.assign(data, queryData);
             return data;
         }
     }));
