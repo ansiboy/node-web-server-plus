@@ -16,10 +16,10 @@ export interface ActionResult {
 
 export class ContentResult implements ActionResult {
     private contentType: string;
-    private content: string;
+    private content: string | Buffer;
     private statusCode: number;
 
-    constructor(content: string, contentType?: string, statusCode?: number) {
+    constructor(content: string | Buffer, contentType?: string, statusCode?: number) {
         if (content == null)
             throw arugmentNull('content')
 
