@@ -11,7 +11,7 @@ export declare class ContentResult implements ActionResult {
     private contentType;
     private content;
     private statusCode;
-    constructor(content: string, contentType?: string, statusCode?: number);
+    constructor(content: string | Buffer, contentType?: string, statusCode?: number);
     execute(res: http.ServerResponse): void;
 }
 export declare class RedirectResult implements ActionResult {
