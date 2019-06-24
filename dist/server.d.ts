@@ -30,6 +30,9 @@ export interface Config {
     headers?: {
         [name: string]: string;
     };
+    virtualPaths?: {
+        [virtualPath: string]: string;
+    };
 }
 export declare function startServer(config: Config): {
     staticServer: nodeStatic.Server;

@@ -17,6 +17,7 @@ const controller_loader_1 = require("./controller-loader");
 const nodeStatic = require("maishu-node-static");
 const action_results_1 = require("./action-results");
 const attributes_1 = require("./attributes");
+let packageInfo = require('../package.json');
 const DefaultControllerPath = 'controllers';
 const DefaultStaticFileDirectory = 'public';
 function startServer(config) {
@@ -33,17 +34,32 @@ function startServer(config) {
     if (!path.isAbsolute(config.staticRootDirectory))
         config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory);
     let controllerLoader = new controller_loader_1.ControllerLoader([config.controllerDirectory]);
-    let externalPaths = config.staticExternalDirectories || [];
+    let externalPaths = [];
+    if (config.staticExternalDirectories != null && config.staticExternalDirectories.length > 0) {
+        for (let i = 0; i < config.staticExternalDirectories.length; i++) {
+            let item = config.staticExternalDirectories[i];
+            externalPaths.push(item);
+        }
+    }
     for (let i = 0; i < externalPaths.length; i++) {
         if (!path.isAbsolute(externalPaths[i])) {
             externalPaths[i] = path.join(config.rootPath, externalPaths[i]);
         }
-        externalPaths[i] = path.normalize(externalPaths[i]);
+        else {
+            externalPaths[i] = path.normalize(externalPaths[i]);
+        }
     }
     let fileServer;
     fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-        externalPaths
+        externalPaths,
+        virtualPaths: config.virtualPaths,
+        serverInfo: `maishu-node-mvc ${packageInfo.version}`,
+        gzip: true
     });
+    let fileServer_resolve = fileServer.resolve;
+    fileServer.resolve = function (pathname, req) {
+        return fileServer_resolve(pathname, req);
+    };
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
         if (config.headers) {
             for (let key in config.headers) {
