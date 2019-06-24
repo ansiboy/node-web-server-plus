@@ -8,6 +8,8 @@ import nodeStatic = require('maishu-node-static')
 import { ActionResult, ContentResult, contentTypes } from './action-results';
 import { metaKeys, ActionParameterDecoder, createParameterDecorator } from './attributes';
 
+let packageInfo = require('../package.json')
+
 const DefaultControllerPath = 'controllers'
 const DefaultStaticFileDirectory = 'public'
 
@@ -15,6 +17,11 @@ interface ProxyItem {
     targetUrl: string,
     headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>)
 }
+
+// interface ExternalDirectory {
+//     path: string
+//     alias?: string
+// }
 
 export interface Config {
     port: number,
@@ -29,6 +36,7 @@ export interface Config {
 
     /** 设置默认的 Http Header */
     headers?: { [name: string]: string }
+    virtualPaths?: { [virtualPath: string]: string }
 }
 
 export function startServer(config: Config) {
@@ -48,18 +56,35 @@ export function startServer(config: Config) {
         config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
 
     let controllerLoader = new ControllerLoader([config.controllerDirectory])
-    let externalPaths = config.staticExternalDirectories || []
+    let externalPaths: string[] = []
+    if (config.staticExternalDirectories != null && config.staticExternalDirectories.length > 0) {
+        for (let i = 0; i < config.staticExternalDirectories.length; i++) {
+            let item = config.staticExternalDirectories[i]
+            externalPaths.push(item)
+        }
+    }
+
     for (let i = 0; i < externalPaths.length; i++) {
         if (!path.isAbsolute(externalPaths[i])) {
             externalPaths[i] = path.join(config.rootPath, externalPaths[i]);
         }
-        externalPaths[i] = path.normalize(externalPaths[i]);
+        else {
+            externalPaths[i] = path.normalize(externalPaths[i]);
+        }
     }
 
     let fileServer: nodeStatic.Server
     fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-        externalPaths
+        externalPaths,
+        virtualPaths: config.virtualPaths,
+        serverInfo: `maishu-node-mvc ${packageInfo.version}`,
+        gzip: true
     })
+
+    let fileServer_resolve = fileServer.resolve
+    fileServer.resolve = function (pathname: string, req: http.IncomingMessage) {
+        return fileServer_resolve(pathname, req)
+    }
 
     let server = http.createServer(async (req, res) => {
         if (config.headers) {
