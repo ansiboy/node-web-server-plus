@@ -28,7 +28,7 @@ export interface Config {
     bindIP?: string,
     rootPath: string,
     proxy?: { [path_pattern: string]: string | ProxyItem },
-    controllerDirectory?: string,
+    controllerDirectory?: string | string[],
     staticRootDirectory?: string,
     staticExternalDirectories?: string[],
     authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{ errorResult: ActionResult }>,
@@ -49,13 +49,25 @@ export function startServer(config: Config) {
     if (!config.staticRootDirectory)
         config.staticRootDirectory = DefaultStaticFileDirectory
 
-    if (!path.isAbsolute(config.controllerDirectory))
-        config.controllerDirectory = path.join(config.rootPath, config.controllerDirectory)
+    let controllerDirectories: string[] = []
+    if (config.controllerDirectory) {
+        if (typeof config.controllerDirectory == 'string')
+            controllerDirectories.push(config.controllerDirectory)
+        else
+            controllerDirectories = config.controllerDirectory
+    }
+
+    for (let i = 0; i < controllerDirectories.length; i++) {
+        if (!path.isAbsolute(controllerDirectories[i]))
+            controllerDirectories[i] = path.join(config.rootPath, controllerDirectories[i])
+    }
+
+    // config.controllerDirectory = path.join(config.rootPath, config.controllerDirectory)
 
     if (!path.isAbsolute(config.staticRootDirectory))
         config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
 
-    let controllerLoader = new ControllerLoader([config.controllerDirectory])
+    let controllerLoader = new ControllerLoader(controllerDirectories)
     let externalPaths: string[] = []
     if (config.staticExternalDirectories != null && config.staticExternalDirectories.length > 0) {
         for (let i = 0; i < config.staticExternalDirectories.length; i++) {
@@ -83,7 +95,7 @@ export function startServer(config: Config) {
 
     let fileServer_resolve = fileServer.resolve
     fileServer.resolve = function (pathname: string, req: http.IncomingMessage) {
-        return fileServer_resolve(pathname, req)
+        return fileServer_resolve.apply(fileServer, [pathname, req])
     }
 
     let server = http.createServer(async (req, res) => {
@@ -352,7 +364,7 @@ export let formData = (function () {
                     else {
                         obj = querystring.parse(text);
                     }
-                    reslove(obj);
+                    reslove(obj || {});
                 }
                 catch (err) {
                     reject(err);

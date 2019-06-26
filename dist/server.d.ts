@@ -19,7 +19,7 @@ export interface Config {
     proxy?: {
         [path_pattern: string]: string | ProxyItem;
     };
-    controllerDirectory?: string;
+    controllerDirectory?: string | string[];
     staticRootDirectory?: string;
     staticExternalDirectories?: string[];
     authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{

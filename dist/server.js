@@ -29,11 +29,21 @@ function startServer(config) {
         config.controllerDirectory = DefaultControllerPath;
     if (!config.staticRootDirectory)
         config.staticRootDirectory = DefaultStaticFileDirectory;
-    if (!path.isAbsolute(config.controllerDirectory))
-        config.controllerDirectory = path.join(config.rootPath, config.controllerDirectory);
+    let controllerDirectories = [];
+    if (config.controllerDirectory) {
+        if (typeof config.controllerDirectory == 'string')
+            controllerDirectories.push(config.controllerDirectory);
+        else
+            controllerDirectories = config.controllerDirectory;
+    }
+    for (let i = 0; i < controllerDirectories.length; i++) {
+        if (!path.isAbsolute(controllerDirectories[i]))
+            controllerDirectories[i] = path.join(config.rootPath, controllerDirectories[i]);
+    }
+    // config.controllerDirectory = path.join(config.rootPath, config.controllerDirectory)
     if (!path.isAbsolute(config.staticRootDirectory))
         config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory);
-    let controllerLoader = new controller_loader_1.ControllerLoader([config.controllerDirectory]);
+    let controllerLoader = new controller_loader_1.ControllerLoader(controllerDirectories);
     let externalPaths = [];
     if (config.staticExternalDirectories != null && config.staticExternalDirectories.length > 0) {
         for (let i = 0; i < config.staticExternalDirectories.length; i++) {
@@ -58,7 +68,7 @@ function startServer(config) {
     });
     let fileServer_resolve = fileServer.resolve;
     fileServer.resolve = function (pathname, req) {
-        return fileServer_resolve(pathname, req);
+        return fileServer_resolve.apply(fileServer, [pathname, req]);
     };
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
         if (config.headers) {
@@ -286,7 +296,7 @@ exports.formData = (function () {
                     else {
                         obj = querystring.parse(text);
                     }
-                    reslove(obj);
+                    reslove(obj || {});
                 }
                 catch (err) {
                     reject(err);
