@@ -380,20 +380,27 @@ export let formData = (function () {
     function getQueryObject(request: http.IncomingMessage): { [key: string]: any } {
         let contentType = request.headers['content-type'] as string;
         let obj: { [key: string]: any } = {};
-        if (contentType != null && contentType.indexOf('application/json') >= 0) {
+        let urlInfo = url.parse(request.url || '');
+        let { query } = urlInfo;
+
+        if (!query) {
+            return obj;
+        }
+
+        query = decodeURIComponent(query);
+        let queryIsJSON = (contentType != null && contentType.indexOf('application/json') >= 0) ||
+            (query != null && query[0] == '{' && query[query.length - 1] == '}')
+
+        if (queryIsJSON) {
             let arr = (request.url || '').split('?');
             let str = arr[1]
             if (str != null) {
-                str = decodeURI(str);
+                str = decodeURIComponent(str);
                 obj = JSON.parse(str);  //TODO：异常处理
             }
         }
         else {
-            let urlInfo = url.parse(request.url || '');
-            let { search } = urlInfo;
-            if (search) {
-                obj = querystring.parse(search.substr(1));
-            }
+            obj = querystring.parse(query);
         }
 
         return obj;
