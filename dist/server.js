@@ -197,18 +197,20 @@ function executeAction(controller, action, req, res) {
     });
 }
 function outputResult(result, res, req) {
-    result = result === undefined ? null : result;
-    let contentResult;
-    if (isContentResult(result)) {
-        contentResult = result;
-    }
-    else {
-        contentResult = typeof result == 'string' ?
-            new action_results_1.ContentResult(result, action_results_1.contentTypes.textPlain, 200) :
-            new action_results_1.ContentResult(JSON.stringify(result), action_results_1.contentTypes.applicationJSON, 200);
-    }
-    contentResult.execute(res, req);
-    res.end();
+    return __awaiter(this, void 0, void 0, function* () {
+        result = result === undefined ? null : result;
+        let contentResult;
+        if (isContentResult(result)) {
+            contentResult = result;
+        }
+        else {
+            contentResult = typeof result == 'string' ?
+                new action_results_1.ContentResult(result, action_results_1.contentTypes.textPlain, 200) :
+                new action_results_1.ContentResult(JSON.stringify(result), action_results_1.contentTypes.applicationJSON, 200);
+        }
+        yield contentResult.execute(res, req);
+        res.end();
+    });
 }
 function isContentResult(result) {
     if (result == null)
@@ -236,6 +238,7 @@ function outputError(err, res) {
     res.write(str);
     res.end();
 }
+exports.outputError = outputError;
 function errorOutputObject(err) {
     let outputObject = { message: err.message, name: err.name, stack: err.stack };
     if (err.innerError) {
@@ -244,17 +247,24 @@ function errorOutputObject(err) {
     return outputObject;
 }
 function proxyRequest(targetUrl, req, res, headers) {
-    let request = createTargetResquest(targetUrl, req, res, headers);
-    request.on('error', function (err) {
-        outputError(err, res);
-    });
-    req.on('data', (data) => {
-        request.write(data);
-    });
-    req.on('end', () => {
-        request.end();
+    return new Promise((resolve, reject) => {
+        let request = createTargetResquest(targetUrl, req, res, headers);
+        request.on('error', function (err) {
+            outputError(err, res);
+            reject(err);
+        });
+        request.on("close", () => {
+            resolve();
+        });
+        req.on('data', (data) => {
+            request.write(data);
+        });
+        req.on('end', () => {
+            request.end();
+        });
     });
 }
+exports.proxyRequest = proxyRequest;
 function createTargetResquest(targetUrl, req, res, headers) {
     let u = url.parse(targetUrl);
     let { protocol, hostname, port, path } = u;
@@ -311,20 +321,24 @@ exports.formData = (function () {
     function getQueryObject(request) {
         let contentType = request.headers['content-type'];
         let obj = {};
-        if (contentType != null && contentType.indexOf('application/json') >= 0) {
+        let urlInfo = url.parse(request.url || '');
+        let { query } = urlInfo;
+        if (!query) {
+            return obj;
+        }
+        query = decodeURIComponent(query);
+        let queryIsJSON = (contentType != null && contentType.indexOf('application/json') >= 0) ||
+            (query != null && query[0] == '{' && query[query.length - 1] == '}');
+        if (queryIsJSON) {
             let arr = (request.url || '').split('?');
             let str = arr[1];
             if (str != null) {
-                str = decodeURI(str);
+                str = decodeURIComponent(str);
                 obj = JSON.parse(str); //TODO：异常处理
             }
         }
         else {
-            let urlInfo = url.parse(request.url || '');
-            let { search } = urlInfo;
-            if (search) {
-                obj = querystring.parse(search.substr(1));
-            }
+            obj = querystring.parse(query);
         }
         return obj;
     }

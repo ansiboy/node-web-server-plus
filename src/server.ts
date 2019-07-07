@@ -238,7 +238,7 @@ async function executeAction(controller: object, action: Function, req: http.Inc
     outputResult(actionResult, res, req)
 }
 
-function outputResult(result: object | null, res: http.ServerResponse, req: http.IncomingMessage) {
+async function outputResult(result: object | null, res: http.ServerResponse, req: http.IncomingMessage) {
     result = result === undefined ? null : result
     let contentResult: ActionResult
     if (isContentResult(result)) {
@@ -250,7 +250,7 @@ function outputResult(result: object | null, res: http.ServerResponse, req: http
             new ContentResult(JSON.stringify(result), contentTypes.applicationJSON, 200)
     }
 
-    contentResult.execute(res, req)
+    await contentResult.execute(res, req)
     res.end()
 }
 
@@ -265,7 +265,7 @@ function isContentResult(result: object | null) {
     return false
 }
 
-function outputError(err: Error, res: http.ServerResponse) {
+export function outputError(err: Error, res: http.ServerResponse) {
     if (err == null) {
         err = new Error(`Unkonwn error because original error is null.`)
         err.name = 'nullError'
@@ -297,18 +297,25 @@ function errorOutputObject(err: Error) {
     return outputObject
 }
 
-function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: { [key: string]: string }) {
-    let request = createTargetResquest(targetUrl, req, res, headers);
+export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: { [key: string]: string }) {
+    return new Promise((resolve, reject) => {
+        let request = createTargetResquest(targetUrl, req, res, headers);
 
-    request.on('error', function (err) {
-        outputError(err, res);
-    })
+        request.on('error', function (err) {
+            outputError(err, res);
+            reject(err);
+        })
 
-    req.on('data', (data) => {
-        request.write(data);
-    })
-    req.on('end', () => {
-        request.end();
+        request.on("close", () => {
+            resolve();
+        })
+
+        req.on('data', (data) => {
+            request.write(data);
+        })
+        req.on('end', () => {
+            request.end();
+        })
     })
 }
 

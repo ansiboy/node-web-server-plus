@@ -1,8 +1,12 @@
 import http = require('http')
 import httpProxy = require('http-proxy')
 import { arugmentNull } from './errors';
+import { outputError, proxyRequest } from './server';
+import url = require('url');
+import path = require("path");
 
-var proxy = httpProxy.createProxyServer()
+var proxy = httpProxy.createProxyServer();
+
 //; charset=UTF-8
 const encoding = 'UTF-8'
 export const contentTypes = {
@@ -11,7 +15,7 @@ export const contentTypes = {
 }
 
 export interface ActionResult {
-    execute(res: http.ServerResponse, req: http.IncomingMessage): void
+    execute(res: http.ServerResponse, req: http.IncomingMessage): Promise<any>
 }
 
 export class ContentResult implements ActionResult {
@@ -28,7 +32,7 @@ export class ContentResult implements ActionResult {
         this.statusCode = statusCode || 200
     }
 
-    execute(res: http.ServerResponse): void {
+    async execute(res: http.ServerResponse) {
         res.setHeader("content-type", this.contentType)
         res.statusCode = this.statusCode;
         res.write(this.content)
@@ -41,7 +45,7 @@ export class RedirectResult implements ActionResult {
         this.targetURL = targetURL
     }
 
-    execute(res: http.ServerResponse): void {
+    async execute(res: http.ServerResponse) {
         res.writeHead(302, { 'Location': this.targetURL })
     }
 }
@@ -51,8 +55,14 @@ export class ProxyResut implements ActionResult {
     constructor(targetURL: string) {
         this.targetURL = targetURL
     }
-    execute(res: http.ServerResponse, req: http.IncomingMessage): void {
-        proxy.web(req, res, { target: this.targetURL })
+    execute(res: http.ServerResponse, req: http.IncomingMessage) {
+        let targetURL = this.targetURL;
+        if (req.url) {
+            let u = url.parse(req.url);
+            targetURL = path.join(targetURL, u.path || "");
+        }
+
+        return proxyRequest(targetURL, req, res);
     }
 
 }
