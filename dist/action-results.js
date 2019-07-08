@@ -8,12 +8,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const httpProxy = require("http-proxy");
 const errors_1 = require("./errors");
 const server_1 = require("./server");
 const url = require("url");
 const path = require("path");
-var proxy = httpProxy.createProxyServer();
 //; charset=UTF-8
 const encoding = 'UTF-8';
 exports.contentTypes = {

@@ -1,11 +1,9 @@
 import http = require('http')
-import httpProxy = require('http-proxy')
 import { arugmentNull } from './errors';
 import { outputError, proxyRequest } from './server';
 import url = require('url');
 import path = require("path");
 
-var proxy = httpProxy.createProxyServer();
 
 //; charset=UTF-8
 const encoding = 'UTF-8'
