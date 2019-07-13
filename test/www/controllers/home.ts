@@ -1,6 +1,7 @@
 import { controller, action, createParameterDecorator, formData } from '../../../dist/index'
 import { ConnectionOptions } from 'tls';
 import { actionPaths } from '../actionPaths';
+import { routeData } from '../../../dist/server';
 
 // function connection() {
 
@@ -51,9 +52,9 @@ class HomeController {
         return {}
     }
 
-    @action(`${actionPaths.home.redirect}/:module/*`)
-    redirect() {
-        return {}
+    @action(`${actionPaths.home.redirect}/:module(/*)`)
+    redirect(@routeData data) {
+        return data
     }
 }
 

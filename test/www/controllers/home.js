@@ -22,6 +22,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = require("../../../dist/index");
 const actionPaths_1 = require("../actionPaths");
+const server_1 = require("../../../dist/server");
 // function connection() {
 // }
 // function createParameterDecorator<T>(createParameter: () => T, disposeParameter: (parameter: T) => void) {
@@ -56,8 +57,8 @@ class HomeController {
     product() {
         return {};
     }
-    redirect() {
-        return {};
+    redirect(data) {
+        return data;
     }
 };
 __decorate([
@@ -87,9 +88,10 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "product", null);
 __decorate([
-    index_1.action(`${actionPaths_1.actionPaths.home.redirect}/:module/*`),
+    index_1.action(`${actionPaths_1.actionPaths.home.redirect}/:module(/*)`),
+    __param(0, server_1.routeData),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "redirect", null);
 HomeController = __decorate([

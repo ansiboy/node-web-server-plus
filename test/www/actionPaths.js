@@ -6,7 +6,7 @@ exports.actionPaths = {
         test: "/Home/test",
         distributor: "/home/distributor",
         product: "/home/product",
-        redirect: "/home/redirect"
+        redirect: "/home/d"
     }
 };
 //# sourceMappingURL=actionPaths.js.map

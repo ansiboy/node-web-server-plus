@@ -103,9 +103,9 @@ function startServer(config) {
             let requestUrl = req.url || '';
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
-            let { action, controller } = controllerLoader.getAction(pathName);
+            let { action, controller, routeData } = controllerLoader.getAction(pathName);
             if (action != null && controller != null) {
-                executeAction(controller, action, req, res);
+                executeAction(controller, action, routeData, req, res);
                 return;
             }
             //=====================================================================
@@ -163,14 +163,14 @@ function startServer(config) {
     return { staticServer: fileServer };
 }
 exports.startServer = startServer;
-function executeAction(controller, action, req, res) {
+function executeAction(controller, action, routeData, req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         let parameters = [];
         let parameterDecoders = []; //& { parameterValue?: any }
         parameterDecoders = Reflect.getMetadata(attributes_1.metaKeys.parameter, controller, action.name) || [];
         for (let i = 0; i < parameterDecoders.length; i++) {
             let metaData = parameterDecoders[i];
-            let parameterValue = yield metaData.createParameter(req);
+            let parameterValue = yield metaData.createParameter(req, routeData);
             parameters[metaData.parameterIndex] = parameterValue;
         }
         let actionResult = action.apply(controller, parameters);
@@ -286,7 +286,7 @@ function createTargetResquest(targetUrl, req, res, headers) {
     });
     return request;
 }
-exports.formData = (function () {
+exports.routeData = (function () {
     function getPostObject(request) {
         let length = request.headers['content-length'] || 0;
         let contentType = request.headers['content-type'];
@@ -342,19 +342,26 @@ exports.formData = (function () {
         }
         return obj;
     }
-    return attributes_1.createParameterDecorator((req) => __awaiter(this, void 0, void 0, function* () {
-        if (req.method == 'GET') {
-            let queryData = getQueryObject(req);
-            // dataPromise = Promise.resolve(queryData);
-            return queryData;
-        }
-        else {
-            let queryData = getQueryObject(req);
+    return attributes_1.createParameterDecorator((req, routeData) => __awaiter(this, void 0, void 0, function* () {
+        let obj = routeData = routeData || {};
+        let queryData = getQueryObject(req);
+        console.assert(queryData != null);
+        obj = Object.assign(obj, queryData);
+        // if (req.method == 'GET') {
+        //     let queryData = getQueryObject(req);
+        //     // dataPromise = Promise.resolve(queryData);
+        //     return queryData
+        // }
+        // else {
+        // let queryData = getQueryObject(req);
+        if (req.method != 'GET') {
             let data = yield getPostObject(req);
-            console.assert(queryData != null);
-            data = Object.assign(data, queryData);
-            return data;
+            obj = Object.assign(obj, data);
         }
+        // console.assert(queryData != null)
+        return obj;
+        // }
     }));
 })();
+exports.formData = exports.routeData;
 //# sourceMappingURL=server.js.map
