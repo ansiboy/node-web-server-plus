@@ -5,9 +5,16 @@ const fs = require("fs");
 const path = require("path");
 const isClass = require("is-class");
 const attributes_1 = require("./attributes");
+const router_1 = require("./router");
+// import Route = require("route-parser");
+const UrlPattern = require("url-pattern");
 class ControllerLoader {
+    // private routes: Route[] = [];
     constructor(controller_directories) {
-        this.actions = {};
+        // 使用路径进行匹配的 action
+        this.pathActions = {};
+        // 使用路由进行匹配的 action
+        this.routeActions = [];
         if (controller_directories == null || controller_directories.length == 0)
             throw errors.arugmentNull('areas');
         let controllerPaths = {};
@@ -34,7 +41,13 @@ class ControllerLoader {
                     if (actionPath[0] != '/') {
                         actionPath = this.joinPaths(c.path, actionPath);
                     }
-                    this.actions[actionPath] = { controllerType: c.type, memberName: a.memberName };
+                    if (router_1.isRouteString(actionPath)) {
+                        let route = new UrlPattern(actionPath);
+                        this.routeActions.push({ route, controllerType: c.type, memberName: a.memberName });
+                    }
+                    else {
+                        this.pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName };
+                    }
                 }
             });
         });
@@ -100,26 +113,24 @@ class ControllerLoader {
         // 去掉路径末尾的 / ，例如：/shop/test/ 变为 /shop/test, 如果路径 / 则保持不变
         if (virtualPath[virtualPath.length - 1] == '/' && virtualPath.length > 1)
             virtualPath = virtualPath.substr(0, virtualPath.length - 1);
-        let actionInfo = this.actions[virtualPath];
-        if (actionInfo == null) {
-            // throw innerErrors.actionNotExists(virtualPath)
-            return { action: null, controller: null };
+        let actionInfo = this.pathActions[virtualPath];
+        let controller = null;
+        let action = null;
+        let routeData = null;
+        if (actionInfo != null) {
+            controller = new actionInfo.controllerType();
+            action = controller[actionInfo.memberName];
+            console.assert(action != null);
         }
-        let controller = new actionInfo.controllerType();
-        let action = controller[actionInfo.memberName];
-        console.assert(action != null);
-        return { action, controller };
-    }
-    isActionExists(virtualPath) {
-        if (!virtualPath)
-            throw errors.arugmentNull('virtualPath');
-        // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
-        virtualPath = virtualPath.replace(/\/+/g, '/');
-        // 去掉路径末尾的 / ，例如：/shop/test/ 变为 /shop/test, 如果路径 / 则保持不变
-        if (virtualPath[virtualPath.length - 1] == '/' && virtualPath.length > 1)
-            virtualPath = virtualPath.substr(0, virtualPath.length - 1);
-        let actionInfo = this.actions[virtualPath];
-        return actionInfo != null;
+        for (let i = 0; i < this.routeActions.length; i++) {
+            let r = this.routeActions[i].route.match(virtualPath);
+            if (r) {
+                routeData = r;
+                controller = new this.routeActions[i].controllerType();
+                action = controller[this.routeActions[i].memberName];
+            }
+        }
+        return { action, controller, routeData };
     }
 }
 exports.ControllerLoader = ControllerLoader;

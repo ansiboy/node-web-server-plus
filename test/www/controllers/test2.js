@@ -1,4 +1,4 @@
-const { controller, action, register } = require('../../dist/index')
+const { controller, action, register } = require('../../../dist/index')
 
 class Test2 {
     check() {

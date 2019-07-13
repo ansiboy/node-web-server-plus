@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const index_1 = require("../dist/index");
+const index_1 = require("../../dist/index");
 index_1.startServer({
     port: 1234,
     rootPath: __dirname

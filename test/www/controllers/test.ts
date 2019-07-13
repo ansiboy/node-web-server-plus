@@ -1,6 +1,6 @@
 import { join } from "path";
 
-const { controller, action } = require('../../dist/index')
+import { controller, action } from '../../../dist/index';
 
 @controller()
 class Test {
