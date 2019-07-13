@@ -135,9 +135,9 @@ export function startServer(config: Config) {
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
 
-            let { action, controller } = controllerLoader.getAction(pathName)
+            let { action, controller, routeData } = controllerLoader.getAction(pathName)
             if (action != null && controller != null) {
-                executeAction(controller, action, req, res)
+                executeAction(controller, action, routeData, req, res)
                 return
             }
 
@@ -202,19 +202,20 @@ export function startServer(config: Config) {
     return { staticServer: fileServer }
 }
 
-async function executeAction(controller: object, action: Function, req: http.IncomingMessage, res: http.ServerResponse) {
+async function executeAction(controller: object, action: Function, routeData: { [key: string]: string } | null,
+    req: http.IncomingMessage, res: http.ServerResponse) {
 
     let parameters: object[] = []
 
     let parameterDecoders: (ActionParameterDecoder<any>)[] = []//& { parameterValue?: any }
     parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name) || []
     for (let i = 0; i < parameterDecoders.length; i++) {
-        let metaData = parameterDecoders[i]
-        let parameterValue = await metaData.createParameter(req)
-        parameters[metaData.parameterIndex] = parameterValue
+        let metaData = parameterDecoders[i];
+        let parameterValue = await metaData.createParameter(req, routeData);
+        parameters[metaData.parameterIndex] = parameterValue;
     }
 
-    let actionResult = action.apply(controller, parameters)
+    let actionResult = action.apply(controller, parameters);
     let p = actionResult as Promise<any>
     if (p != null && p.then && p.catch) {
         let disposeParameter = () => {
@@ -348,7 +349,7 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
 }
 
 
-export let formData = (function () {
+export let routeData = (function () {
 
     function getPostObject(request: http.IncomingMessage): Promise<any> {
         let length = request.headers['content-length'] || 0;
@@ -413,24 +414,31 @@ export let formData = (function () {
         return obj;
     }
 
+    return createParameterDecorator<any>(async (req, routeData) => {
+        let obj: any = routeData = routeData || {}
 
+        let queryData = getQueryObject(req);
+        console.assert(queryData != null)
+        obj = Object.assign(obj, queryData);
 
-    return createParameterDecorator<any>(async (req) => {
-        if (req.method == 'GET') {
-            let queryData = getQueryObject(req);
-            // dataPromise = Promise.resolve(queryData);
-            return queryData
-        }
-        else {
-            let queryData = getQueryObject(req);
+        // if (req.method == 'GET') {
+        //     let queryData = getQueryObject(req);
+        //     // dataPromise = Promise.resolve(queryData);
+        //     return queryData
+        // }
+        // else {
+        // let queryData = getQueryObject(req);
+        if (req.method != 'GET') {
             let data = await getPostObject(req);
-
-            console.assert(queryData != null)
-            data = Object.assign(data, queryData)
-            return data
+            obj = Object.assign(obj, data)
         }
 
+        // console.assert(queryData != null)
+        return obj;
+        // }
     })
 
 })()
+
+export let formData = routeData;
 
