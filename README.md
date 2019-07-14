@@ -23,7 +23,7 @@ startServer({
 ```ts
 import { Controller } from 'maishu-node-mvc';
 
-class Home extends Controller {
+export class Home extends Controller {
     @action("/")
     index() {
         return 'node mvc'
@@ -108,7 +108,7 @@ startServer({
 ```ts
 import { Controller } from 'maishu-node-mvc';
 
-class Home extends Controller {
+export class Home extends Controller {
     @action("/")
     index() {
         return 'node mvc'
@@ -120,7 +120,7 @@ class Home extends Controller {
 import { controller, Controller } from 'maishu-node-mvc';
 
 @controller()
-class Home extends Controller {
+export class Home extends Controller {
     @action("/")
     index() {
         return 'node mvc'
@@ -137,7 +137,7 @@ controller 路径，在使用 controller 装饰器时，可以指定 controller 
 import { Controller } from 'maishu-node-mvc';
 
 @controller()
-class Home {
+export class Home {
 
 }
 
@@ -149,7 +149,7 @@ controller 的路径名为 **Home**。
 import { Controller } from 'maishu-node-mvc';
 
 @controller("/distributor/home")
-class Home {
+export class Home {
 
 }
 
@@ -168,7 +168,7 @@ action 路径，在使用 action 装饰器时，可以指定 action 路径，act
 * action，controller 都不指定路径，访问路径为控制器的默认路径加上 action 的默认路径，例如：
 
     ```ts
-    class Home extends Controller {
+    export class Home extends Controller {
         @action()
         index() {
             return 'node mvc'
@@ -189,7 +189,7 @@ action 路径，在使用 action 装饰器时，可以指定 action 路径，act
     import { controller, Controller } from 'maishu-node-mvc';
 
     @controller()
-    class Home extends Controller {
+    export class Home extends Controller {
         @action("/")
         index() {
             return 'node mvc'
