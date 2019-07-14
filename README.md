@@ -1,52 +1,62 @@
 # NODE-MVC
 
-基于 nodejs 的 MVC 框架，可用于开发 nodejs 的微服务。
+nodejs 的 MVC 框架。使用 typescript 开发，需要配合 typescript 使用。
 
-# 一分钟上手
+为什么要开发这个类库？
 
-1. npm i maishu-node-mvc
+作者使用过的 mvc 框架包括：asp.net mvc，spring boot。后来在 nodejs 下做开发，使用过 node.js express，后来听别人介绍，也了解过 egg.js 等框架，但是 nodejs 的这些 web 开发框架，都不是作者想要的。于是开发 node-mvc ，作者在开发 node-mvc 的时候，充分借鉴了 asp.net mvc 的设计，甚至起名都借鉴了 ^_^ 。
 
-# 创建 index.ts 文件
+希望这个框架能够获得大家的喜欢，QQ 讨论组：119038574
 
-```ts 
-import { startServer } from 'maishu-node-mvc';
-startServer({
-    port: 2001,
-    rootPath: __dirname
-})
-```
+## 一分钟上手
 
-# 创建 controllers 文件夹
+1. 创建 nodejs 项目文件夹，安装 node-mvc
 
-在 controllers 文件夹下创建 home.ts 文件
+    ```
+    npm i maishu-node-mvc
+    ```
 
-```ts
-import { Controller } from 'maishu-node-mvc';
+1. 创建 index.ts 文件
 
-export class Home extends Controller {
-    @action("/")
-    index() {
-        return 'node mvc'
+    ```ts 
+    import { startServer } from 'maishu-node-mvc';
+    startServer({
+        port: 2001,
+        rootPath: __dirname
+    })
+    ```
+
+1. 创建 controllers 文件夹
+
+    在 controllers 文件夹下创建 home.ts 文件
+
+    ```ts
+    import { Controller } from 'maishu-node-mvc';
+
+    export class Home extends Controller {
+        @action("/")
+        index() {
+            return 'node mvc'
+        }
     }
-}
 
-```
+    ```
 
-# 启动程序
+1. 启动程序
 
-把 ts 文件转换为 js 文件，输入命令启动程序
+    把 ts 文件转换为 js 文件，输入命令启动程序
 
-```cmd
-node index.js
-```
+    ```cmd
+    node index.js
+    ```
 
-# 在浏览器输入
+1. 在浏览器输入
 
-在浏览器输入 http://localhost:2001/ 显示
+    在浏览器输入 http://localhost:2001/ 显示
 
-```
-node mvc
-```
+    ```
+    node mvc
+    ```
 
 # 使用手册
 
@@ -324,7 +334,7 @@ export class Test extends Controller {
 }
 ```
 
-在浏览器输入：http://localhost:1234/product/1122?name=apple，可以看到浏览器输出结果为：
+在浏览器输入：http://localhost:1234/product/1122?name=apple ，可以看到浏览器输出结果为：
 
 ```
 id: 1122, name: apple
