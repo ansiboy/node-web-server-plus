@@ -353,16 +353,58 @@ id: 1122, name: apple
 其中的 **name** 来自 url 参数 
 
 
-## 内置装饰器
+## 参数注入
 
-. controller
+在了解 node-mvc 的参数注入前，先来对比一下这两段代码，为什么要使用参数注入。
 
-. action
+代码一：
 
-. routeData
+```ts
+import * as mysql from 'mysql';
+import * as settings from './settings';
+export class UserController {
+    @action()
+    async getUser(){
+        let conn = mysql.createConnection(settings.conn.auth);
+        try {
+            // 查询数据库等操作
+        }
+        finally {
+            conn.end();
+        }
+    }
+}
+```
 
+代码二，使用参数注入方法：
 
+```ts
+export class UserController {
+    @action()
+    async getUser(@connection conn: Connection){
+        // 查询数据库等操作
+    }
+}
+```
 
+对比上面这两段代码，可以发现，代码二更为简洁，因为没有 try finally 这些代码。为什么通过参数注入的方式，不需要处理连接的关闭呢，这是因为，conn 是函数外传进来给函数使用的，由外部创建，也由外部销毁。
 
+通过调用 createParameterDecorator 方法创建装饰器，然后在参数前面加上该装饰器，就可以把参数注入到函数中了。例如 @connection 的创建：
 
+```ts
+import * as mysql from 'mysql';
+import * as settings from './settings';
+import { createParameterDecorator } from 'maishu-node-mvc';
+export let connection = createParameterDecorator(
+    async () => {
+        let conn = mysql.createConnection(settings.conn.auth)
+        return conn
+    },
+    (conn) => {
+        console.assert(conn != null)
+        conn.end()
+    }
+)
+```
 
+createParameterDecorator 方法的第一个参数，为创建要注入的对象，第二个参数为销毁该对象的函数。第二个参数的函数，在 action 执行完成后进行调用。注意：进行数据库操作，要返回一个 Promise 对象。
