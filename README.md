@@ -21,7 +21,7 @@ nodejs 的 MVC 框架。使用 typescript 开发，需要配合 typescript 使�
     ```ts 
     import { startServer } from 'maishu-node-mvc';
     startServer({
-        port: 2001,
+        port: 1234,
         rootPath: __dirname
     })
     ```
@@ -52,7 +52,7 @@ nodejs 的 MVC 框架。使用 typescript 开发，需要配合 typescript 使�
 
 1. 在浏览器输入
 
-    在浏览器输入 http://localhost:2001/ 显示
+    在浏览器输入 http://localhost:1234/ 显示
 
     ```
     node mvc
@@ -67,7 +67,7 @@ nodejs 的 MVC 框架。使用 typescript 开发，需要配合 typescript 使�
 ```js 
 const { startServer } = require('maishu-node-mvc')
 startServer({
-    port: 2001,
+    port: 1234,
     rootPath: __dirname
 })
 ```
