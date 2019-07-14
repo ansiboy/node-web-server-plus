@@ -1,6 +1,6 @@
 import http = require('http')
 import { arugmentNull } from './errors';
-import { outputError, proxyRequest } from './server';
+import { proxyRequest } from './server';
 import url = require('url');
 import path = require("path");
 

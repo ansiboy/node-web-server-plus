@@ -5,7 +5,7 @@ import path = require('path')
 import { ControllerLoader } from './controller-loader';
 import nodeStatic = require('maishu-node-static')
 import { ActionResult, ContentResult, contentTypes } from './action-results';
-import { metaKeys, ActionParameterDecoder, createParameterDecorator } from './attributes';
+import { metaKeys, ActionParameterDecoder } from './attributes';
 
 let packageInfo = require('../package.json')
 
