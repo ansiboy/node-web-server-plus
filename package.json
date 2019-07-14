@@ -19,9 +19,7 @@
     },
     "homepage": "https://github.com/ansiboy/node-mvc#readme",
     "devDependencies": {
-        "@types/http-proxy": "^1.17.0",
         "@types/node": "^10.12.18",
-        "@types/route-parser": "^0.1.3",
         "mocha": "^6.1.4"
     },
     "dependencies": {
