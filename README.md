@@ -16,6 +16,16 @@ nodejs 的 MVC 框架。使用 typescript 开发，需要配合 typescript 使�
     npm i maishu-node-mvc
     ```
 
+    文件夹结构如下
+
+    ```
+    根目录
+    ├── controllers
+    |   └── home.ts
+    ├── index.ts
+    └── package.json
+    ```
+
 1. 创建 index.ts 文件
 
     ```ts 
@@ -43,16 +53,6 @@ nodejs 的 MVC 框架。使用 typescript 开发，需要配合 typescript 使�
     ```
 
 1. 启动程序
-
-    文件结构如下
-
-    ```
-    根目录
-    ├── controllers
-    |   └── home.ts
-    ├── index.ts
-    └── package.json
-    ```
 
     把 ts 文件转换为 js 文件，输入命令启动程序
 
