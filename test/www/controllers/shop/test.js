@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const index_1 = require("../../../dist/index");
+const index_1 = require("../../../../dist/index");
 let TestController = class TestController {
     index() {
         return "shop test index";

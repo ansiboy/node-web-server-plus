@@ -14,7 +14,10 @@ export let metaKeys = {
 
 export interface ActionParameterDecoder<T> {
     parameterIndex: number,
-    createParameter: (req: http.IncomingMessage) => Promise<T>,
+    createParameter: (
+        req: http.IncomingMessage,
+        routeData: { [key: string]: string } | null
+    ) => Promise<T>,
     disposeParameter?: (parameter: T) => void
 }
 
@@ -106,7 +109,8 @@ function registerAction<T>(controllerDefine: ControllerDefine, memberName: keyof
     controllerDefine.actionDefines.push({ memberName: memberName as string, paths })
 }
 
-export function createParameterDecorator<T>(createParameter: (req: http.IncomingMessage) => Promise<T>, disposeParameter?: (parameter: T) => void) {
+export function createParameterDecorator<T>(
+    createParameter: (req: http.IncomingMessage, routeData: { [key: string]: string } | null) => Promise<T>, disposeParameter?: (parameter: T) => void) {
     return function (target: Object, propertyKey: string | symbol, parameterIndex: number) {
 
         let value: ActionParameterDecoder<T>[] = Reflect.getMetadata(metaKeys.parameter, target, propertyKey) || []

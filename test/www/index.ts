@@ -1,4 +1,4 @@
-import { startServer } from '../dist/index'
+import { startServer } from '../../dist/index'
 import path = require('path')
 startServer({
     port: 1234,

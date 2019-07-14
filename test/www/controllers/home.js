@@ -20,7 +20,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const index_1 = require("../../dist/index");
+const index_1 = require("../../../dist/index");
+const actionPaths_1 = require("../actionPaths");
+const server_1 = require("../../../dist/server");
 // function connection() {
 // }
 // function createParameterDecorator<T>(createParameter: () => T, disposeParameter: (parameter: T) => void) {
@@ -49,9 +51,18 @@ class HomeController {
     test({ arg }) {
         return arg;
     }
+    distributor() {
+        return {};
+    }
+    product() {
+        return {};
+    }
+    redirect(data) {
+        return data;
+    }
 };
 __decorate([
-    index_1.action("/"),
+    index_1.action(actionPaths_1.actionPaths.home.index),
     __param(0, connection), __param(1, index_1.formData),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
@@ -64,6 +75,25 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "test", null);
+__decorate([
+    index_1.action(`${actionPaths_1.actionPaths.home.distributor}/*`),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], HomeController.prototype, "distributor", null);
+__decorate([
+    index_1.action(`${actionPaths_1.actionPaths.home.product}/:id`),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], HomeController.prototype, "product", null);
+__decorate([
+    index_1.action(`${actionPaths_1.actionPaths.home.redirect}/:module(/*)`),
+    __param(0, server_1.routeData),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], HomeController.prototype, "redirect", null);
 HomeController = __decorate([
     index_1.controller()
     /** 主页模块 */

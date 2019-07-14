@@ -7,7 +7,9 @@ export declare let metaKeys: {
 };
 export interface ActionParameterDecoder<T> {
     parameterIndex: number;
-    createParameter: (req: http.IncomingMessage) => Promise<T>;
+    createParameter: (req: http.IncomingMessage, routeData: {
+        [key: string]: string;
+    } | null) => Promise<T>;
     disposeParameter?: (parameter: T) => void;
 }
 interface ActionDefine {
@@ -38,5 +40,7 @@ export declare function action(...paths: string[]): (target: any, propertyKey: s
 export declare function register<T>(type: ControllerType<T>, path?: string): {
     action(member: keyof T, paths?: string[] | undefined): any;
 };
-export declare function createParameterDecorator<T>(createParameter: (req: http.IncomingMessage) => Promise<T>, disposeParameter?: (parameter: T) => void): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare function createParameterDecorator<T>(createParameter: (req: http.IncomingMessage, routeData: {
+    [key: string]: string;
+} | null) => Promise<T>, disposeParameter?: (parameter: T) => void): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export {};

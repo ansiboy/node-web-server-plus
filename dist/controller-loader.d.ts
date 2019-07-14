@@ -1,12 +1,15 @@
 export declare class ControllerLoader {
-    private actions;
+    private pathActions;
+    private routeActions;
     constructor(controller_directories: string[]);
     private joinPaths;
     private getControllerPaths;
     private loadController;
     getAction(virtualPath: string): {
-        action: Function | null;
-        controller: object | null;
+        action: any;
+        controller: any;
+        routeData: {
+            [key: string]: string;
+        } | null;
     };
-    isActionExists(virtualPath: string): boolean;
 }
