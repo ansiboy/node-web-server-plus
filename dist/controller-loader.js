@@ -8,6 +8,7 @@ const attributes_1 = require("./attributes");
 const router_1 = require("./router");
 // import Route = require("route-parser");
 const UrlPattern = require("url-pattern");
+const controller_1 = require("./controller");
 class ControllerLoader {
     // private routes: Route[] = [];
     constructor(controller_directories) {
@@ -61,6 +62,10 @@ class ControllerLoader {
         p = p.replace(/\\/g, '/');
         return p;
     }
+    /**
+     * 获取指定文件夹中（包括子目录），控制器的路径。
+     * @param dir 控制器的文件夹
+     */
     getControllerPaths(dir) {
         let controllerPaths = [];
         let dirs = [];
@@ -88,15 +93,18 @@ class ControllerLoader {
             console.assert(mod != null);
             let propertyNames = Object.getOwnPropertyNames(mod);
             for (let i = 0; i < propertyNames.length; i++) {
-                let ctrl = mod[propertyNames[i]];
-                if (!isClass(ctrl)) {
+                let ctrlType = mod[propertyNames[i]];
+                if (!isClass(ctrlType)) {
                     continue;
                 }
                 //TODO: 检查控制器是否重复
                 console.assert(attributes_1.controllerDefines != null);
-                let controllerDefine = attributes_1.controllerDefines.filter(o => o.type == ctrl)[0];
-                if (controllerDefine && !controllerDefine.path) {
-                    controllerDefine.path = path.join('/', path.relative(dir, controllerPath));
+                let controllerDefine = attributes_1.controllerDefines.filter(o => o.type == ctrlType)[0];
+                // if (controllerDefine && !controllerDefine.path) {
+                //     controllerDefine.path = path.join('/', path.relative(dir, controllerPath))
+                // }
+                if (controllerDefine == null && ctrlType.prototype instanceof controller_1.Controller) {
+                    attributes_1.controller(ctrlType.name)(ctrlType);
                 }
             }
         }

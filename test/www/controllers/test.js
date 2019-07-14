@@ -10,14 +10,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = require("../../../dist/index");
-let Test = class Test {
+class Test extends index_1.Controller {
     index() {
         return 'Hello World';
     }
     j() {
         return { a: 10, b: 10 };
     }
-};
+}
 __decorate([
     index_1.action(),
     __metadata("design:type", Function),
@@ -25,13 +25,10 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], Test.prototype, "index", null);
 __decorate([
-    index_1.action(),
+    index_1.action("/j"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], Test.prototype, "j", null);
-Test = __decorate([
-    index_1.controller()
-], Test);
 exports.default = Test;
 //# sourceMappingURL=test.js.map

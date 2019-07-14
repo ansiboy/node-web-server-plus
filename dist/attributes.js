@@ -16,12 +16,12 @@ exports.controllerDefines = [];
  */
 function controller(path) {
     return function (constructor) {
-        let controllerDefine = registerController(constructor, path);
+        let controllerInfo = registerController(constructor, path);
         let propertyNames = Object.getOwnPropertyNames(constructor.prototype);
         for (let i = 0; i < propertyNames.length; i++) {
             let metadata = Reflect.getMetadata(actionMetaKey, constructor, propertyNames[i]);
             if (metadata) {
-                registerAction(controllerDefine, metadata.memberName, metadata.paths);
+                registerAction(controllerInfo, metadata.memberName, metadata.paths);
             }
         }
     };

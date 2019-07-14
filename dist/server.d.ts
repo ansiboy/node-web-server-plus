@@ -40,7 +40,7 @@ export declare function startServer(config: Config): {
 export declare function outputError(err: Error, res: http.ServerResponse): void;
 export declare function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: {
     [key: string]: string;
-}): Promise<{}>;
+}): Promise<unknown>;
 export declare let routeData: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare let formData: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export {};

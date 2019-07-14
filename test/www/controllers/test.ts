@@ -1,15 +1,14 @@
 import { join } from "path";
 
-import { controller, action } from '../../../dist/index';
+import { controller, action, Controller } from '../../../dist/index';
 
-@controller()
-class Test {
+class Test extends Controller {
     @action()
     index() {
         return 'Hello World'
     }
 
-    @action()
+    @action("/j")
     j() {
         return { a: 10, b: 10 }
     }

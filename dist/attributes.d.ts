@@ -12,19 +12,19 @@ export interface ActionParameterDecoder<T> {
     } | null) => Promise<T>;
     disposeParameter?: (parameter: T) => void;
 }
-interface ActionDefine {
+interface ActionInfo {
     memberName: string;
     paths: string[];
 }
-interface ControllerDefine {
+interface ControllerInfo {
     type: ControllerType<any>;
     path: string;
-    actionDefines: ActionDefine[];
+    actionDefines: ActionInfo[];
 }
 export declare type ControllerType<T> = {
     new (): T;
 };
-export declare let controllerDefines: ControllerDefine[];
+export declare let controllerDefines: ControllerInfo[];
 /**
  * 标记一个类是否为控制器
  * @param path 路径
