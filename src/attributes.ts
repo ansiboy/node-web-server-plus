@@ -21,19 +21,19 @@ export interface ActionParameterDecoder<T> {
     disposeParameter?: (parameter: T) => void
 }
 
-interface ActionDefine {
+interface ActionInfo {
     memberName: string,
     paths: string[],
 }
 
-interface ControllerDefine {
+interface ControllerInfo {
     type: ControllerType<any>,
     path: string,
-    actionDefines: ActionDefine[]
+    actionDefines: ActionInfo[]
 }
 
 export type ControllerType<T> = { new(): T }
-export let controllerDefines: ControllerDefine[] = []
+export let controllerDefines: ControllerInfo[] = []
 
 /**
  * 标记一个类是否为控制器
@@ -42,12 +42,12 @@ export let controllerDefines: ControllerDefine[] = []
 export function controller<T extends { new(...args: any[]): any }>(path?: string) {
     return function (constructor: T) {
 
-        let controllerDefine = registerController(constructor, path)
+        let controllerInfo = registerController(constructor, path)
         let propertyNames = Object.getOwnPropertyNames(constructor.prototype)
         for (let i = 0; i < propertyNames.length; i++) {
-            let metadata: ActionDefine = Reflect.getMetadata(actionMetaKey, constructor, propertyNames[i])
+            let metadata: ActionInfo = Reflect.getMetadata(actionMetaKey, constructor, propertyNames[i])
             if (metadata) {
-                registerAction(controllerDefine, metadata.memberName, metadata.paths)
+                registerAction(controllerInfo, metadata.memberName, metadata.paths)
             }
         }
     }
@@ -60,7 +60,7 @@ export function controller<T extends { new(...args: any[]): any }>(path?: string
 export function action(...paths: string[]) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         let memberName = descriptor.value.name
-        let obj: ActionDefine = { memberName, paths }
+        let obj: ActionInfo = { memberName, paths }
         let controllerType = target.constructor
         let actionDefine = Reflect.getMetadata(actionMetaKey, controllerType, propertyKey)
         if (actionDefine)
@@ -101,7 +101,7 @@ function registerController<T>(type: ControllerType<T>, path?: string) {
     return controllerDefine
 }
 
-function registerAction<T>(controllerDefine: ControllerDefine, memberName: keyof T, paths: string[]) {
+function registerAction<T>(controllerDefine: ControllerInfo, memberName: keyof T, paths: string[]) {
     if (controllerDefine == null)
         throw errors.arugmentNull('controllerDefine')
 

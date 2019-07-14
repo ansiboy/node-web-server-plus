@@ -2,10 +2,11 @@ import * as errors from './errors'
 import * as fs from 'fs'
 import * as path from 'path'
 import isClass = require('is-class')
-import { controllerDefines, ControllerType } from './attributes';
+import { controllerDefines, ControllerType, controller } from './attributes';
 import { isRouteString } from "./router";
 // import Route = require("route-parser");
 import UrlPattern = require("url-pattern");
+import { Controller } from './controller';
 
 
 export class ControllerLoader {
@@ -72,6 +73,10 @@ export class ControllerLoader {
         return p
     }
 
+    /**
+     * 获取指定文件夹中（包括子目录），控制器的路径。
+     * @param dir 控制器的文件夹
+     */
     private getControllerPaths(dir: string) {
         let controllerPaths: string[] = []
         let dirs: string[] = []
@@ -101,16 +106,20 @@ export class ControllerLoader {
             console.assert(mod != null)
             let propertyNames = Object.getOwnPropertyNames(mod)
             for (let i = 0; i < propertyNames.length; i++) {
-                let ctrl = mod[propertyNames[i]]
-                if (!isClass(ctrl)) {
+                let ctrlType = mod[propertyNames[i]]
+                if (!isClass(ctrlType)) {
                     continue
                 }
 
                 //TODO: 检查控制器是否重复
                 console.assert(controllerDefines != null)
-                let controllerDefine = controllerDefines.filter(o => o.type == ctrl)[0]
-                if (controllerDefine && !controllerDefine.path) {
-                    controllerDefine.path = path.join('/', path.relative(dir, controllerPath))
+                let controllerDefine = controllerDefines.filter(o => o.type == ctrlType)[0]
+                // if (controllerDefine && !controllerDefine.path) {
+                //     controllerDefine.path = path.join('/', path.relative(dir, controllerPath))
+                // }
+
+                if (controllerDefine == null && ctrlType.prototype instanceof Controller) {
+                    controller(ctrlType.name)(ctrlType);
                 }
             }
         }
