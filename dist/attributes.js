@@ -1,8 +1,18 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const errors = require("./errors");
 const constants_1 = require("./constants");
 require("reflect-metadata");
+const querystring = require("querystring");
+const url = require("url");
 const actionMetaKey = Symbol('action');
 const parameterMetaKey = Symbol('parameter');
 exports.metaKeys = {
@@ -87,4 +97,82 @@ function createParameterDecorator(createParameter, disposeParameter) {
     };
 }
 exports.createParameterDecorator = createParameterDecorator;
+exports.routeData = (function () {
+    function getPostObject(request) {
+        let length = request.headers['content-length'] || 0;
+        let contentType = request.headers['content-type'];
+        if (length <= 0)
+            return Promise.resolve({});
+        return new Promise((reslove, reject) => {
+            var text = "";
+            request.on('data', (data) => {
+                text = text + data.toString();
+            });
+            request.on('end', () => {
+                let obj;
+                try {
+                    if (contentType.indexOf('application/json') >= 0) {
+                        obj = JSON.parse(text);
+                    }
+                    else {
+                        obj = querystring.parse(text);
+                    }
+                    reslove(obj || {});
+                }
+                catch (err) {
+                    reject(err);
+                }
+            });
+        });
+    }
+    /**
+     *
+     * @param request 获取 QueryString 里的对象
+     */
+    function getQueryObject(request) {
+        let contentType = request.headers['content-type'];
+        let obj = {};
+        let urlInfo = url.parse(request.url || '');
+        let { query } = urlInfo;
+        if (!query) {
+            return obj;
+        }
+        query = decodeURIComponent(query);
+        let queryIsJSON = (contentType != null && contentType.indexOf('application/json') >= 0) ||
+            (query != null && query[0] == '{' && query[query.length - 1] == '}');
+        if (queryIsJSON) {
+            let arr = (request.url || '').split('?');
+            let str = arr[1];
+            if (str != null) {
+                str = decodeURIComponent(str);
+                obj = JSON.parse(str); //TODO：异常处理
+            }
+        }
+        else {
+            obj = querystring.parse(query);
+        }
+        return obj;
+    }
+    return createParameterDecorator((req, routeData) => __awaiter(this, void 0, void 0, function* () {
+        let obj = routeData = routeData || {};
+        let queryData = getQueryObject(req);
+        console.assert(queryData != null);
+        obj = Object.assign(obj, queryData);
+        // if (req.method == 'GET') {
+        //     let queryData = getQueryObject(req);
+        //     // dataPromise = Promise.resolve(queryData);
+        //     return queryData
+        // }
+        // else {
+        // let queryData = getQueryObject(req);
+        if (req.method != 'GET') {
+            let data = yield getPostObject(req);
+            obj = Object.assign(obj, data);
+        }
+        // console.assert(queryData != null)
+        return obj;
+        // }
+    }));
+})();
+exports.formData = exports.routeData;
 //# sourceMappingURL=attributes.js.map

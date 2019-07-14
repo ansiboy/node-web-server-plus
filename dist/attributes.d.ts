@@ -43,4 +43,6 @@ export declare function register<T>(type: ControllerType<T>, path?: string): {
 export declare function createParameterDecorator<T>(createParameter: (req: http.IncomingMessage, routeData: {
     [key: string]: string;
 } | null) => Promise<T>, disposeParameter?: (parameter: T) => void): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare let routeData: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare let formData: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export {};

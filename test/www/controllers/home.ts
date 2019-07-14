@@ -1,7 +1,7 @@
 import { controller, action, createParameterDecorator, formData } from '../../../dist/index'
 import { ConnectionOptions } from 'tls';
 import { actionPaths } from '../actionPaths';
-import { routeData } from '../../../dist/server';
+import { routeData } from '../../../dist/index';
 
 // function connection() {
 

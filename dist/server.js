@@ -11,7 +11,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const http = require("http");
 const errors = require("./errors");
 const url = require("url");
-const querystring = require("querystring");
 const path = require("path");
 const controller_loader_1 = require("./controller-loader");
 const nodeStatic = require("maishu-node-static");
@@ -25,6 +24,8 @@ function startServer(config) {
         throw errors.arugmentNull('config');
     if (!config.rootPath)
         throw errors.rootPathNull();
+    if (!path.isAbsolute(config.rootPath))
+        throw errors.rootPathNotAbsolute(config.rootPath);
     if (!config.controllerDirectory)
         config.controllerDirectory = DefaultControllerPath;
     if (!config.staticRootDirectory)
@@ -44,24 +45,24 @@ function startServer(config) {
     if (!path.isAbsolute(config.staticRootDirectory))
         config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory);
     let controllerLoader = new controller_loader_1.ControllerLoader(controllerDirectories);
-    let externalPaths = [];
-    if (config.staticExternalDirectories != null && config.staticExternalDirectories.length > 0) {
-        for (let i = 0; i < config.staticExternalDirectories.length; i++) {
-            let item = config.staticExternalDirectories[i];
-            externalPaths.push(item);
-        }
-    }
-    for (let i = 0; i < externalPaths.length; i++) {
-        if (!path.isAbsolute(externalPaths[i])) {
-            externalPaths[i] = path.join(config.rootPath, externalPaths[i]);
-        }
-        else {
-            externalPaths[i] = path.normalize(externalPaths[i]);
-        }
-    }
+    // let externalPaths: string[] = []
+    // if (config.staticExternalDirectories != null && config.staticExternalDirectories.length > 0) {
+    //     for (let i = 0; i < config.staticExternalDirectories.length; i++) {
+    //         let item = config.staticExternalDirectories[i]
+    //         externalPaths.push(item)
+    //     }
+    // }
+    // for (let i = 0; i < externalPaths.length; i++) {
+    //     if (!path.isAbsolute(externalPaths[i])) {
+    //         externalPaths[i] = path.join(config.rootPath, externalPaths[i]);
+    //     }
+    //     else {
+    //         externalPaths[i] = path.normalize(externalPaths[i]);
+    //     }
+    // }
     let fileServer;
     fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-        externalPaths,
+        // externalPaths,
         virtualPaths: config.virtualPaths,
         serverInfo: `maishu-node-mvc ${packageInfo.version}`,
         gzip: true
@@ -286,82 +287,4 @@ function createTargetResquest(targetUrl, req, res, headers) {
     });
     return request;
 }
-exports.routeData = (function () {
-    function getPostObject(request) {
-        let length = request.headers['content-length'] || 0;
-        let contentType = request.headers['content-type'];
-        if (length <= 0)
-            return Promise.resolve({});
-        return new Promise((reslove, reject) => {
-            var text = "";
-            request.on('data', (data) => {
-                text = text + data.toString();
-            });
-            request.on('end', () => {
-                let obj;
-                try {
-                    if (contentType.indexOf('application/json') >= 0) {
-                        obj = JSON.parse(text);
-                    }
-                    else {
-                        obj = querystring.parse(text);
-                    }
-                    reslove(obj || {});
-                }
-                catch (err) {
-                    reject(err);
-                }
-            });
-        });
-    }
-    /**
-     *
-     * @param request 获取 QueryString 里的对象
-     */
-    function getQueryObject(request) {
-        let contentType = request.headers['content-type'];
-        let obj = {};
-        let urlInfo = url.parse(request.url || '');
-        let { query } = urlInfo;
-        if (!query) {
-            return obj;
-        }
-        query = decodeURIComponent(query);
-        let queryIsJSON = (contentType != null && contentType.indexOf('application/json') >= 0) ||
-            (query != null && query[0] == '{' && query[query.length - 1] == '}');
-        if (queryIsJSON) {
-            let arr = (request.url || '').split('?');
-            let str = arr[1];
-            if (str != null) {
-                str = decodeURIComponent(str);
-                obj = JSON.parse(str); //TODO：异常处理
-            }
-        }
-        else {
-            obj = querystring.parse(query);
-        }
-        return obj;
-    }
-    return attributes_1.createParameterDecorator((req, routeData) => __awaiter(this, void 0, void 0, function* () {
-        let obj = routeData = routeData || {};
-        let queryData = getQueryObject(req);
-        console.assert(queryData != null);
-        obj = Object.assign(obj, queryData);
-        // if (req.method == 'GET') {
-        //     let queryData = getQueryObject(req);
-        //     // dataPromise = Promise.resolve(queryData);
-        //     return queryData
-        // }
-        // else {
-        // let queryData = getQueryObject(req);
-        if (req.method != 'GET') {
-            let data = yield getPostObject(req);
-            obj = Object.assign(obj, data);
-        }
-        // console.assert(queryData != null)
-        return obj;
-        // }
-    }));
-})();
-exports.formData = exports.routeData;
 //# sourceMappingURL=server.js.map

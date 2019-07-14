@@ -14,14 +14,13 @@ interface ProxyItem {
 }
 export interface Config {
     port: number;
-    bindIP?: string;
     rootPath: string;
+    bindIP?: string;
+    controllerDirectory?: string | string[];
+    staticRootDirectory?: string;
     proxy?: {
         [path_pattern: string]: string | ProxyItem;
     };
-    controllerDirectory?: string | string[];
-    staticRootDirectory?: string;
-    staticExternalDirectories?: string[];
     authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{
         errorResult: ActionResult;
     }>;
@@ -41,6 +40,4 @@ export declare function outputError(err: Error, res: http.ServerResponse): void;
 export declare function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: {
     [key: string]: string;
 }): Promise<unknown>;
-export declare let routeData: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare let formData: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export {};

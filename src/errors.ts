@@ -54,7 +54,14 @@ export function rootPathNull() {
     return error
 }
 
-export function authenticateResultNull(){
+export function rootPathNotAbsolute(path: string) {
+    let msg = `Root path '${path}' is not a absolute path.`;
+    let error = new Error(msg);
+    error.name = rootPathNotAbsolute.name;
+    return error;
+}
+
+export function authenticateResultNull() {
     let msg = `Authenticate result cannt null`
     let error = new Error(msg)
     error.name = authenticateResultNull.name

@@ -1,7 +1,6 @@
 import http = require('http')
 import errors = require('./errors');
 import url = require('url');
-import querystring = require('querystring');
 import path = require('path')
 import { ControllerLoader } from './controller-loader';
 import nodeStatic = require('maishu-node-static')
@@ -25,14 +24,14 @@ interface ProxyItem {
 
 export interface Config {
     port: number,
-    bindIP?: string,
     rootPath: string,
-    proxy?: { [path_pattern: string]: string | ProxyItem },
+    bindIP?: string,
     controllerDirectory?: string | string[],
     staticRootDirectory?: string,
-    staticExternalDirectories?: string[],
+    proxy?: { [path_pattern: string]: string | ProxyItem },
     authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{ errorResult: ActionResult }>,
     actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult>)[],
+    // staticExternalDirectories?: string[],
 
     /** 设置默认的 Http Header */
     headers?: { [name: string]: string }
@@ -42,12 +41,16 @@ export interface Config {
 export function startServer(config: Config) {
     if (!config) throw errors.arugmentNull('config')
     if (!config.rootPath) throw errors.rootPathNull()
+    if (!path.isAbsolute(config.rootPath))
+        throw errors.rootPathNotAbsolute(config.rootPath);
 
     if (!config.controllerDirectory)
         config.controllerDirectory = DefaultControllerPath
 
     if (!config.staticRootDirectory)
         config.staticRootDirectory = DefaultStaticFileDirectory
+
+
 
     let controllerDirectories: string[] = []
     if (config.controllerDirectory) {
@@ -68,26 +71,26 @@ export function startServer(config: Config) {
         config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
 
     let controllerLoader = new ControllerLoader(controllerDirectories)
-    let externalPaths: string[] = []
-    if (config.staticExternalDirectories != null && config.staticExternalDirectories.length > 0) {
-        for (let i = 0; i < config.staticExternalDirectories.length; i++) {
-            let item = config.staticExternalDirectories[i]
-            externalPaths.push(item)
-        }
-    }
+    // let externalPaths: string[] = []
+    // if (config.staticExternalDirectories != null && config.staticExternalDirectories.length > 0) {
+    //     for (let i = 0; i < config.staticExternalDirectories.length; i++) {
+    //         let item = config.staticExternalDirectories[i]
+    //         externalPaths.push(item)
+    //     }
+    // }
 
-    for (let i = 0; i < externalPaths.length; i++) {
-        if (!path.isAbsolute(externalPaths[i])) {
-            externalPaths[i] = path.join(config.rootPath, externalPaths[i]);
-        }
-        else {
-            externalPaths[i] = path.normalize(externalPaths[i]);
-        }
-    }
+    // for (let i = 0; i < externalPaths.length; i++) {
+    //     if (!path.isAbsolute(externalPaths[i])) {
+    //         externalPaths[i] = path.join(config.rootPath, externalPaths[i]);
+    //     }
+    //     else {
+    //         externalPaths[i] = path.normalize(externalPaths[i]);
+    //     }
+    // }
 
     let fileServer: nodeStatic.Server
     fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-        externalPaths,
+        // externalPaths,
         virtualPaths: config.virtualPaths,
         serverInfo: `maishu-node-mvc ${packageInfo.version}`,
         gzip: true
@@ -349,96 +352,5 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
 }
 
 
-export let routeData = (function () {
 
-    function getPostObject(request: http.IncomingMessage): Promise<any> {
-        let length = request.headers['content-length'] || 0;
-        let contentType = request.headers['content-type'] as string;
-        if (length <= 0)
-            return Promise.resolve({});
-
-        return new Promise((reslove, reject) => {
-            var text = "";
-            request.on('data', (data: { toString: () => string }) => {
-                text = text + data.toString();
-            });
-
-            request.on('end', () => {
-                let obj;
-                try {
-                    if (contentType.indexOf('application/json') >= 0) {
-                        obj = JSON.parse(text)
-                    }
-                    else {
-                        obj = querystring.parse(text);
-                    }
-                    reslove(obj || {});
-                }
-                catch (err) {
-                    reject(err);
-                }
-            })
-        });
-    }
-
-    /**
-     * 
-     * @param request 获取 QueryString 里的对象
-     */
-    function getQueryObject(request: http.IncomingMessage): { [key: string]: any } {
-        let contentType = request.headers['content-type'] as string;
-        let obj: { [key: string]: any } = {};
-        let urlInfo = url.parse(request.url || '');
-        let { query } = urlInfo;
-
-        if (!query) {
-            return obj;
-        }
-
-        query = decodeURIComponent(query);
-        let queryIsJSON = (contentType != null && contentType.indexOf('application/json') >= 0) ||
-            (query != null && query[0] == '{' && query[query.length - 1] == '}')
-
-        if (queryIsJSON) {
-            let arr = (request.url || '').split('?');
-            let str = arr[1]
-            if (str != null) {
-                str = decodeURIComponent(str);
-                obj = JSON.parse(str);  //TODO：异常处理
-            }
-        }
-        else {
-            obj = querystring.parse(query);
-        }
-
-        return obj;
-    }
-
-    return createParameterDecorator<any>(async (req, routeData) => {
-        let obj: any = routeData = routeData || {}
-
-        let queryData = getQueryObject(req);
-        console.assert(queryData != null)
-        obj = Object.assign(obj, queryData);
-
-        // if (req.method == 'GET') {
-        //     let queryData = getQueryObject(req);
-        //     // dataPromise = Promise.resolve(queryData);
-        //     return queryData
-        // }
-        // else {
-        // let queryData = getQueryObject(req);
-        if (req.method != 'GET') {
-            let data = await getPostObject(req);
-            obj = Object.assign(obj, data)
-        }
-
-        // console.assert(queryData != null)
-        return obj;
-        // }
-    })
-
-})()
-
-export let formData = routeData;
 
