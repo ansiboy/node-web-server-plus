@@ -174,7 +174,6 @@ export function startServer(config: Config) {
 
     server.listen(config.port, config.bindIP)
 
-    return { staticServer: fileServer }
 }
 
 async function executeAction(controller: object, action: Function, routeData: { [key: string]: string } | null,
