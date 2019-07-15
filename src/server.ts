@@ -24,8 +24,8 @@ export interface Config {
     controllerDirectory?: string | string[],
     staticRootDirectory?: string,
     proxy?: { [path_pattern: string]: string | ProxyItem },
-    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult>,
-    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult>)[],
+    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult | null>,
+    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult | null>)[],
 
     /** 设置默认的 Http Header */
     headers?: { [name: string]: string }
