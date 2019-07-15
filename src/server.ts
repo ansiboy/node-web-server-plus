@@ -17,11 +17,6 @@ interface ProxyItem {
     headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>)
 }
 
-// interface ExternalDirectory {
-//     path: string
-//     alias?: string
-// }
-
 export interface Config {
     port: number,
     rootPath: string,
@@ -29,9 +24,8 @@ export interface Config {
     controllerDirectory?: string | string[],
     staticRootDirectory?: string,
     proxy?: { [path_pattern: string]: string | ProxyItem },
-    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{ errorResult: ActionResult }>,
+    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult>,
     actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult>)[],
-    // staticExternalDirectories?: string[],
 
     /** 设置默认的 Http Header */
     headers?: { [name: string]: string }
@@ -65,32 +59,13 @@ export function startServer(config: Config) {
             controllerDirectories[i] = path.join(config.rootPath, controllerDirectories[i])
     }
 
-    // config.controllerDirectory = path.join(config.rootPath, config.controllerDirectory)
-
     if (!path.isAbsolute(config.staticRootDirectory))
         config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
 
     let controllerLoader = new ControllerLoader(controllerDirectories)
-    // let externalPaths: string[] = []
-    // if (config.staticExternalDirectories != null && config.staticExternalDirectories.length > 0) {
-    //     for (let i = 0; i < config.staticExternalDirectories.length; i++) {
-    //         let item = config.staticExternalDirectories[i]
-    //         externalPaths.push(item)
-    //     }
-    // }
-
-    // for (let i = 0; i < externalPaths.length; i++) {
-    //     if (!path.isAbsolute(externalPaths[i])) {
-    //         externalPaths[i] = path.join(config.rootPath, externalPaths[i]);
-    //     }
-    //     else {
-    //         externalPaths[i] = path.normalize(externalPaths[i]);
-    //     }
-    // }
 
     let fileServer: nodeStatic.Server
     fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-        // externalPaths,
         virtualPaths: config.virtualPaths,
         serverInfo: `maishu-node-mvc ${packageInfo.version}`,
         gzip: true
@@ -114,11 +89,8 @@ export function startServer(config: Config) {
         try {
             if (config.authenticate) {
                 let r = await config.authenticate(req, res)
-                if (r == null)
-                    throw errors.authenticateResultNull()
-
-                if (r.errorResult) {
-                    outputResult(r.errorResult, res, req)
+                if (r) {
+                    outputResult(r, res, req)
                     return
                 }
             }
