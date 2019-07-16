@@ -2,20 +2,20 @@ import * as errors from './errors'
 import * as fs from 'fs'
 import * as path from 'path'
 import isClass = require('is-class')
-import { controllerDefines, ControllerType, controller } from './attributes';
+import { controllerDefines, controller } from './attributes';
 import { isRouteString } from "./router";
 // import Route = require("route-parser");
 import UrlPattern = require("url-pattern");
 import { Controller } from './controller';
-
+import { createAPIControllerType, ActionInfo } from './api-controller';
 
 export class ControllerLoader {
 
     // 使用路径进行匹配的 action
-    private pathActions: { [path: string]: { controllerType: ControllerType<any>, memberName: string, } } = {};
+    private pathActions: { [path: string]: ActionInfo } = {};
 
     // 使用路由进行匹配的 action
-    private routeActions: { route: UrlPattern, controllerType: ControllerType<any>, memberName: string, }[] = [];
+    private routeActions: (ActionInfo & { route: UrlPattern })[] = [];
     // private routes: Route[] = [];
 
     constructor(controller_directories: string[]) {
@@ -33,10 +33,22 @@ export class ControllerLoader {
 
         for (let dir in controllerPaths) {
             controllerPaths[dir].forEach(controllerPath => {
-                this.loadController(controllerPath, dir)
-
+                this.loadController(controllerPath)
             })
         }
+
+        //=============================================
+        // 注册内置的控制器
+
+        createAPIControllerType(() => {
+            let actionInfos: ActionInfo[] = [
+                ...Object.getOwnPropertyNames(this.pathActions).map(name => this.pathActions[name]),
+                ...this.routeActions
+            ];
+
+            return actionInfos;
+        });
+        //==============================================
 
         controllerDefines.forEach(c => {
             console.assert((c.path || '') != '')
@@ -54,10 +66,10 @@ export class ControllerLoader {
 
                     if (isRouteString(actionPath)) {
                         let route = new UrlPattern(actionPath);
-                        this.routeActions.push({ route, controllerType: c.type, memberName: a.memberName });
+                        this.routeActions.push({ route, controllerType: c.type, memberName: a.memberName, actionPath });
                     }
                     else {
-                        this.pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName }
+                        this.pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName, actionPath }
                     }
 
                 }
@@ -100,7 +112,7 @@ export class ControllerLoader {
         return controllerPaths
     }
 
-    private loadController(controllerPath: string, dir: string): void {
+    private loadController(controllerPath: string): void {
         try {
             let mod = require(controllerPath);
             console.assert(mod != null)
@@ -128,6 +140,7 @@ export class ControllerLoader {
             throw innerErrors.loadControllerFail(controllerPath, err)
         }
     }
+
 
     getAction(virtualPath: string) {
 
@@ -162,7 +175,6 @@ export class ControllerLoader {
 
         return { action, controller, routeData }
     }
-
 }
 
 
