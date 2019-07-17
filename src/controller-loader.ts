@@ -130,7 +130,8 @@ export class ControllerLoader {
                 //     controllerDefine.path = path.join('/', path.relative(dir, controllerPath))
                 // }
 
-                if (controllerDefine == null && ctrlType.prototype instanceof Controller) {
+                // 判断类型使用 ctrlType.prototype instanceof Controller 不可靠
+                if (controllerDefine == null && ctrlType["typeName"] == Controller.typeName) {
                     controller(ctrlType.name)(ctrlType);
                 }
             }

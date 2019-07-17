@@ -1,6 +1,9 @@
 import { ContentResult, RedirectResult, ProxyResut, contentTypes } from "./action-results";
 
 export class Controller {
+
+    static typeName = "node-mvc.Controller";
+
     content(value: string, statusCode: number): ContentResult;
     content(value: string, type: string, statusCode?: number): ContentResult;
     content(value: string, type?: string | number, statusCode?: number): ContentResult {
