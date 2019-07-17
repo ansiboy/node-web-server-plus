@@ -35,7 +35,13 @@ interface ControllerInfo {
 }
 
 export type ControllerType<T> = { new(): T }
-export let controllerDefines: ControllerInfo[] = []
+
+//==============================================================================
+// controllerDefines 变量用作全局变量, 由于同一个文件可能会加载多次, 会导致变量失效
+// export let controllerDefines: ControllerInfo[] = []
+export let controllerDefines: ControllerInfo[] =
+    (global as any)["Node-MVC-ControllerInfos"] = (global as any)["Node-MVC-ControllerInfos"] || []
+//==============================================================================
 
 /**
  * 标记一个类是否为控制器
@@ -199,24 +205,32 @@ export let routeData = (function () {
         console.assert(queryData != null)
         obj = Object.assign(obj, queryData);
 
-        // if (req.method == 'GET') {
-        //     let queryData = getQueryObject(req);
-        //     // dataPromise = Promise.resolve(queryData);
-        //     return queryData
-        // }
-        // else {
-        // let queryData = getQueryObject(req);
         if (req.method != 'GET') {
             let data = await getPostObject(req);
             obj = Object.assign(obj, data)
         }
 
-        // console.assert(queryData != null)
         return obj;
-        // }
     })
 
 })()
 
 export let formData = routeData;
 
+export let request = createParameterDecorator(
+    async (req, res) => {
+        return req;
+    }
+)
+
+export let response = createParameterDecorator(
+    async (req, res) => {
+        return res;
+    }
+)
+
+export let requestHeaders = createParameterDecorator(
+    async (req, res) => {
+        return req.headers;
+    }
+)

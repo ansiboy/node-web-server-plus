@@ -2,7 +2,11 @@ import { startServer } from '../../dist/index'
 import path = require('path')
 startServer({
     port: 1234,
-    rootPath: __dirname
+    rootPath: __dirname,
+    controllerDirectory: [
+        path.join(__dirname, 'controllers'),
+        path.join(__dirname, 'controllers1')
+    ]
     // controllerDirectories: [path.join(__dirname, 'controllers')],
     // staticFileDirectory: path.join(__dirname, 'public')
 })

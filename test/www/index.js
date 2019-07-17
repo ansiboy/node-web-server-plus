@@ -1,9 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = require("../../dist/index");
+const path = require("path");
 index_1.startServer({
     port: 1234,
-    rootPath: __dirname
+    rootPath: __dirname,
+    controllerDirectory: [
+        path.join(__dirname, 'controllers'),
+        path.join(__dirname, 'controllers1')
+    ]
     // controllerDirectories: [path.join(__dirname, 'controllers')],
     // staticFileDirectory: path.join(__dirname, 'public')
 });
