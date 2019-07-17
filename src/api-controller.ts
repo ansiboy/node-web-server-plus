@@ -7,7 +7,6 @@ export type ActionInfo = {
 
 export function createAPIControllerType(getActionInfos: () => ActionInfo[]) {
     let APIControllerType = class APIController extends Controller {
-        static listPath = "/api/list"
         async list() {
             let actionInfos = getActionInfos();
             let r = actionInfos.map(o => ({
@@ -19,7 +18,7 @@ export function createAPIControllerType(getActionInfos: () => ActionInfo[]) {
             return r;
         }
     }
-    register(APIControllerType).action("list", ["/api/list"]);
+    register(APIControllerType).action("list", ["/api/action/list"]);
 
     return APIControllerType;
 }
