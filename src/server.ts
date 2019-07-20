@@ -19,7 +19,6 @@ interface ProxyItem {
 
 export interface Config {
     port: number,
-    rootPath: string,
     bindIP?: string,
     controllerDirectory?: string | string[],
     staticRootDirectory?: string,
@@ -34,9 +33,9 @@ export interface Config {
 
 export function startServer(config: Config) {
     if (!config) throw errors.arugmentNull('config')
-    if (!config.rootPath) throw errors.rootPathNull()
-    if (!path.isAbsolute(config.rootPath))
-        throw errors.rootPathNotAbsolute(config.rootPath);
+    // if (!config.rootPath) throw errors.rootPathNull()
+    // if (!path.isAbsolute(config.rootPath))
+    //     throw errors.rootPathNotAbsolute(config.rootPath);
 
     if (!config.controllerDirectory)
         config.controllerDirectory = DefaultControllerPath
@@ -56,11 +55,13 @@ export function startServer(config: Config) {
 
     for (let i = 0; i < controllerDirectories.length; i++) {
         if (!path.isAbsolute(controllerDirectories[i]))
-            controllerDirectories[i] = path.join(config.rootPath, controllerDirectories[i])
+            throw errors.notAbsolutePath(controllerDirectories[i]);
+        // controllerDirectories[i] = path.join(config.rootPath, controllerDirectories[i])
     }
 
     if (!path.isAbsolute(config.staticRootDirectory))
-        config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
+        throw errors.notAbsolutePath(config.staticRootDirectory);
+    // config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
 
     let controllerLoader = new ControllerLoader(controllerDirectories)
 
