@@ -33,18 +33,7 @@ export interface Config {
 
 export function startServer(config: Config) {
     if (!config) throw errors.arugmentNull('config')
-    // if (!config.rootPath) throw errors.rootPathNull()
-    // if (!path.isAbsolute(config.rootPath))
-    //     throw errors.rootPathNotAbsolute(config.rootPath);
-
-    // if (!config.controllerDirectory)
-    //     config.controllerDirectory = DefaultControllerPath
-
-    // if (!config.staticRootDirectory)
-    //     config.staticRootDirectory = DefaultStaticFileDirectory
-
-
-
+ 
     let controllerDirectories: string[] = []
     if (config.controllerDirectory) {
         if (typeof config.controllerDirectory == 'string')
@@ -56,7 +45,6 @@ export function startServer(config: Config) {
     for (let i = 0; i < controllerDirectories.length; i++) {
         if (!path.isAbsolute(controllerDirectories[i]))
             throw errors.notAbsolutePath(controllerDirectories[i]);
-        // controllerDirectories[i] = path.join(config.rootPath, controllerDirectories[i])
     }
 
     if (config.staticRootDirectory && !path.isAbsolute(config.staticRootDirectory))

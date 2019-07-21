@@ -28,4 +28,3 @@ function createAPIControllerType(getActionInfos) {
     return APIControllerType;
 }
 exports.createAPIControllerType = createAPIControllerType;
-//# sourceMappingURL=api-controller.js.map

@@ -12,15 +12,15 @@ const controller_1 = require("./controller");
 const api_controller_1 = require("./api-controller");
 class ControllerLoader {
     // private routes: Route[] = [];
-    constructor(controller_directories) {
+    constructor(controllerDirectories) {
         // 使用路径进行匹配的 action
         this.pathActions = {};
         // 使用路由进行匹配的 action
         this.routeActions = [];
-        if (controller_directories == null || controller_directories.length == 0)
-            throw errors.arugmentNull('areas');
+        if (controllerDirectories == null || controllerDirectories.length == 0)
+            throw errors.arugmentNull('controllerDirectories');
         let controllerPaths = {};
-        controller_directories.forEach(dir => {
+        controllerDirectories.forEach(dir => {
             if (!fs.existsSync(dir)) {
                 throw errors.controllerDirectoryNotExists(dir);
             }
@@ -111,9 +111,6 @@ class ControllerLoader {
                 //TODO: 检查控制器是否重复
                 console.assert(attributes_1.controllerDefines != null);
                 let controllerDefine = attributes_1.controllerDefines.filter(o => o.type == ctrlType)[0];
-                // if (controllerDefine && !controllerDefine.path) {
-                //     controllerDefine.path = path.join('/', path.relative(dir, controllerPath))
-                // }
                 // 判断类型使用 ctrlType.prototype instanceof Controller 不可靠
                 if (controllerDefine == null && ctrlType["typeName"] == controller_1.Controller.typeName) {
                     attributes_1.controller(ctrlType.name)(ctrlType);
@@ -148,8 +145,12 @@ class ControllerLoader {
                 routeData = r;
                 controller = new this.routeActions[i].controllerType();
                 action = controller[this.routeActions[i].memberName];
+                break;
             }
         }
+        if (action == null)
+            return null;
+        console.assert(controller != null);
         return { action, controller, routeData };
     }
 }
@@ -199,4 +200,3 @@ let innerErrors = {
         return error;
     }
 };
-//# sourceMappingURL=controller-loader.js.map

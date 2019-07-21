@@ -126,9 +126,6 @@ export class ControllerLoader {
                 //TODO: 检查控制器是否重复
                 console.assert(controllerDefines != null)
                 let controllerDefine = controllerDefines.filter(o => o.type == ctrlType)[0]
-                // if (controllerDefine && !controllerDefine.path) {
-                //     controllerDefine.path = path.join('/', path.relative(dir, controllerPath))
-                // }
 
                 // 判断类型使用 ctrlType.prototype instanceof Controller 不可靠
                 if (controllerDefine == null && ctrlType["typeName"] == Controller.typeName) {

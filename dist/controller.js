@@ -25,4 +25,3 @@ class Controller {
 }
 Controller.typeName = "node-mvc.Controller";
 exports.Controller = Controller;
-//# sourceMappingURL=controller.js.map

@@ -179,4 +179,3 @@ exports.response = createParameterDecorator((req, res) => __awaiter(this, void 0
 exports.requestHeaders = createParameterDecorator((req, res) => __awaiter(this, void 0, void 0, function* () {
     return req.headers;
 }));
-//# sourceMappingURL=attributes.js.map

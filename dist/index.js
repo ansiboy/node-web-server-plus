@@ -14,4 +14,3 @@ exports.ContentResult = action_results_1.ContentResult;
 exports.RedirectResult = action_results_1.RedirectResult;
 var controller_1 = require("./controller");
 exports.Controller = controller_1.Controller;
-//# sourceMappingURL=index.js.map

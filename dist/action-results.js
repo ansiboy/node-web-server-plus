@@ -59,4 +59,3 @@ class ProxyResut {
     }
 }
 exports.ProxyResut = ProxyResut;
-//# sourceMappingURL=action-results.js.map

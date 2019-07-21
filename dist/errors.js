@@ -75,4 +75,11 @@ function notAbsolutePath(path) {
     return error;
 }
 exports.notAbsolutePath = notAbsolutePath;
-//# sourceMappingURL=errors.js.map
+function pageNotFound(path) {
+    let msg = `Path '${path}' not found.`;
+    let error = new Error(msg);
+    error.name = pageNotFound.name;
+    error.statusCode = 404;
+    return error;
+}
+exports.pageNotFound = pageNotFound;

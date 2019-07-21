@@ -1,7 +1,7 @@
 export declare class ControllerLoader {
     private pathActions;
     private routeActions;
-    constructor(controller_directories: string[]);
+    constructor(controllerDirectories: string[]);
     private joinPaths;
     /**
      * 获取指定文件夹中（包括子目录），控制器的路径。
@@ -15,5 +15,5 @@ export declare class ControllerLoader {
         routeData: {
             [key: string]: string;
         } | null;
-    };
+    } | null;
 }

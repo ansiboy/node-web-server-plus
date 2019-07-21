@@ -22,13 +22,6 @@ const DefaultStaticFileDirectory = 'public';
 function startServer(config) {
     if (!config)
         throw errors.arugmentNull('config');
-    // if (!config.rootPath) throw errors.rootPathNull()
-    // if (!path.isAbsolute(config.rootPath))
-    //     throw errors.rootPathNotAbsolute(config.rootPath);
-    if (!config.controllerDirectory)
-        config.controllerDirectory = DefaultControllerPath;
-    if (!config.staticRootDirectory)
-        config.staticRootDirectory = DefaultStaticFileDirectory;
     let controllerDirectories = [];
     if (config.controllerDirectory) {
         if (typeof config.controllerDirectory == 'string')
@@ -39,22 +32,25 @@ function startServer(config) {
     for (let i = 0; i < controllerDirectories.length; i++) {
         if (!path.isAbsolute(controllerDirectories[i]))
             throw errors.notAbsolutePath(controllerDirectories[i]);
-        // controllerDirectories[i] = path.join(config.rootPath, controllerDirectories[i])
     }
-    if (!path.isAbsolute(config.staticRootDirectory))
+    if (config.staticRootDirectory && !path.isAbsolute(config.staticRootDirectory))
         throw errors.notAbsolutePath(config.staticRootDirectory);
     // config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
-    let controllerLoader = new controller_loader_1.ControllerLoader(controllerDirectories);
-    let fileServer;
-    fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-        virtualPaths: config.virtualPaths,
-        serverInfo: `maishu-node-mvc ${packageInfo.version}`,
-        gzip: true
-    });
-    let fileServer_resolve = fileServer.resolve;
-    fileServer.resolve = function (pathname, req) {
-        return fileServer_resolve.apply(fileServer, [pathname, req]);
-    };
+    let controllerLoader;
+    if (controllerDirectories.length > 0)
+        controllerLoader = new controller_loader_1.ControllerLoader(controllerDirectories);
+    let fileServer = null;
+    if (config.staticRootDirectory) {
+        fileServer = new nodeStatic.Server(config.staticRootDirectory, {
+            virtualPaths: config.virtualPaths,
+            serverInfo: `maishu-node-mvc ${packageInfo.version}`,
+            gzip: true
+        });
+        let fileServer_resolve = fileServer.resolve;
+        fileServer.resolve = function (pathname, req) {
+            return fileServer_resolve.apply(fileServer, [pathname, req]);
+        };
+    }
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
         if (config.headers) {
             for (let key in config.headers) {
@@ -86,9 +82,13 @@ function startServer(config) {
             let requestUrl = req.url || '';
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
-            let { action, controller, routeData } = controllerLoader.getAction(pathName);
-            if (action != null && controller != null) {
-                executeAction(controller, action, routeData, req, res);
+            let r = null;
+            if (controllerLoader) {
+                r = controllerLoader.getAction(pathName);
+            }
+            // let { action, controller, routeData } = controllerLoader.getAction(pathName)
+            if (r != null && r.action != null && r.controller != null) {
+                executeAction(r.controller, r.action, r.routeData, req, res);
                 return;
             }
             //=====================================================================
@@ -110,14 +110,7 @@ function startServer(config) {
                         if (typeof proxyItem.headers == 'function') {
                             let r = proxyItem.headers(req);
                             let p = r;
-                            // let headers
                             if (p != null && p.then && p.catch) {
-                                // p.then(d => {
-                                //     headers = d
-                                // }).catch(err => {
-                                //     outputError(err, res)
-                                //     return
-                                // })
                                 headers = yield p;
                             }
                             else {
@@ -133,7 +126,11 @@ function startServer(config) {
                 }
             }
             //=====================================================================
-            fileServer.serve(req, res);
+            if (fileServer) {
+                fileServer.serve(req, res);
+                return;
+            }
+            throw errors.pageNotFound(requestUrl);
         }
         catch (err) {
             outputError(err, res);
@@ -268,4 +265,3 @@ function createTargetResquest(targetUrl, req, res, headers) {
     });
     return request;
 }
-//# sourceMappingURL=server.js.map
