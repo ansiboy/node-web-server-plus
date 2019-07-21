@@ -37,11 +37,11 @@ export function startServer(config: Config) {
     // if (!path.isAbsolute(config.rootPath))
     //     throw errors.rootPathNotAbsolute(config.rootPath);
 
-    if (!config.controllerDirectory)
-        config.controllerDirectory = DefaultControllerPath
+    // if (!config.controllerDirectory)
+    //     config.controllerDirectory = DefaultControllerPath
 
-    if (!config.staticRootDirectory)
-        config.staticRootDirectory = DefaultStaticFileDirectory
+    // if (!config.staticRootDirectory)
+    //     config.staticRootDirectory = DefaultStaticFileDirectory
 
 
 
@@ -59,22 +59,26 @@ export function startServer(config: Config) {
         // controllerDirectories[i] = path.join(config.rootPath, controllerDirectories[i])
     }
 
-    if (!path.isAbsolute(config.staticRootDirectory))
+    if (config.staticRootDirectory && !path.isAbsolute(config.staticRootDirectory))
         throw errors.notAbsolutePath(config.staticRootDirectory);
     // config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
 
-    let controllerLoader = new ControllerLoader(controllerDirectories)
+    let controllerLoader: ControllerLoader;
+    if (controllerDirectories.length > 0)
+        controllerLoader = new ControllerLoader(controllerDirectories)
 
-    let fileServer: nodeStatic.Server
-    fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-        virtualPaths: config.virtualPaths,
-        serverInfo: `maishu-node-mvc ${packageInfo.version}`,
-        gzip: true
-    })
+    let fileServer: nodeStatic.Server | null = null;
+    if (config.staticRootDirectory) {
+        fileServer = new nodeStatic.Server(config.staticRootDirectory, {
+            virtualPaths: config.virtualPaths,
+            serverInfo: `maishu-node-mvc ${packageInfo.version}`,
+            gzip: true
+        })
 
-    let fileServer_resolve = fileServer.resolve
-    fileServer.resolve = function (pathname: string, req: http.IncomingMessage) {
-        return fileServer_resolve.apply(fileServer, [pathname, req])
+        let fileServer_resolve = fileServer.resolve
+        fileServer.resolve = function (pathname: string, req: http.IncomingMessage) {
+            return fileServer_resolve.apply(fileServer, [pathname, req])
+        }
     }
 
     let server = http.createServer(async (req, res) => {
@@ -111,9 +115,14 @@ export function startServer(config: Config) {
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
 
-            let { action, controller, routeData } = controllerLoader.getAction(pathName)
-            if (action != null && controller != null) {
-                executeAction(controller, action, routeData, req, res)
+            let r: ReturnType<ControllerLoader["getAction"]> | null = null;
+            if (controllerLoader) {
+                r = controllerLoader.getAction(pathName);
+            }
+
+            // let { action, controller, routeData } = controllerLoader.getAction(pathName)
+            if (r != null && r.action != null && r.controller != null) {
+                executeAction(r.controller, r.action, r.routeData, req, res)
                 return
             }
 
@@ -136,14 +145,7 @@ export function startServer(config: Config) {
                         if (typeof proxyItem.headers == 'function') {
                             let r = proxyItem.headers(req)
                             let p = r as Promise<any>
-                            // let headers
                             if (p != null && p.then && p.catch) {
-                                // p.then(d => {
-                                //     headers = d
-                                // }).catch(err => {
-                                //     outputError(err, res)
-                                //     return
-                                // })
                                 headers = await p
                             }
                             else {
@@ -160,8 +162,12 @@ export function startServer(config: Config) {
                 }
             }
             //=====================================================================
+            if (fileServer) {
+                fileServer.serve(req, res)
+                return;
+            }
 
-            fileServer.serve(req, res)
+            throw errors.pageNotFound(requestUrl);
 
         }
         catch (err) {

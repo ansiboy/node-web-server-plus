@@ -18,12 +18,12 @@ export class ControllerLoader {
     private routeActions: (ActionInfo & { route: UrlPattern })[] = [];
     // private routes: Route[] = [];
 
-    constructor(controller_directories: string[]) {
-        if (controller_directories == null || controller_directories.length == 0)
-            throw errors.arugmentNull('areas')
+    constructor(controllerDirectories: string[]) {
+        if (controllerDirectories == null || controllerDirectories.length == 0)
+            throw errors.arugmentNull('controllerDirectories')
 
         let controllerPaths: { [dir: string]: string[] } = {}
-        controller_directories.forEach(dir => {
+        controllerDirectories.forEach(dir => {
             if (!fs.existsSync(dir)) {
                 throw errors.controllerDirectoryNotExists(dir)
             }
@@ -171,9 +171,14 @@ export class ControllerLoader {
                 routeData = r;
                 controller = new this.routeActions[i].controllerType();
                 action = controller[this.routeActions[i].memberName];
+                break;
             }
         }
 
+        if (action == null)
+            return null;
+
+        console.assert(controller != null);
         return { action, controller, routeData }
     }
 }
