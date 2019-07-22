@@ -144,6 +144,15 @@ function startServer(config) {
 exports.startServer = startServer;
 function executeAction(controller, action, routeData, req, res) {
     return __awaiter(this, void 0, void 0, function* () {
+        if (!controller)
+            throw errors.arugmentNull("controller");
+        if (!action)
+            throw errors.arugmentNull("action");
+        if (!req)
+            throw errors.arugmentNull("req");
+        if (!res)
+            throw errors.arugmentNull("res");
+        routeData = routeData || {};
         let parameters = [];
         let parameterDecoders = []; //& { parameterValue?: any }
         parameterDecoders = Reflect.getMetadata(attributes_1.metaKeys.parameter, controller, action.name) || [];

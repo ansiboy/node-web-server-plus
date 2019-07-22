@@ -5,6 +5,6 @@
     },
     "include": [
         "index.ts",
-        "decorator.ts"
+        "decorators.ts"
     ]
 }

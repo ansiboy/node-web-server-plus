@@ -33,7 +33,7 @@ export interface Config {
 
 export function startServer(config: Config) {
     if (!config) throw errors.arugmentNull('config')
- 
+
     let controllerDirectories: string[] = []
     if (config.controllerDirectory) {
         if (typeof config.controllerDirectory == 'string')
@@ -173,6 +173,21 @@ export function startServer(config: Config) {
 
 async function executeAction(controller: object, action: Function, routeData: { [key: string]: string } | null,
     req: http.IncomingMessage, res: http.ServerResponse) {
+
+    if (!controller)
+        throw errors.arugmentNull("controller")
+
+    if (!action)
+        throw errors.arugmentNull("action")
+
+    if (!req)
+        throw errors.arugmentNull("req");
+
+    if (!res)
+        throw errors.arugmentNull("res");
+
+    routeData = routeData || {};
+
 
     let parameters: object[] = []
 
