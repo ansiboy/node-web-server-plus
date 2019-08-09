@@ -5,6 +5,7 @@ import "reflect-metadata";
 import http = require('http')
 import querystring = require('querystring');
 import url = require('url');
+import { ControllerLoader } from './controller-loader';
 
 const actionMetaKey = Symbol('action')
 const parameterMetaKey = Symbol('parameter')
@@ -28,7 +29,7 @@ interface ActionInfo {
     paths: string[],
 }
 
-interface ControllerInfo {
+export interface ControllerInfo {
     type: ControllerType<any>,
     path: string,
     actionDefines: ActionInfo[]
@@ -39,8 +40,8 @@ export type ControllerType<T> = { new(): T }
 //==============================================================================
 // controllerDefines 变量用作全局变量, 由于同一个文件可能会加载多次, 会导致变量失效
 // export let controllerDefines: ControllerInfo[] = []
-export let controllerDefines: ControllerInfo[] =
-    (global as any)["Node-MVC-ControllerInfos"] = (global as any)["Node-MVC-ControllerInfos"] || []
+// export let controllerDefines: ControllerInfo[] =
+//     (global as any)["Node-MVC-ControllerInfos"] = (global as any)["Node-MVC-ControllerInfos"] || []
 //==============================================================================
 
 /**
@@ -99,12 +100,12 @@ function registerController<T>(type: ControllerType<T>, path?: string) {
     if (path && path[0] != '/')
         path = '/' + path
 
-    let controllerDefine = controllerDefines.filter(o => o.type == type)[0]
+    let controllerDefine = ControllerLoader.controllerDefines.filter(o => o.type == type)[0]
     if (controllerDefine != null)
         throw errors.controlRegister(type)
 
     controllerDefine = { type: type, actionDefines: [], path }
-    controllerDefines.push(controllerDefine)
+    ControllerLoader.controllerDefines.push(controllerDefine)
 
     return controllerDefine
 }

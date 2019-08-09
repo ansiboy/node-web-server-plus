@@ -6,6 +6,8 @@ import { ControllerLoader } from './controller-loader';
 import nodeStatic = require('maishu-node-static')
 import { ActionResult, ContentResult, contentTypes } from './action-results';
 import { metaKeys, ActionParameterDecoder } from './attributes';
+import { Server } from 'https';
+import { ServerContext } from './server-context';
 
 let packageInfo = require('../package.json')
 
@@ -14,6 +16,7 @@ const DefaultStaticFileDirectory = 'public'
 
 interface ProxyItem {
     targetUrl: string,
+    rewrite?: [string, string],
     headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>)
 }
 
@@ -51,9 +54,11 @@ export function startServer(config: Config) {
         throw errors.notAbsolutePath(config.staticRootDirectory);
     // config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
 
+    let serverContext: ServerContext = {};
+
     let controllerLoader: ControllerLoader;
     if (controllerDirectories.length > 0)
-        controllerLoader = new ControllerLoader(controllerDirectories)
+        controllerLoader = new ControllerLoader(serverContext, controllerDirectories);
 
     let fileServer: nodeStatic.Server | null = null;
     if (config.staticRootDirectory) {
@@ -110,7 +115,7 @@ export function startServer(config: Config) {
 
             // let { action, controller, routeData } = controllerLoader.getAction(pathName)
             if (r != null && r.action != null && r.controller != null) {
-                executeAction(r.controller, r.action, r.routeData, req, res)
+                executeAction(serverContext, r.controller, r.action, r.routeData, req, res)
                 return
             }
 
@@ -143,7 +148,6 @@ export function startServer(config: Config) {
                         else if (typeof proxyItem.headers == 'object') {
                             headers = proxyItem.headers
                         }
-
                         proxyRequest(targetUrl, req, res, headers)
                         return
                     }
@@ -171,7 +175,7 @@ export function startServer(config: Config) {
 
 }
 
-async function executeAction(controller: object, action: Function, routeData: { [key: string]: string } | null,
+async function executeAction(serverContext: ServerContext, controller: object, action: Function, routeData: { [key: string]: string } | null,
     req: http.IncomingMessage, res: http.ServerResponse) {
 
     if (!controller)

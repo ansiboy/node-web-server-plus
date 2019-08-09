@@ -2,12 +2,13 @@ import * as errors from './errors'
 import * as fs from 'fs'
 import * as path from 'path'
 import isClass = require('is-class')
-import { controllerDefines, controller } from './attributes';
+import { controller, ControllerType, ControllerInfo } from './attributes';
 import { isRouteString } from "./router";
 // import Route = require("route-parser");
 import UrlPattern = require("url-pattern");
 import { Controller } from './controller';
 import { createAPIControllerType, ActionInfo } from './api-controller';
+import { ServerContext } from './server-context';
 
 export class ControllerLoader {
 
@@ -18,7 +19,9 @@ export class ControllerLoader {
     private routeActions: (ActionInfo & { route: UrlPattern })[] = [];
     // private routes: Route[] = [];
 
-    constructor(controllerDirectories: string[]) {
+    static controllerDefines: ControllerInfo[] = [];
+
+    constructor(serverContext: ServerContext, controllerDirectories: string[]) {
         if (controllerDirectories == null || controllerDirectories.length == 0)
             throw errors.arugmentNull('controllerDirectories')
 
@@ -50,7 +53,7 @@ export class ControllerLoader {
         });
         //==============================================
 
-        controllerDefines.forEach(c => {
+        ControllerLoader.controllerDefines.forEach(c => {
             console.assert((c.path || '') != '')
             c.actionDefines.forEach(a => {
 
@@ -124,8 +127,8 @@ export class ControllerLoader {
                 }
 
                 //TODO: 检查控制器是否重复
-                console.assert(controllerDefines != null)
-                let controllerDefine = controllerDefines.filter(o => o.type == ctrlType)[0]
+                console.assert(ControllerLoader.controllerDefines != null)
+                let controllerDefine = ControllerLoader.controllerDefines.filter(o => o.type == ctrlType)[0]
 
                 // 判断类型使用 ctrlType.prototype instanceof Controller 不可靠
                 if (controllerDefine == null && ctrlType["typeName"] == Controller.typeName) {
