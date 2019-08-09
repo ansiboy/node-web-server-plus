@@ -13,6 +13,7 @@ const constants_1 = require("./constants");
 require("reflect-metadata");
 const querystring = require("querystring");
 const url = require("url");
+const controller_loader_1 = require("./controller-loader");
 const actionMetaKey = Symbol('action');
 const parameterMetaKey = Symbol('parameter');
 exports.metaKeys = {
@@ -22,7 +23,8 @@ exports.metaKeys = {
 //==============================================================================
 // controllerDefines 变量用作全局变量, 由于同一个文件可能会加载多次, 会导致变量失效
 // export let controllerDefines: ControllerInfo[] = []
-exports.controllerDefines = global["Node-MVC-ControllerInfos"] = global["Node-MVC-ControllerInfos"] || [];
+// export let controllerDefines: ControllerInfo[] =
+//     (global as any)["Node-MVC-ControllerInfos"] = (global as any)["Node-MVC-ControllerInfos"] || []
 //==============================================================================
 /**
  * 标记一个类是否为控制器
@@ -75,11 +77,11 @@ function registerController(type, path) {
     }
     if (path && path[0] != '/')
         path = '/' + path;
-    let controllerDefine = exports.controllerDefines.filter(o => o.type == type)[0];
+    let controllerDefine = controller_loader_1.ControllerLoader.controllerDefines.filter(o => o.type == type)[0];
     if (controllerDefine != null)
         throw errors.controlRegister(type);
     controllerDefine = { type: type, actionDefines: [], path };
-    exports.controllerDefines.push(controllerDefine);
+    controller_loader_1.ControllerLoader.controllerDefines.push(controllerDefine);
     return controllerDefine;
 }
 function registerAction(controllerDefine, memberName, paths) {

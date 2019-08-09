@@ -11,8 +11,7 @@ const UrlPattern = require("url-pattern");
 const controller_1 = require("./controller");
 const api_controller_1 = require("./api-controller");
 class ControllerLoader {
-    // private routes: Route[] = [];
-    constructor(controllerDirectories) {
+    constructor(serverContext, controllerDirectories) {
         // 使用路径进行匹配的 action
         this.pathActions = {};
         // 使用路由进行匹配的 action
@@ -41,7 +40,7 @@ class ControllerLoader {
             return actionInfos;
         });
         //==============================================
-        attributes_1.controllerDefines.forEach(c => {
+        ControllerLoader.controllerDefines.forEach(c => {
             console.assert((c.path || '') != '');
             c.actionDefines.forEach(a => {
                 let actionPaths = a.paths || [];
@@ -109,8 +108,8 @@ class ControllerLoader {
                     continue;
                 }
                 //TODO: 检查控制器是否重复
-                console.assert(attributes_1.controllerDefines != null);
-                let controllerDefine = attributes_1.controllerDefines.filter(o => o.type == ctrlType)[0];
+                console.assert(ControllerLoader.controllerDefines != null);
+                let controllerDefine = ControllerLoader.controllerDefines.filter(o => o.type == ctrlType)[0];
                 // 判断类型使用 ctrlType.prototype instanceof Controller 不可靠
                 if (controllerDefine == null && ctrlType["typeName"] == controller_1.Controller.typeName) {
                     attributes_1.controller(ctrlType.name)(ctrlType);
@@ -154,6 +153,8 @@ class ControllerLoader {
         return { action, controller, routeData };
     }
 }
+// private routes: Route[] = [];
+ControllerLoader.controllerDefines = [];
 exports.ControllerLoader = ControllerLoader;
 let innerErrors = {
     invalidAreaType(areaName, actualType) {

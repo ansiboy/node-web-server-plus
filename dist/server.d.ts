@@ -3,6 +3,7 @@ import http = require('http');
 import { ActionResult } from './action-results';
 interface ProxyItem {
     targetUrl: string;
+    rewrite?: [string, string];
     headers?: {
         [name: string]: string;
     } | ((req: http.IncomingMessage) => {

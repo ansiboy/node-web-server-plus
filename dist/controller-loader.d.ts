@@ -1,7 +1,10 @@
+import { ControllerInfo } from './attributes';
+import { ServerContext } from './server-context';
 export declare class ControllerLoader {
     private pathActions;
     private routeActions;
-    constructor(controllerDirectories: string[]);
+    static controllerDefines: ControllerInfo[];
+    constructor(serverContext: ServerContext, controllerDirectories: string[]);
     private joinPaths;
     /**
      * 获取指定文件夹中（包括子目录），控制器的路径。

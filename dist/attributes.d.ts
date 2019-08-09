@@ -16,7 +16,7 @@ interface ActionInfo {
     memberName: string;
     paths: string[];
 }
-interface ControllerInfo {
+export interface ControllerInfo {
     type: ControllerType<any>;
     path: string;
     actionDefines: ActionInfo[];
@@ -24,7 +24,6 @@ interface ControllerInfo {
 export declare type ControllerType<T> = {
     new (): T;
 };
-export declare let controllerDefines: ControllerInfo[];
 /**
  * 标记一个类是否为控制器
  * @param path 路径

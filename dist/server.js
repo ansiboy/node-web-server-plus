@@ -36,9 +36,10 @@ function startServer(config) {
     if (config.staticRootDirectory && !path.isAbsolute(config.staticRootDirectory))
         throw errors.notAbsolutePath(config.staticRootDirectory);
     // config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
+    let serverContext = {};
     let controllerLoader;
     if (controllerDirectories.length > 0)
-        controllerLoader = new controller_loader_1.ControllerLoader(controllerDirectories);
+        controllerLoader = new controller_loader_1.ControllerLoader(serverContext, controllerDirectories);
     let fileServer = null;
     if (config.staticRootDirectory) {
         fileServer = new nodeStatic.Server(config.staticRootDirectory, {
@@ -88,7 +89,7 @@ function startServer(config) {
             }
             // let { action, controller, routeData } = controllerLoader.getAction(pathName)
             if (r != null && r.action != null && r.controller != null) {
-                executeAction(r.controller, r.action, r.routeData, req, res);
+                executeAction(serverContext, r.controller, r.action, r.routeData, req, res);
                 return;
             }
             //=====================================================================
@@ -142,7 +143,7 @@ function startServer(config) {
     server.listen(config.port, config.bindIP);
 }
 exports.startServer = startServer;
-function executeAction(controller, action, routeData, req, res) {
+function executeAction(serverContext, controller, action, routeData, req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!controller)
             throw errors.arugmentNull("controller");
