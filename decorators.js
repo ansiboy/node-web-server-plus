@@ -7,3 +7,4 @@ exports.routeData = attributes_1.routeData;
 exports.request = attributes_1.request;
 exports.response = attributes_1.response;
 exports.requestHeaders = attributes_1.requestHeaders;
+exports.context = attributes_1.context;

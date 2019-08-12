@@ -1,1 +1,1 @@
-export { controller, action, routeData, request, response, requestHeaders } from "./dist/attributes";
+export { controller, action, routeData, request, response, requestHeaders, context } from "./dist/attributes";

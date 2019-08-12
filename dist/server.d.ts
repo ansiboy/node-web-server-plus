@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import http = require('http');
 import { ActionResult } from './action-results';
+import { ServerContext } from './server-context';
 interface ProxyItem {
     targetUrl: string;
     rewrite?: [string, string];
@@ -20,8 +21,9 @@ export interface Config {
     proxy?: {
         [path_pattern: string]: string | ProxyItem;
     };
-    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult | null>;
-    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult | null>)[];
+    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>;
+    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[];
+    serverName?: string;
     /** 设置默认的 Http Header */
     headers?: {
         [name: string]: string;

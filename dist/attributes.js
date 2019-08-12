@@ -159,7 +159,7 @@ exports.routeData = (function () {
         }
         return obj;
     }
-    return createParameterDecorator((req, routeData) => __awaiter(this, void 0, void 0, function* () {
+    return createParameterDecorator((req, res, context, routeData) => __awaiter(this, void 0, void 0, function* () {
         let obj = routeData = routeData || {};
         let queryData = getQueryObject(req);
         console.assert(queryData != null);
@@ -172,12 +172,15 @@ exports.routeData = (function () {
     }));
 })();
 exports.formData = exports.routeData;
-exports.request = createParameterDecorator((req, res) => __awaiter(this, void 0, void 0, function* () {
+exports.request = createParameterDecorator((req) => __awaiter(this, void 0, void 0, function* () {
     return req;
 }));
 exports.response = createParameterDecorator((req, res) => __awaiter(this, void 0, void 0, function* () {
     return res;
 }));
-exports.requestHeaders = createParameterDecorator((req, res) => __awaiter(this, void 0, void 0, function* () {
+exports.requestHeaders = createParameterDecorator((req) => __awaiter(this, void 0, void 0, function* () {
     return req.headers;
+}));
+exports.context = createParameterDecorator((req, res, context) => __awaiter(this, void 0, void 0, function* () {
+    return context;
 }));

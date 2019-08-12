@@ -1,13 +1,14 @@
 /// <reference types="node" />
 import "reflect-metadata";
 import http = require('http');
+import { ServerContext } from './server-context';
 export declare let metaKeys: {
     action: symbol;
     parameter: symbol;
 };
 export interface ActionParameterDecoder<T> {
     parameterIndex: number;
-    createParameter: (req: http.IncomingMessage, routeData: {
+    createParameter: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext, routeData: {
         [key: string]: string;
     } | null) => Promise<T>;
     disposeParameter?: (parameter: T) => void;
@@ -39,7 +40,7 @@ export declare function action(...paths: string[]): (target: any, propertyKey: s
 export declare function register<T>(type: ControllerType<T>, path?: string): {
     action(member: keyof T, paths?: string[] | undefined): any;
 };
-export declare function createParameterDecorator<T>(createParameter: (req: http.IncomingMessage, routeData: {
+export declare function createParameterDecorator<T>(createParameter: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext, routeData: {
     [key: string]: string;
 } | null) => Promise<T>, disposeParameter?: (parameter: T) => void): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare let routeData: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
@@ -47,4 +48,5 @@ export declare let formData: (target: Object, propertyKey: string | symbol, para
 export declare let request: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare let response: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare let requestHeaders: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare let context: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
 export {};

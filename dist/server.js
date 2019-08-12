@@ -35,8 +35,7 @@ function startServer(config) {
     }
     if (config.staticRootDirectory && !path.isAbsolute(config.staticRootDirectory))
         throw errors.notAbsolutePath(config.staticRootDirectory);
-    // config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
-    let serverContext = {};
+    let serverContext = { data: {} };
     let controllerLoader;
     if (controllerDirectories.length > 0)
         controllerLoader = new controller_loader_1.ControllerLoader(serverContext, controllerDirectories);
@@ -44,8 +43,8 @@ function startServer(config) {
     if (config.staticRootDirectory) {
         fileServer = new nodeStatic.Server(config.staticRootDirectory, {
             virtualPaths: config.virtualPaths,
-            serverInfo: `maishu-node-mvc ${packageInfo.version}`,
-            gzip: true
+            serverInfo: `maishu-node-mvc ${packageInfo.version} ${config.serverName}`,
+            gzip: true,
         });
         let fileServer_resolve = fileServer.resolve;
         fileServer.resolve = function (pathname, req) {
@@ -64,7 +63,7 @@ function startServer(config) {
         }
         try {
             if (config.authenticate) {
-                let r = yield config.authenticate(req, res);
+                let r = yield config.authenticate(req, res, serverContext);
                 if (r) {
                     outputResult(r, res, req);
                     return;
@@ -73,7 +72,7 @@ function startServer(config) {
             if (config.actionFilters) {
                 let actionFilters = config.actionFilters || [];
                 for (let i = 0; i < actionFilters.length; i++) {
-                    let result = yield actionFilters[i](req, res);
+                    let result = yield actionFilters[i](req, res, serverContext);
                     if (result != null) {
                         outputResult(result, res, req);
                         return;
@@ -155,11 +154,11 @@ function executeAction(serverContext, controller, action, routeData, req, res) {
             throw errors.arugmentNull("res");
         routeData = routeData || {};
         let parameters = [];
-        let parameterDecoders = []; //& { parameterValue?: any }
+        let parameterDecoders = [];
         parameterDecoders = Reflect.getMetadata(attributes_1.metaKeys.parameter, controller, action.name) || [];
         for (let i = 0; i < parameterDecoders.length; i++) {
             let metaData = parameterDecoders[i];
-            let parameterValue = yield metaData.createParameter(req, routeData);
+            let parameterValue = yield metaData.createParameter(req, res, serverContext, routeData);
             parameters[metaData.parameterIndex] = parameterValue;
         }
         let actionResult = action.apply(controller, parameters);
