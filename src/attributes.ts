@@ -6,6 +6,7 @@ import http = require('http')
 import querystring = require('querystring');
 import url = require('url');
 import { ControllerLoader } from './controller-loader';
+import { ServerContext } from './server-context';
 
 const actionMetaKey = Symbol('action')
 const parameterMetaKey = Symbol('parameter')
@@ -19,7 +20,9 @@ export interface ActionParameterDecoder<T> {
     parameterIndex: number,
     createParameter: (
         req: http.IncomingMessage,
-        routeData: { [key: string]: string } | null
+        res: http.ServerResponse,
+        context: ServerContext,
+        routeData: { [key: string]: string } | null,
     ) => Promise<T>,
     disposeParameter?: (parameter: T) => void
 }
@@ -119,7 +122,7 @@ function registerAction<T>(controllerDefine: ControllerInfo, memberName: keyof T
 }
 
 export function createParameterDecorator<T>(
-    createParameter: (req: http.IncomingMessage, routeData: { [key: string]: string } | null) => Promise<T>, disposeParameter?: (parameter: T) => void) {
+    createParameter: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext, routeData: { [key: string]: string } | null) => Promise<T>, disposeParameter?: (parameter: T) => void) {
     return function (target: Object, propertyKey: string | symbol, parameterIndex: number) {
 
         let value: ActionParameterDecoder<T>[] = Reflect.getMetadata(metaKeys.parameter, target, propertyKey) || []
@@ -199,7 +202,7 @@ export let routeData = (function () {
         return obj;
     }
 
-    return createParameterDecorator<any>(async (req, routeData) => {
+    return createParameterDecorator<any>(async (req: http.IncomingMessage, res, context, routeData?: { [key: string]: string } | null) => {
         let obj: any = routeData = routeData || {}
 
         let queryData = getQueryObject(req);
@@ -219,19 +222,25 @@ export let routeData = (function () {
 export let formData = routeData;
 
 export let request = createParameterDecorator(
-    async (req, res) => {
+    async (req) => {
         return req;
     }
 )
 
 export let response = createParameterDecorator(
-    async (req, res) => {
+    async (req, res: http.ServerResponse) => {
         return res;
     }
 )
 
 export let requestHeaders = createParameterDecorator(
-    async (req, res) => {
+    async (req) => {
         return req.headers;
+    }
+)
+
+export let context = createParameterDecorator(
+    async (req, res, context: ServerContext) => {
+        return context;
     }
 )

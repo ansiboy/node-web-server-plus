@@ -26,9 +26,9 @@ export interface Config {
     controllerDirectory?: string | string[],
     staticRootDirectory?: string,
     proxy?: { [path_pattern: string]: string | ProxyItem },
-    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult | null>,
-    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult | null>)[],
-
+    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>,
+    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[],
+    serverName?: string,
     /** 设置默认的 Http Header */
     headers?: { [name: string]: string }
     virtualPaths?: { [virtualPath: string]: string }
@@ -52,9 +52,8 @@ export function startServer(config: Config) {
 
     if (config.staticRootDirectory && !path.isAbsolute(config.staticRootDirectory))
         throw errors.notAbsolutePath(config.staticRootDirectory);
-    // config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
 
-    let serverContext: ServerContext = {};
+    let serverContext: ServerContext = { data: {} };
 
     let controllerLoader: ControllerLoader;
     if (controllerDirectories.length > 0)
@@ -64,8 +63,8 @@ export function startServer(config: Config) {
     if (config.staticRootDirectory) {
         fileServer = new nodeStatic.Server(config.staticRootDirectory, {
             virtualPaths: config.virtualPaths,
-            serverInfo: `maishu-node-mvc ${packageInfo.version}`,
-            gzip: true
+            serverInfo: `maishu-node-mvc ${packageInfo.version} ${config.serverName}`,
+            gzip: true,
         })
 
         let fileServer_resolve = fileServer.resolve
@@ -86,7 +85,7 @@ export function startServer(config: Config) {
         }
         try {
             if (config.authenticate) {
-                let r = await config.authenticate(req, res)
+                let r = await config.authenticate(req, res, serverContext)
                 if (r) {
                     outputResult(r, res, req)
                     return
@@ -96,7 +95,7 @@ export function startServer(config: Config) {
             if (config.actionFilters) {
                 let actionFilters = config.actionFilters || []
                 for (let i = 0; i < actionFilters.length; i++) {
-                    let result = await actionFilters[i](req, res)
+                    let result = await actionFilters[i](req, res, serverContext)
                     if (result != null) {
                         outputResult(result, res, req)
                         return
@@ -195,11 +194,11 @@ async function executeAction(serverContext: ServerContext, controller: object, a
 
     let parameters: object[] = []
 
-    let parameterDecoders: (ActionParameterDecoder<any>)[] = []//& { parameterValue?: any }
+    let parameterDecoders: (ActionParameterDecoder<any>)[] = []
     parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name) || []
     for (let i = 0; i < parameterDecoders.length; i++) {
         let metaData = parameterDecoders[i];
-        let parameterValue = await metaData.createParameter(req, routeData);
+        let parameterValue = await metaData.createParameter(req, res, serverContext, routeData);
         parameters[metaData.parameterIndex] = parameterValue;
     }
 
