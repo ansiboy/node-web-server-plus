@@ -1,10 +1,11 @@
 import { ControllerType } from "./attributes";
+import { ServerContext } from "./server-context";
 export declare type ActionInfo = {
     controllerType: ControllerType<any>;
     memberName: string;
     actionPath: string;
 };
-export declare function createAPIControllerType(getActionInfos: () => ActionInfo[]): {
+export declare function createAPIControllerType(getActionInfos: () => ActionInfo[], serverContext: ServerContext): {
     new (): {
         list(): Promise<{
             path: string;

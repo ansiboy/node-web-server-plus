@@ -11,8 +11,10 @@ const UrlPattern = require("url-pattern");
 const controller_1 = require("./controller");
 const api_controller_1 = require("./api-controller");
 class ControllerLoader {
+    // private routes: Route[] = [];
+    // static controllerDefines: ControllerInfo[] = [];
     constructor(serverContext, controllerDirectories) {
-        // 使用路径进行匹配的 action
+        // 使用路径进行匹配的 action
         this.pathActions = {};
         // 使用路由进行匹配的 action
         this.routeActions = [];
@@ -27,7 +29,7 @@ class ControllerLoader {
         });
         for (let dir in controllerPaths) {
             controllerPaths[dir].forEach(controllerPath => {
-                this.loadController(controllerPath);
+                this.loadController(controllerPath, serverContext);
             });
         }
         //=============================================
@@ -38,9 +40,10 @@ class ControllerLoader {
                 ...this.routeActions
             ];
             return actionInfos;
-        });
+        }, serverContext);
         //==============================================
-        ControllerLoader.controllerDefines.forEach(c => {
+        console.assert(serverContext.controllerDefines != null);
+        serverContext.controllerDefines.forEach(c => {
             console.assert((c.path || '') != '');
             c.actionDefines.forEach(a => {
                 let actionPaths = a.paths || [];
@@ -97,7 +100,7 @@ class ControllerLoader {
         }
         return controllerPaths;
     }
-    loadController(controllerPath) {
+    loadController(controllerPath, serverContext) {
         try {
             let mod = require(controllerPath);
             console.assert(mod != null);
@@ -107,12 +110,17 @@ class ControllerLoader {
                 if (!isClass(ctrlType)) {
                     continue;
                 }
+                if (ctrlType.prototype[attributes_1.CONTROLLER_REGISTER]) {
+                    ctrlType.prototype[attributes_1.CONTROLLER_REGISTER](serverContext);
+                    continue;
+                }
                 //TODO: 检查控制器是否重复
-                console.assert(ControllerLoader.controllerDefines != null);
-                let controllerDefine = ControllerLoader.controllerDefines.filter(o => o.type == ctrlType)[0];
+                console.assert(serverContext.controllerDefines != null);
+                let controllerDefine = serverContext.controllerDefines.filter(o => o.type == ctrlType)[0];
                 // 判断类型使用 ctrlType.prototype instanceof Controller 不可靠
                 if (controllerDefine == null && ctrlType["typeName"] == controller_1.Controller.typeName) {
                     attributes_1.controller(ctrlType.name)(ctrlType);
+                    ctrlType.prototype[attributes_1.CONTROLLER_REGISTER](serverContext);
                 }
             }
         }
@@ -153,8 +161,6 @@ class ControllerLoader {
         return { action, controller, routeData };
     }
 }
-// private routes: Route[] = [];
-ControllerLoader.controllerDefines = [];
 exports.ControllerLoader = ControllerLoader;
 let innerErrors = {
     invalidAreaType(areaName, actualType) {

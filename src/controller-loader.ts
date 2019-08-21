@@ -2,7 +2,7 @@ import * as errors from './errors'
 import * as fs from 'fs'
 import * as path from 'path'
 import isClass = require('is-class')
-import { controller, ControllerType, ControllerInfo } from './attributes';
+import { controller, ControllerType, ControllerInfo, CONTROLLER_REGISTER } from './attributes';
 import { isRouteString } from "./router";
 // import Route = require("route-parser");
 import UrlPattern = require("url-pattern");
@@ -12,14 +12,14 @@ import { ServerContext } from './server-context';
 
 export class ControllerLoader {
 
-    // 使用路径进行匹配的 action
+    // 使用路径进行匹配的 action
     private pathActions: { [path: string]: ActionInfo } = {};
 
     // 使用路由进行匹配的 action
     private routeActions: (ActionInfo & { route: UrlPattern })[] = [];
     // private routes: Route[] = [];
 
-    static controllerDefines: ControllerInfo[] = [];
+    // static controllerDefines: ControllerInfo[] = [];
 
     constructor(serverContext: ServerContext, controllerDirectories: string[]) {
         if (controllerDirectories == null || controllerDirectories.length == 0)
@@ -36,7 +36,7 @@ export class ControllerLoader {
 
         for (let dir in controllerPaths) {
             controllerPaths[dir].forEach(controllerPath => {
-                this.loadController(controllerPath)
+                this.loadController(controllerPath, serverContext)
             })
         }
 
@@ -50,10 +50,11 @@ export class ControllerLoader {
             ];
 
             return actionInfos;
-        });
+        }, serverContext);
         //==============================================
 
-        ControllerLoader.controllerDefines.forEach(c => {
+        console.assert(serverContext.controllerDefines != null);
+        serverContext.controllerDefines.forEach(c => {
             console.assert((c.path || '') != '')
             c.actionDefines.forEach(a => {
 
@@ -115,10 +116,10 @@ export class ControllerLoader {
         return controllerPaths
     }
 
-    private loadController(controllerPath: string): void {
+    private loadController(controllerPath: string, serverContext: ServerContext): void {
         try {
             let mod = require(controllerPath);
-            console.assert(mod != null)
+            console.assert(mod != null);
             let propertyNames = Object.getOwnPropertyNames(mod)
             for (let i = 0; i < propertyNames.length; i++) {
                 let ctrlType = mod[propertyNames[i]]
@@ -126,13 +127,19 @@ export class ControllerLoader {
                     continue
                 }
 
+                if (ctrlType.prototype[CONTROLLER_REGISTER]) {
+                    ctrlType.prototype[CONTROLLER_REGISTER](serverContext);
+                    continue;
+                }
+
                 //TODO: 检查控制器是否重复
-                console.assert(ControllerLoader.controllerDefines != null)
-                let controllerDefine = ControllerLoader.controllerDefines.filter(o => o.type == ctrlType)[0]
+                console.assert(serverContext.controllerDefines != null)
+                let controllerDefine = serverContext.controllerDefines.filter(o => o.type == ctrlType)[0]
 
                 // 判断类型使用 ctrlType.prototype instanceof Controller 不可靠
                 if (controllerDefine == null && ctrlType["typeName"] == Controller.typeName) {
                     controller(ctrlType.name)(ctrlType);
+                    ctrlType.prototype[CONTROLLER_REGISTER](serverContext);
                 }
             }
         }

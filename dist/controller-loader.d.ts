@@ -1,9 +1,7 @@
-import { ControllerInfo } from './attributes';
 import { ServerContext } from './server-context';
 export declare class ControllerLoader {
     private pathActions;
     private routeActions;
-    static controllerDefines: ControllerInfo[];
     constructor(serverContext: ServerContext, controllerDirectories: string[]);
     private joinPaths;
     /**

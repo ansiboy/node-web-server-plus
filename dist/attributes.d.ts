@@ -25,6 +25,7 @@ export interface ControllerInfo {
 export declare type ControllerType<T> = {
     new (): T;
 };
+export declare let CONTROLLER_REGISTER: string;
 /**
  * 标记一个类是否为控制器
  * @param path 路径
@@ -37,7 +38,7 @@ export declare function controller<T extends {
  * @param paths 路径
  */
 export declare function action(...paths: string[]): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => void;
-export declare function register<T>(type: ControllerType<T>, path?: string): {
+export declare function register<T>(type: ControllerType<T>, serverContext: ServerContext, path?: string): {
     action(member: keyof T, paths?: string[] | undefined): any;
 };
 export declare function createParameterDecorator<T>(createParameter: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext, routeData: {

@@ -53,7 +53,7 @@ export function startServer(config: Config) {
     if (config.staticRootDirectory && !path.isAbsolute(config.staticRootDirectory))
         throw errors.notAbsolutePath(config.staticRootDirectory);
 
-    let serverContext: ServerContext = { data: {} };
+    let serverContext: ServerContext = { data: {}, controllerDefines: [] };
 
     let controllerLoader: ControllerLoader;
     if (controllerDirectories.length > 0)

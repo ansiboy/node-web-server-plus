@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const controller_1 = require("./controller");
 const attributes_1 = require("./attributes");
-function createAPIControllerType(getActionInfos) {
+function createAPIControllerType(getActionInfos, serverContext) {
     let APIControllerType = class APIController extends controller_1.Controller {
         list() {
             return __awaiter(this, void 0, void 0, function* () {
@@ -24,7 +24,7 @@ function createAPIControllerType(getActionInfos) {
             });
         }
     };
-    attributes_1.register(APIControllerType).action("list", ["/api/action/list"]);
+    attributes_1.register(APIControllerType, serverContext).action("list", ["/api/action/list"]);
     return APIControllerType;
 }
 exports.createAPIControllerType = createAPIControllerType;

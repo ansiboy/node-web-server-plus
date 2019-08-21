@@ -6,6 +6,6 @@ class Test2 {
     }
 }
 
-register(Test2, '/test2').action('check')
+// register(Test2, '/test2').action('check')
 
 exports.default = Test2

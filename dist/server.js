@@ -35,7 +35,7 @@ function startServer(config) {
     }
     if (config.staticRootDirectory && !path.isAbsolute(config.staticRootDirectory))
         throw errors.notAbsolutePath(config.staticRootDirectory);
-    let serverContext = { data: {} };
+    let serverContext = { data: {}, controllerDefines: [] };
     let controllerLoader;
     if (controllerDirectories.length > 0)
         controllerLoader = new controller_loader_1.ControllerLoader(serverContext, controllerDirectories);
