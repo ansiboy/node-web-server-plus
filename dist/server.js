@@ -17,8 +17,6 @@ const nodeStatic = require("maishu-node-static");
 const action_results_1 = require("./action-results");
 const attributes_1 = require("./attributes");
 let packageInfo = require('../package.json');
-const DefaultControllerPath = 'controllers';
-const DefaultStaticFileDirectory = 'public';
 function startServer(config) {
     if (!config)
         throw errors.arugmentNull('config');
@@ -84,9 +82,8 @@ function startServer(config) {
             let pathName = urlInfo.pathname || '';
             let r = null;
             if (controllerLoader) {
-                r = controllerLoader.getAction(pathName);
+                r = controllerLoader.getAction(pathName, serverContext);
             }
-            // let { action, controller, routeData } = controllerLoader.getAction(pathName)
             if (r != null && r.action != null && r.controller != null) {
                 executeAction(serverContext, r.controller, r.action, r.routeData, req, res);
                 return;
@@ -256,7 +253,6 @@ exports.proxyRequest = proxyRequest;
 function createTargetResquest(targetUrl, req, res, headers) {
     let u = url.parse(targetUrl);
     let { protocol, hostname, port, path } = u;
-    // let headers: any = req.headers;
     headers = headers || {};
     headers = Object.assign(req.headers, headers);
     let request = http.request({

@@ -10,7 +10,7 @@ export declare class ControllerLoader {
      */
     private getControllerPaths;
     private loadController;
-    getAction(virtualPath: string): {
+    getAction(virtualPath: string, serverContext: ServerContext): {
         action: any;
         controller: any;
         routeData: {

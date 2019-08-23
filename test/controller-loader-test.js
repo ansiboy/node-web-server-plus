@@ -11,7 +11,7 @@ describe("controller-loader", function () {
 
     assert.ok(fs.existsSync(controllerPath));
 
-    let loader = new ControllerLoader([controllerPath]);
+    let loader = new ControllerLoader({}, [controllerPath]);
     it("home index action，应该返回非空的 action", function () {
         let r = loader.getAction(actionPaths.home.index);
         assert(r.action != null);

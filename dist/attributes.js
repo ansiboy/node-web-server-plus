@@ -13,11 +13,11 @@ const constants_1 = require("./constants");
 require("reflect-metadata");
 const querystring = require("querystring");
 const url = require("url");
-const actionMetaKey = Symbol('action');
-const parameterMetaKey = Symbol('parameter');
+// const actionMetaKey = Symbol('action')
+// const parameterMetaKey = Symbol('parameter')
 exports.metaKeys = {
-    action: actionMetaKey,
-    parameter: parameterMetaKey
+    action: "actionMetaKey",
+    parameter: "parameterMetaKey"
 };
 //==============================================================================
 // controllerDefines 变量用作全局变量, 由于同一个文件可能会加载多次, 会导致变量失效
@@ -36,7 +36,7 @@ function controller(path) {
             let controllerInfo = registerController(constructor, serverContext, path);
             let propertyNames = Object.getOwnPropertyNames(constructor.prototype);
             for (let i = 0; i < propertyNames.length; i++) {
-                let metadata = Reflect.getMetadata(actionMetaKey, constructor, propertyNames[i]);
+                let metadata = Reflect.getMetadata(exports.metaKeys.action, constructor, propertyNames[i]);
                 if (metadata) {
                     registerAction(controllerInfo, metadata.memberName, metadata.paths);
                 }
@@ -54,10 +54,10 @@ function action(...paths) {
         let memberName = descriptor.value.name;
         let obj = { memberName, paths };
         let controllerType = target.constructor;
-        let actionDefine = Reflect.getMetadata(actionMetaKey, controllerType, propertyKey);
+        let actionDefine = Reflect.getMetadata(exports.metaKeys.action, controllerType, propertyKey);
         if (actionDefine)
             throw errors.onlyOneAction(propertyKey);
-        Reflect.defineMetadata(actionMetaKey, obj, controllerType, propertyKey);
+        Reflect.defineMetadata(exports.metaKeys.action, obj, controllerType, propertyKey);
     };
 }
 exports.action = action;

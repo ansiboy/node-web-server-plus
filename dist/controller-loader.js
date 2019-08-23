@@ -11,8 +11,6 @@ const UrlPattern = require("url-pattern");
 const controller_1 = require("./controller");
 const api_controller_1 = require("./api-controller");
 class ControllerLoader {
-    // private routes: Route[] = [];
-    // static controllerDefines: ControllerInfo[] = [];
     constructor(serverContext, controllerDirectories) {
         // 使用路径进行匹配的 action
         this.pathActions = {};
@@ -129,7 +127,7 @@ class ControllerLoader {
             throw innerErrors.loadControllerFail(controllerPath, err);
         }
     }
-    getAction(virtualPath) {
+    getAction(virtualPath, serverContext) {
         if (!virtualPath)
             throw errors.arugmentNull('virtualPath');
         // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
@@ -143,6 +141,7 @@ class ControllerLoader {
         let routeData = null;
         if (actionInfo != null) {
             controller = new actionInfo.controllerType();
+            controller.serverContext = serverContext;
             action = controller[actionInfo.memberName];
             console.assert(action != null);
         }

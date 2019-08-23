@@ -2,6 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const action_results_1 = require("./action-results");
 class Controller {
+    constructor() {
+        this.serverContext = null;
+    }
     content(value, type, statusCode) {
         if (typeof type == "number") {
             statusCode = type;

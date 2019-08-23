@@ -3,8 +3,8 @@ import "reflect-metadata";
 import http = require('http');
 import { ServerContext } from './server-context';
 export declare let metaKeys: {
-    action: symbol;
-    parameter: symbol;
+    action: string;
+    parameter: string;
 };
 export interface ActionParameterDecoder<T> {
     parameterIndex: number;
@@ -43,11 +43,11 @@ export declare function register<T>(type: ControllerType<T>, serverContext: Serv
 };
 export declare function createParameterDecorator<T>(createParameter: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext, routeData: {
     [key: string]: string;
-} | null) => Promise<T>, disposeParameter?: (parameter: T) => void): (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare let routeData: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare let formData: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare let request: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare let response: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare let requestHeaders: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare let context: (target: Object, propertyKey: string | symbol, parameterIndex: number) => void;
+} | null) => Promise<T>, disposeParameter?: (parameter: T) => void): (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare let routeData: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare let formData: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare let request: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare let response: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare let requestHeaders: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare let context: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
 export {};
