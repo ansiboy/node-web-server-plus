@@ -6,7 +6,7 @@ import { controller, ControllerType, ControllerInfo, CONTROLLER_REGISTER } from 
 import { isRouteString } from "./router";
 // import Route = require("route-parser");
 import UrlPattern = require("url-pattern");
-import { Controller, IController } from './controller';
+import { Controller } from './controller';
 import { createAPIControllerType, ActionInfo } from './api-controller';
 import { ServerContext } from './server-context';
 
@@ -165,7 +165,6 @@ export class ControllerLoader {
 
         if (actionInfo != null) {
             controller = new actionInfo.controllerType();
-            (controller as IController).serverContext = serverContext;
             action = controller[actionInfo.memberName]
             console.assert(action != null)
         }

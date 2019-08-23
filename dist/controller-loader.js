@@ -141,7 +141,6 @@ class ControllerLoader {
         let routeData = null;
         if (actionInfo != null) {
             controller = new actionInfo.controllerType();
-            controller.serverContext = serverContext;
             action = controller[actionInfo.memberName];
             console.assert(action != null);
         }
