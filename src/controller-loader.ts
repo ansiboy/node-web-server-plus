@@ -6,7 +6,7 @@ import { controller, ControllerType, ControllerInfo, CONTROLLER_REGISTER } from 
 import { isRouteString } from "./router";
 // import Route = require("route-parser");
 import UrlPattern = require("url-pattern");
-import { Controller } from './controller';
+import { Controller, IController } from './controller';
 import { createAPIControllerType, ActionInfo } from './api-controller';
 import { ServerContext } from './server-context';
 
@@ -17,9 +17,6 @@ export class ControllerLoader {
 
     // 使用路由进行匹配的 action
     private routeActions: (ActionInfo & { route: UrlPattern })[] = [];
-    // private routes: Route[] = [];
-
-    // static controllerDefines: ControllerInfo[] = [];
 
     constructor(serverContext: ServerContext, controllerDirectories: string[]) {
         if (controllerDirectories == null || controllerDirectories.length == 0)
@@ -150,7 +147,7 @@ export class ControllerLoader {
     }
 
 
-    getAction(virtualPath: string) {
+    getAction(virtualPath: string, serverContext: ServerContext) {
 
         if (!virtualPath) throw errors.arugmentNull('virtualPath')
 
@@ -167,7 +164,8 @@ export class ControllerLoader {
         let routeData: { [key: string]: string } | null = null;
 
         if (actionInfo != null) {
-            controller = new actionInfo.controllerType()
+            controller = new actionInfo.controllerType();
+            (controller as IController).serverContext = serverContext;
             action = controller[actionInfo.memberName]
             console.assert(action != null)
         }

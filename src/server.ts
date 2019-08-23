@@ -6,13 +6,9 @@ import { ControllerLoader } from './controller-loader';
 import nodeStatic = require('maishu-node-static')
 import { ActionResult, ContentResult, contentTypes } from './action-results';
 import { metaKeys, ActionParameterDecoder } from './attributes';
-import { Server } from 'https';
 import { ServerContext } from './server-context';
 
 let packageInfo = require('../package.json')
-
-const DefaultControllerPath = 'controllers'
-const DefaultStaticFileDirectory = 'public'
 
 interface ProxyItem {
     targetUrl: string,
@@ -109,10 +105,9 @@ export function startServer(config: Config) {
 
             let r: ReturnType<ControllerLoader["getAction"]> | null = null;
             if (controllerLoader) {
-                r = controllerLoader.getAction(pathName);
+                r = controllerLoader.getAction(pathName, serverContext);
             }
 
-            // let { action, controller, routeData } = controllerLoader.getAction(pathName)
             if (r != null && r.action != null && r.controller != null) {
                 executeAction(serverContext, r.controller, r.action, r.routeData, req, res)
                 return
@@ -311,7 +306,6 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
 
     let u = url.parse(targetUrl)
     let { protocol, hostname, port, path } = u
-    // let headers: any = req.headers;
     headers = headers || {}
     headers = Object.assign(req.headers, headers)
     let request = http.request(

@@ -8,12 +8,12 @@ import url = require('url');
 import { ControllerLoader } from './controller-loader';
 import { ServerContext } from './server-context';
 
-const actionMetaKey = Symbol('action')
-const parameterMetaKey = Symbol('parameter')
+// const actionMetaKey = Symbol('action')
+// const parameterMetaKey = Symbol('parameter')
 
 export let metaKeys = {
-    action: actionMetaKey,
-    parameter: parameterMetaKey
+    action: "actionMetaKey",
+    parameter: "parameterMetaKey"
 }
 
 export interface ActionParameterDecoder<T> {
@@ -60,7 +60,7 @@ export function controller<T extends { new(...args: any[]): any }>(path?: string
             let controllerInfo = registerController(constructor, serverContext, path)
             let propertyNames = Object.getOwnPropertyNames(constructor.prototype)
             for (let i = 0; i < propertyNames.length; i++) {
-                let metadata: ActionInfo = Reflect.getMetadata(actionMetaKey, constructor, propertyNames[i])
+                let metadata: ActionInfo = Reflect.getMetadata(metaKeys.action, constructor, propertyNames[i])
                 if (metadata) {
                     registerAction(controllerInfo, metadata.memberName, metadata.paths)
                 }
@@ -79,11 +79,11 @@ export function action(...paths: string[]) {
         let memberName = descriptor.value.name
         let obj: ActionInfo = { memberName, paths }
         let controllerType = target.constructor
-        let actionDefine = Reflect.getMetadata(actionMetaKey, controllerType, propertyKey)
+        let actionDefine = Reflect.getMetadata(metaKeys.action, controllerType, propertyKey)
         if (actionDefine)
             throw errors.onlyOneAction(propertyKey)
 
-        Reflect.defineMetadata(actionMetaKey, obj, controllerType, propertyKey)
+        Reflect.defineMetadata(metaKeys.action, obj, controllerType, propertyKey)
     };
 }
 
@@ -129,8 +129,7 @@ function registerAction<T>(controllerDefine: ControllerInfo, memberName: keyof T
 
 export function createParameterDecorator<T>(
     createParameter: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext, routeData: { [key: string]: string } | null) => Promise<T>, disposeParameter?: (parameter: T) => void) {
-    return function (target: Object, propertyKey: string | symbol, parameterIndex: number) {
-
+    return function (target: any, propertyKey: string | symbol, parameterIndex: number) {
         let value: ActionParameterDecoder<T>[] = Reflect.getMetadata(metaKeys.parameter, target, propertyKey) || []
         let p: ActionParameterDecoder<T> = {
             createParameter,
