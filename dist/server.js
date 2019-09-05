@@ -255,6 +255,10 @@ function createTargetResquest(targetUrl, req, res, headers) {
     let { protocol, hostname, port, path } = u;
     headers = headers || {};
     headers = Object.assign(req.headers, headers);
+    //=====================================================
+    // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+    delete headers.host;
+    //=====================================================
     let request = http.request({
         protocol, hostname, port, path,
         method: req.method,
