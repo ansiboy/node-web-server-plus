@@ -304,10 +304,14 @@ export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: 
 
 function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: { [key: string]: string }) {
 
-    let u = url.parse(targetUrl)
-    let { protocol, hostname, port, path } = u
-    headers = headers || {}
-    headers = Object.assign(req.headers, headers)
+    let u = url.parse(targetUrl);
+    let { protocol, hostname, port, path } = u;
+    headers = headers || {};
+    headers = Object.assign(req.headers, headers);
+    //=====================================================
+    // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+    delete headers.host;
+    //=====================================================
     let request = http.request(
         {
             protocol, hostname, port, path,
