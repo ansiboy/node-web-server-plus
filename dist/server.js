@@ -77,16 +77,18 @@ function startServer(config) {
                     }
                 }
             }
-            let requestUrl = req.url || '';
+            let requestUrl = getRequestUrl(req);
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
+            if (pathName == "/socket.io/socket.io.js") {
+                return;
+            }
             let r = null;
             if (controllerLoader) {
                 r = controllerLoader.getAction(pathName, serverContext);
             }
             if (r != null && r.action != null && r.controller != null) {
-                executeAction(serverContext, r.controller, r.action, r.routeData, req, res);
-                return;
+                return executeAction(serverContext, r.controller, r.action, r.routeData, req, res);
             }
             //=====================================================================
             // 处理 URL 转发
@@ -137,48 +139,42 @@ function startServer(config) {
         console.log(err);
     });
     server.listen(config.port, config.bindIP);
+    return { server };
 }
 exports.startServer = startServer;
 function executeAction(serverContext, controller, action, routeData, req, res) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!controller)
-            throw errors.arugmentNull("controller");
-        if (!action)
-            throw errors.arugmentNull("action");
-        if (!req)
-            throw errors.arugmentNull("req");
-        if (!res)
-            throw errors.arugmentNull("res");
-        routeData = routeData || {};
-        let parameters = [];
-        let parameterDecoders = [];
-        parameterDecoders = Reflect.getMetadata(attributes_1.metaKeys.parameter, controller, action.name) || [];
-        for (let i = 0; i < parameterDecoders.length; i++) {
-            let metaData = parameterDecoders[i];
-            let parameterValue = yield metaData.createParameter(req, res, serverContext, routeData);
-            parameters[metaData.parameterIndex] = parameterValue;
-        }
+    if (!controller)
+        throw errors.arugmentNull("controller");
+    if (!action)
+        throw errors.arugmentNull("action");
+    if (!req)
+        throw errors.arugmentNull("req");
+    if (!res)
+        throw errors.arugmentNull("res");
+    routeData = routeData || {};
+    let parameterDecoders = [];
+    parameterDecoders = Reflect.getMetadata(attributes_1.metaKeys.parameter, controller, action.name) || [];
+    parameterDecoders.sort((a, b) => a.parameterIndex < b.parameterIndex ? -1 : 1);
+    let parameters = [];
+    return Promise.all(parameterDecoders.map(p => p.createParameter(req, res, serverContext, routeData))).then(r => {
+        parameters = r;
         let actionResult = action.apply(controller, parameters);
         let p = actionResult;
-        if (p != null && p.then && p.catch) {
-            let disposeParameter = () => {
-                for (let i = 0; i < parameterDecoders.length; i++) {
-                    let d = parameterDecoders[i];
-                    if (d.disposeParameter) {
-                        d.disposeParameter(parameters[d.parameterIndex]);
-                    }
-                }
-            };
-            p.then(r => {
-                outputResult(r, res, req);
-                disposeParameter();
-            }).catch(err => {
-                outputError(err, res);
-                disposeParameter();
-            });
-            return;
+        if (p == null || p.then == null) {
+            p = Promise.resolve(p);
         }
-        outputResult(actionResult, res, req);
+        return p;
+    }).then((r) => {
+        return outputResult(r, res, req);
+    }).catch(err => {
+        return outputError(err, res);
+    }).finally(() => {
+        for (let i = 0; i < parameterDecoders.length; i++) {
+            let d = parameterDecoders[i];
+            if (d.disposeParameter) {
+                d.disposeParameter(parameters[d.parameterIndex]);
+            }
+        }
     });
 }
 function outputResult(result, res, req) {
@@ -273,4 +269,13 @@ function createTargetResquest(targetUrl, req, res, headers) {
         response.pipe(res);
     });
     return request;
+}
+function getRequestUrl(req) {
+    let requestUrl = req.url || '';
+    // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
+    requestUrl = requestUrl.replace(/\/+/g, '/');
+    // 去掉路径末尾的 / ，例如：/shop/test/ 变为 /shop/test, 如果路径 / 则保持不变
+    if (requestUrl[requestUrl.length - 1] == '/' && requestUrl.length > 1)
+        requestUrl = requestUrl.substr(0, requestUrl.length - 1);
+    return requestUrl;
 }

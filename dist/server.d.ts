@@ -32,7 +32,9 @@ export interface Config {
         [virtualPath: string]: string;
     };
 }
-export declare function startServer(config: Config): void;
+export declare function startServer(config: Config): {
+    server: http.Server;
+};
 export declare function outputError(err: Error, res: http.ServerResponse): void;
 export declare function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: {
     [key: string]: string;

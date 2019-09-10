@@ -99,9 +99,13 @@ export function startServer(config: Config) {
                 }
             }
 
-            let requestUrl = req.url || ''
+            let requestUrl = getRequestUrl(req);
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
+
+            if (pathName == "/socket.io/socket.io.js") {
+                return
+            }
 
             let r: ReturnType<ControllerLoader["getAction"]> | null = null;
             if (controllerLoader) {
@@ -109,8 +113,7 @@ export function startServer(config: Config) {
             }
 
             if (r != null && r.action != null && r.controller != null) {
-                executeAction(serverContext, r.controller, r.action, r.routeData, req, res)
-                return
+                return executeAction(serverContext, r.controller, r.action, r.routeData, req, res);
             }
 
             //=====================================================================
@@ -167,9 +170,10 @@ export function startServer(config: Config) {
 
     server.listen(config.port, config.bindIP)
 
+    return { server };
 }
 
-async function executeAction(serverContext: ServerContext, controller: object, action: Function, routeData: { [key: string]: string } | null,
+function executeAction(serverContext: ServerContext, controller: object, action: Function, routeData: { [key: string]: string } | null,
     req: http.IncomingMessage, res: http.ServerResponse) {
 
     if (!controller)
@@ -186,39 +190,30 @@ async function executeAction(serverContext: ServerContext, controller: object, a
 
     routeData = routeData || {};
 
-
+    let parameterDecoders: (ActionParameterDecoder<any>)[] = [];
+    parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name) || [];
+    parameterDecoders.sort((a, b) => a.parameterIndex < b.parameterIndex ? -1 : 1);
     let parameters: object[] = []
-
-    let parameterDecoders: (ActionParameterDecoder<any>)[] = []
-    parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name) || []
-    for (let i = 0; i < parameterDecoders.length; i++) {
-        let metaData = parameterDecoders[i];
-        let parameterValue = await metaData.createParameter(req, res, serverContext, routeData);
-        parameters[metaData.parameterIndex] = parameterValue;
-    }
-
-    let actionResult = action.apply(controller, parameters);
-    let p = actionResult as Promise<any>
-    if (p != null && p.then && p.catch) {
-        let disposeParameter = () => {
-            for (let i = 0; i < parameterDecoders.length; i++) {
-                let d = parameterDecoders[i]
-                if (d.disposeParameter) {
-                    d.disposeParameter(parameters[d.parameterIndex])
-                }
+    return Promise.all(parameterDecoders.map(p => p.createParameter(req, res, serverContext, routeData))).then(r => {
+        parameters = r;
+        let actionResult = action.apply(controller, parameters);
+        let p = actionResult as Promise<any>;
+        if (p == null || p.then == null) {
+            p = Promise.resolve(p);
+        }
+        return p;
+    }).then((r) => {
+        return outputResult(r, res, req);
+    }).catch(err => {
+        return outputError(err, res);
+    }).finally(() => {
+        for (let i = 0; i < parameterDecoders.length; i++) {
+            let d = parameterDecoders[i]
+            if (d.disposeParameter) {
+                d.disposeParameter(parameters[d.parameterIndex])
             }
         }
-        p.then(r => {
-            outputResult(r, res, req)
-            disposeParameter()
-        }).catch(err => {
-            outputError(err, res)
-            disposeParameter()
-        })
-        return
-    }
-
-    outputResult(actionResult, res, req)
+    })
 }
 
 async function outputResult(result: object | null, res: http.ServerResponse, req: http.IncomingMessage) {
@@ -331,6 +326,18 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
     );
 
     return request;
+}
+
+function getRequestUrl(req: http.IncomingMessage) {
+    let requestUrl = req.url || ''
+    // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
+    requestUrl = requestUrl.replace(/\/+/g, '/');
+
+    // 去掉路径末尾的 / ，例如：/shop/test/ 变为 /shop/test, 如果路径 / 则保持不变
+    if (requestUrl[requestUrl.length - 1] == '/' && requestUrl.length > 1)
+        requestUrl = requestUrl.substr(0, requestUrl.length - 1);
+
+    return requestUrl;
 }
 
 
