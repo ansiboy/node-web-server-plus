@@ -140,7 +140,8 @@ export function startServer(config: Config) {
 
             let { action, controller, routeData } = controllerLoader.getAction(pathName)
             if (action != null && controller != null) {
-                executeAction(controller, action, routeData, req, res)
+                let actionResult = await executeAction(controller, action, routeData, req, res);
+                outputResult(actionResult, res, req);
                 return
             }
 
@@ -239,7 +240,7 @@ async function executeAction(controller: object, action: Function, routeData: { 
         return
     }
 
-    outputResult(actionResult, res, req)
+    return actionResult;
 }
 
 async function outputResult(result: object | null, res: http.ServerResponse, req: http.IncomingMessage) {

@@ -106,7 +106,8 @@ function startServer(config) {
             let pathName = urlInfo.pathname || '';
             let { action, controller, routeData } = controllerLoader.getAction(pathName);
             if (action != null && controller != null) {
-                executeAction(controller, action, routeData, req, res);
+                let actionResult = yield executeAction(controller, action, routeData, req, res);
+                outputResult(actionResult, res, req);
                 return;
             }
             //=====================================================================
@@ -194,7 +195,7 @@ function executeAction(controller, action, routeData, req, res) {
             });
             return;
         }
-        outputResult(actionResult, res, req);
+        return actionResult;
     });
 }
 function outputResult(result, res, req) {
