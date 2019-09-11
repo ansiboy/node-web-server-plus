@@ -11,7 +11,7 @@ describe("controller-loader", function () {
 
     assert.ok(fs.existsSync(controllerPath));
 
-    let loader = new ControllerLoader([controllerPath]);
+    let loader = new ControllerLoader({}, [controllerPath]);
     it("home index action，应该返回非空的 action", function () {
         let r = loader.getAction(actionPaths.home.index);
         assert(r.action != null);
@@ -56,4 +56,11 @@ describe("controller-loader", function () {
 
     })
 
+
+    describe("第二个控制器文件夹测试", function () {
+        it("product list action，应该返回非空的 action", function () {
+            let r = loader.getAction(`/product/list`);
+            assert(r.action != null);
+        })
+    })
 });

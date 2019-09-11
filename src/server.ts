@@ -6,33 +6,25 @@ import { ControllerLoader } from './controller-loader';
 import nodeStatic = require('maishu-node-static')
 import { ActionResult, ContentResult, contentTypes } from './action-results';
 import { metaKeys, ActionParameterDecoder } from './attributes';
+import { ServerContext } from './server-context';
 
 let packageInfo = require('../package.json')
 
-const DefaultControllerPath = 'controllers'
-const DefaultStaticFileDirectory = 'public'
-
 interface ProxyItem {
     targetUrl: string,
+    rewrite?: [string, string],
     headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>)
 }
 
-// interface ExternalDirectory {
-//     path: string
-//     alias?: string
-// }
-
 export interface Config {
     port: number,
-    rootPath: string,
     bindIP?: string,
     controllerDirectory?: string | string[],
     staticRootDirectory?: string,
     proxy?: { [path_pattern: string]: string | ProxyItem },
-    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{ errorResult: ActionResult }>,
-    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult>)[],
-    // staticExternalDirectories?: string[],
-
+    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>,
+    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[],
+    serverName?: string,
     /** 设置默认的 Http Header */
     headers?: { [name: string]: string }
     virtualPaths?: { [virtualPath: string]: string }
@@ -40,17 +32,6 @@ export interface Config {
 
 export function startServer(config: Config) {
     if (!config) throw errors.arugmentNull('config')
-    if (!config.rootPath) throw errors.rootPathNull()
-    if (!path.isAbsolute(config.rootPath))
-        throw errors.rootPathNotAbsolute(config.rootPath);
-
-    if (!config.controllerDirectory)
-        config.controllerDirectory = DefaultControllerPath
-
-    if (!config.staticRootDirectory)
-        config.staticRootDirectory = DefaultStaticFileDirectory
-
-
 
     let controllerDirectories: string[] = []
     if (config.controllerDirectory) {
@@ -62,43 +43,30 @@ export function startServer(config: Config) {
 
     for (let i = 0; i < controllerDirectories.length; i++) {
         if (!path.isAbsolute(controllerDirectories[i]))
-            controllerDirectories[i] = path.join(config.rootPath, controllerDirectories[i])
+            throw errors.notAbsolutePath(controllerDirectories[i]);
     }
 
-    // config.controllerDirectory = path.join(config.rootPath, config.controllerDirectory)
+    if (config.staticRootDirectory && !path.isAbsolute(config.staticRootDirectory))
+        throw errors.notAbsolutePath(config.staticRootDirectory);
 
-    if (!path.isAbsolute(config.staticRootDirectory))
-        config.staticRootDirectory = path.join(config.rootPath, config.staticRootDirectory)
+    let serverContext: ServerContext = { data: {}, controllerDefines: [] };
 
-    let controllerLoader = new ControllerLoader(controllerDirectories)
-    // let externalPaths: string[] = []
-    // if (config.staticExternalDirectories != null && config.staticExternalDirectories.length > 0) {
-    //     for (let i = 0; i < config.staticExternalDirectories.length; i++) {
-    //         let item = config.staticExternalDirectories[i]
-    //         externalPaths.push(item)
-    //     }
-    // }
+    let controllerLoader: ControllerLoader;
+    if (controllerDirectories.length > 0)
+        controllerLoader = new ControllerLoader(serverContext, controllerDirectories);
 
-    // for (let i = 0; i < externalPaths.length; i++) {
-    //     if (!path.isAbsolute(externalPaths[i])) {
-    //         externalPaths[i] = path.join(config.rootPath, externalPaths[i]);
-    //     }
-    //     else {
-    //         externalPaths[i] = path.normalize(externalPaths[i]);
-    //     }
-    // }
+    let fileServer: nodeStatic.Server | null = null;
+    if (config.staticRootDirectory) {
+        fileServer = new nodeStatic.Server(config.staticRootDirectory, {
+            virtualPaths: config.virtualPaths,
+            serverInfo: `maishu-node-mvc ${packageInfo.version} ${config.serverName}`,
+            gzip: true,
+        })
 
-    let fileServer: nodeStatic.Server
-    fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-        // externalPaths,
-        virtualPaths: config.virtualPaths,
-        serverInfo: `maishu-node-mvc ${packageInfo.version}`,
-        gzip: true
-    })
-
-    let fileServer_resolve = fileServer.resolve
-    fileServer.resolve = function (pathname: string, req: http.IncomingMessage) {
-        return fileServer_resolve.apply(fileServer, [pathname, req])
+        let fileServer_resolve = fileServer.resolve
+        fileServer.resolve = function (pathname: string, req: http.IncomingMessage) {
+            return fileServer_resolve.apply(fileServer, [pathname, req])
+        }
     }
 
     let server = http.createServer(async (req, res) => {
@@ -113,12 +81,9 @@ export function startServer(config: Config) {
         }
         try {
             if (config.authenticate) {
-                let r = await config.authenticate(req, res)
-                if (r == null)
-                    throw errors.authenticateResultNull()
-
-                if (r.errorResult) {
-                    outputResult(r.errorResult, res, req)
+                let r = await config.authenticate(req, res, serverContext)
+                if (r) {
+                    outputResult(r, res, req)
                     return
                 }
             }
@@ -126,7 +91,7 @@ export function startServer(config: Config) {
             if (config.actionFilters) {
                 let actionFilters = config.actionFilters || []
                 for (let i = 0; i < actionFilters.length; i++) {
-                    let result = await actionFilters[i](req, res)
+                    let result = await actionFilters[i](req, res, serverContext)
                     if (result != null) {
                         outputResult(result, res, req)
                         return
@@ -134,15 +99,21 @@ export function startServer(config: Config) {
                 }
             }
 
-            let requestUrl = req.url || ''
+            let requestUrl = getRequestUrl(req);
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
 
-            let { action, controller, routeData } = controllerLoader.getAction(pathName)
-            if (action != null && controller != null) {
-                let actionResult = await executeAction(controller, action, routeData, req, res);
-                outputResult(actionResult, res, req);
+            if (pathName == "/socket.io/socket.io.js") {
                 return
+            }
+
+            let r: ReturnType<ControllerLoader["getAction"]> | null = null;
+            if (controllerLoader) {
+                r = controllerLoader.getAction(pathName, serverContext);
+            }
+
+            if (r != null && r.action != null && r.controller != null) {
+                return executeAction(serverContext, r.controller, r.action, r.routeData, req, res);
             }
 
             //=====================================================================
@@ -164,14 +135,7 @@ export function startServer(config: Config) {
                         if (typeof proxyItem.headers == 'function') {
                             let r = proxyItem.headers(req)
                             let p = r as Promise<any>
-                            // let headers
                             if (p != null && p.then && p.catch) {
-                                // p.then(d => {
-                                //     headers = d
-                                // }).catch(err => {
-                                //     outputError(err, res)
-                                //     return
-                                // })
                                 headers = await p
                             }
                             else {
@@ -181,15 +145,18 @@ export function startServer(config: Config) {
                         else if (typeof proxyItem.headers == 'object') {
                             headers = proxyItem.headers
                         }
-
                         proxyRequest(targetUrl, req, res, headers)
                         return
                     }
                 }
             }
             //=====================================================================
+            if (fileServer) {
+                fileServer.serve(req, res)
+                return;
+            }
 
-            fileServer.serve(req, res)
+            throw errors.pageNotFound(requestUrl);
 
         }
         catch (err) {
@@ -203,44 +170,50 @@ export function startServer(config: Config) {
 
     server.listen(config.port, config.bindIP)
 
-    return { staticServer: fileServer }
+    return { server };
 }
 
-async function executeAction(controller: object, action: Function, routeData: { [key: string]: string } | null,
+function executeAction(serverContext: ServerContext, controller: object, action: Function, routeData: { [key: string]: string } | null,
     req: http.IncomingMessage, res: http.ServerResponse) {
 
+    if (!controller)
+        throw errors.arugmentNull("controller")
+
+    if (!action)
+        throw errors.arugmentNull("action")
+
+    if (!req)
+        throw errors.arugmentNull("req");
+
+    if (!res)
+        throw errors.arugmentNull("res");
+
+    routeData = routeData || {};
+
+    let parameterDecoders: (ActionParameterDecoder<any>)[] = [];
+    parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name) || [];
+    parameterDecoders.sort((a, b) => a.parameterIndex < b.parameterIndex ? -1 : 1);
     let parameters: object[] = []
-
-    let parameterDecoders: (ActionParameterDecoder<any>)[] = []//& { parameterValue?: any }
-    parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name) || []
-    for (let i = 0; i < parameterDecoders.length; i++) {
-        let metaData = parameterDecoders[i];
-        let parameterValue = await metaData.createParameter(req, routeData);
-        parameters[metaData.parameterIndex] = parameterValue;
-    }
-
-    let actionResult = action.apply(controller, parameters);
-    let p = actionResult as Promise<any>
-    if (p != null && p.then && p.catch) {
-        let disposeParameter = () => {
-            for (let i = 0; i < parameterDecoders.length; i++) {
-                let d = parameterDecoders[i]
-                if (d.disposeParameter) {
-                    d.disposeParameter(parameters[d.parameterIndex])
-                }
+    return Promise.all(parameterDecoders.map(p => p.createParameter(req, res, serverContext, routeData))).then(r => {
+        parameters = r;
+        let actionResult = action.apply(controller, parameters);
+        let p = actionResult as Promise<any>;
+        if (p == null || p.then == null) {
+            p = Promise.resolve(p);
+        }
+        return p;
+    }).then((r) => {
+        return outputResult(r, res, req);
+    }).catch(err => {
+        return outputError(err, res);
+    }).finally(() => {
+        for (let i = 0; i < parameterDecoders.length; i++) {
+            let d = parameterDecoders[i]
+            if (d.disposeParameter) {
+                d.disposeParameter(parameters[d.parameterIndex])
             }
         }
-        p.then(r => {
-            outputResult(r, res, req)
-            disposeParameter()
-        }).catch(err => {
-            outputError(err, res)
-            disposeParameter()
-        })
-        return
-    }
-
-    return actionResult;
+    })
 }
 
 async function outputResult(result: object | null, res: http.ServerResponse, req: http.IncomingMessage) {
@@ -326,11 +299,14 @@ export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: 
 
 function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: { [key: string]: string }) {
 
-    let u = url.parse(targetUrl)
-    let { protocol, hostname, port, path } = u
-    // let headers: any = req.headers;
-    headers = headers || {}
-    headers = Object.assign(req.headers, headers)
+    let u = url.parse(targetUrl);
+    let { protocol, hostname, port, path } = u;
+    headers = headers || {};
+    headers = Object.assign(req.headers, headers);
+    //=====================================================
+    // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+    delete headers.host;
+    //=====================================================
     let request = http.request(
         {
             protocol, hostname, port, path,
@@ -350,6 +326,18 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
     );
 
     return request;
+}
+
+function getRequestUrl(req: http.IncomingMessage) {
+    let requestUrl = req.url || ''
+    // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
+    requestUrl = requestUrl.replace(/\/+/g, '/');
+
+    // 去掉路径末尾的 / ，例如：/shop/test/ 变为 /shop/test, 如果路径 / 则保持不变
+    if (requestUrl[requestUrl.length - 1] == '/' && requestUrl.length > 1)
+        requestUrl = requestUrl.substr(0, requestUrl.length - 1);
+
+    return requestUrl;
 }
 
 

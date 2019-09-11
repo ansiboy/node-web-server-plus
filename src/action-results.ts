@@ -5,7 +5,6 @@ import url = require('url');
 import path = require("path");
 
 
-//; charset=UTF-8
 const encoding = 'UTF-8'
 export const contentTypes = {
     applicationJSON: `application/json; charset=${encoding}`,

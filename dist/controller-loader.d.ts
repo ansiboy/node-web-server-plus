@@ -1,7 +1,8 @@
+import { ServerContext } from './server-context';
 export declare class ControllerLoader {
     private pathActions;
     private routeActions;
-    constructor(controller_directories: string[]);
+    constructor(serverContext: ServerContext, controllerDirectories: string[]);
     private joinPaths;
     /**
      * 获取指定文件夹中（包括子目录），控制器的路径。
@@ -9,11 +10,11 @@ export declare class ControllerLoader {
      */
     private getControllerPaths;
     private loadController;
-    getAction(virtualPath: string): {
+    getAction(virtualPath: string, serverContext: ServerContext): {
         action: any;
         controller: any;
         routeData: {
             [key: string]: string;
         } | null;
-    };
+    } | null;
 }

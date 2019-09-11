@@ -12,7 +12,6 @@ const errors_1 = require("./errors");
 const server_1 = require("./server");
 const url = require("url");
 const path = require("path");
-//; charset=UTF-8
 const encoding = 'UTF-8';
 exports.contentTypes = {
     applicationJSON: `application/json; charset=${encoding}`,
@@ -60,4 +59,3 @@ class ProxyResut {
     }
 }
 exports.ProxyResut = ProxyResut;
-//# sourceMappingURL=action-results.js.map

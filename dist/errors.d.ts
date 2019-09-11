@@ -9,3 +9,5 @@ export declare function onlyOneAction(methodName: string): Error;
 export declare function rootPathNull(): Error;
 export declare function rootPathNotAbsolute(path: string): Error;
 export declare function authenticateResultNull(): Error;
+export declare function notAbsolutePath(path: string): Error;
+export declare function pageNotFound(path: string): Error;

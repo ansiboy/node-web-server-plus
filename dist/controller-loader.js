@@ -9,17 +9,17 @@ const router_1 = require("./router");
 // import Route = require("route-parser");
 const UrlPattern = require("url-pattern");
 const controller_1 = require("./controller");
+const api_controller_1 = require("./api-controller");
 class ControllerLoader {
-    // private routes: Route[] = [];
-    constructor(controller_directories) {
-        // 使用路径进行匹配的 action
+    constructor(serverContext, controllerDirectories) {
+        // 使用路径进行匹配的 action
         this.pathActions = {};
         // 使用路由进行匹配的 action
         this.routeActions = [];
-        if (controller_directories == null || controller_directories.length == 0)
-            throw errors.arugmentNull('areas');
+        if (controllerDirectories == null || controllerDirectories.length == 0)
+            throw errors.arugmentNull('controllerDirectories');
         let controllerPaths = {};
-        controller_directories.forEach(dir => {
+        controllerDirectories.forEach(dir => {
             if (!fs.existsSync(dir)) {
                 throw errors.controllerDirectoryNotExists(dir);
             }
@@ -27,10 +27,21 @@ class ControllerLoader {
         });
         for (let dir in controllerPaths) {
             controllerPaths[dir].forEach(controllerPath => {
-                this.loadController(controllerPath, dir);
+                this.loadController(controllerPath, serverContext);
             });
         }
-        attributes_1.controllerDefines.forEach(c => {
+        //=============================================
+        // 注册内置的控制器
+        api_controller_1.createAPIControllerType(() => {
+            let actionInfos = [
+                ...Object.getOwnPropertyNames(this.pathActions).map(name => this.pathActions[name]),
+                ...this.routeActions
+            ];
+            return actionInfos;
+        }, serverContext);
+        //==============================================
+        console.assert(serverContext.controllerDefines != null);
+        serverContext.controllerDefines.forEach(c => {
             console.assert((c.path || '') != '');
             c.actionDefines.forEach(a => {
                 let actionPaths = a.paths || [];
@@ -44,10 +55,10 @@ class ControllerLoader {
                     }
                     if (router_1.isRouteString(actionPath)) {
                         let route = new UrlPattern(actionPath);
-                        this.routeActions.push({ route, controllerType: c.type, memberName: a.memberName });
+                        this.routeActions.push({ route, controllerType: c.type, memberName: a.memberName, actionPath });
                     }
                     else {
-                        this.pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName };
+                        this.pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName, actionPath };
                     }
                 }
             });
@@ -87,7 +98,7 @@ class ControllerLoader {
         }
         return controllerPaths;
     }
-    loadController(controllerPath, dir) {
+    loadController(controllerPath, serverContext) {
         try {
             let mod = require(controllerPath);
             console.assert(mod != null);
@@ -97,14 +108,17 @@ class ControllerLoader {
                 if (!isClass(ctrlType)) {
                     continue;
                 }
+                if (ctrlType.prototype[attributes_1.CONTROLLER_REGISTER]) {
+                    ctrlType.prototype[attributes_1.CONTROLLER_REGISTER](serverContext);
+                    continue;
+                }
                 //TODO: 检查控制器是否重复
-                console.assert(attributes_1.controllerDefines != null);
-                let controllerDefine = attributes_1.controllerDefines.filter(o => o.type == ctrlType)[0];
-                // if (controllerDefine && !controllerDefine.path) {
-                //     controllerDefine.path = path.join('/', path.relative(dir, controllerPath))
-                // }
-                if (controllerDefine == null && ctrlType.prototype instanceof controller_1.Controller) {
+                console.assert(serverContext.controllerDefines != null);
+                let controllerDefine = serverContext.controllerDefines.filter(o => o.type == ctrlType)[0];
+                // 判断类型使用 ctrlType.prototype instanceof Controller 不可靠
+                if (controllerDefine == null && ctrlType["typeName"] == controller_1.Controller.typeName) {
                     attributes_1.controller(ctrlType.name)(ctrlType);
+                    ctrlType.prototype[attributes_1.CONTROLLER_REGISTER](serverContext);
                 }
             }
         }
@@ -113,7 +127,7 @@ class ControllerLoader {
             throw innerErrors.loadControllerFail(controllerPath, err);
         }
     }
-    getAction(virtualPath) {
+    getAction(virtualPath, serverContext) {
         if (!virtualPath)
             throw errors.arugmentNull('virtualPath');
         // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
@@ -136,8 +150,12 @@ class ControllerLoader {
                 routeData = r;
                 controller = new this.routeActions[i].controllerType();
                 action = controller[this.routeActions[i].memberName];
+                break;
             }
         }
+        if (action == null)
+            return null;
+        console.assert(controller != null);
         return { action, controller, routeData };
     }
 }
@@ -187,4 +205,3 @@ let innerErrors = {
         return error;
     }
 };
-//# sourceMappingURL=controller-loader.js.map

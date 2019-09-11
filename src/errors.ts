@@ -68,3 +68,19 @@ export function authenticateResultNull() {
     return error
 }
 
+export function notAbsolutePath(path: string) {
+    let msg = `Path '${path}' is not a absolute path.`;
+    let error = new Error(msg);
+    error.name = rootPathNotAbsolute.name;
+    return error;
+}
+
+export function pageNotFound(path: string) {
+    let msg = `Path '${path}' not found.`;
+    let error = new Error(msg);
+    error.name = pageNotFound.name;
+    error.statusCode = 404;
+    return error;
+}
+
+

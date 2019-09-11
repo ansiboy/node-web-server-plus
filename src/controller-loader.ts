@@ -2,28 +2,28 @@ import * as errors from './errors'
 import * as fs from 'fs'
 import * as path from 'path'
 import isClass = require('is-class')
-import { controllerDefines, ControllerType, controller } from './attributes';
+import { controller, ControllerType, ControllerInfo, CONTROLLER_REGISTER } from './attributes';
 import { isRouteString } from "./router";
 // import Route = require("route-parser");
 import UrlPattern = require("url-pattern");
 import { Controller } from './controller';
-
+import { createAPIControllerType, ActionInfo } from './api-controller';
+import { ServerContext } from './server-context';
 
 export class ControllerLoader {
 
-    // 使用路径进行匹配的 action
-    private pathActions: { [path: string]: { controllerType: ControllerType<any>, memberName: string, } } = {};
+    // 使用路径进行匹配的 action
+    private pathActions: { [path: string]: ActionInfo } = {};
 
     // 使用路由进行匹配的 action
-    private routeActions: { route: UrlPattern, controllerType: ControllerType<any>, memberName: string, }[] = [];
-    // private routes: Route[] = [];
+    private routeActions: (ActionInfo & { route: UrlPattern })[] = [];
 
-    constructor(controller_directories: string[]) {
-        if (controller_directories == null || controller_directories.length == 0)
-            throw errors.arugmentNull('areas')
+    constructor(serverContext: ServerContext, controllerDirectories: string[]) {
+        if (controllerDirectories == null || controllerDirectories.length == 0)
+            throw errors.arugmentNull('controllerDirectories')
 
         let controllerPaths: { [dir: string]: string[] } = {}
-        controller_directories.forEach(dir => {
+        controllerDirectories.forEach(dir => {
             if (!fs.existsSync(dir)) {
                 throw errors.controllerDirectoryNotExists(dir)
             }
@@ -33,12 +33,25 @@ export class ControllerLoader {
 
         for (let dir in controllerPaths) {
             controllerPaths[dir].forEach(controllerPath => {
-                this.loadController(controllerPath, dir)
-
+                this.loadController(controllerPath, serverContext)
             })
         }
 
-        controllerDefines.forEach(c => {
+        //=============================================
+        // 注册内置的控制器
+
+        createAPIControllerType(() => {
+            let actionInfos: ActionInfo[] = [
+                ...Object.getOwnPropertyNames(this.pathActions).map(name => this.pathActions[name]),
+                ...this.routeActions
+            ];
+
+            return actionInfos;
+        }, serverContext);
+        //==============================================
+
+        console.assert(serverContext.controllerDefines != null);
+        serverContext.controllerDefines.forEach(c => {
             console.assert((c.path || '') != '')
             c.actionDefines.forEach(a => {
 
@@ -54,10 +67,10 @@ export class ControllerLoader {
 
                     if (isRouteString(actionPath)) {
                         let route = new UrlPattern(actionPath);
-                        this.routeActions.push({ route, controllerType: c.type, memberName: a.memberName });
+                        this.routeActions.push({ route, controllerType: c.type, memberName: a.memberName, actionPath });
                     }
                     else {
-                        this.pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName }
+                        this.pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName, actionPath }
                     }
 
                 }
@@ -100,10 +113,10 @@ export class ControllerLoader {
         return controllerPaths
     }
 
-    private loadController(controllerPath: string, dir: string): void {
+    private loadController(controllerPath: string, serverContext: ServerContext): void {
         try {
             let mod = require(controllerPath);
-            console.assert(mod != null)
+            console.assert(mod != null);
             let propertyNames = Object.getOwnPropertyNames(mod)
             for (let i = 0; i < propertyNames.length; i++) {
                 let ctrlType = mod[propertyNames[i]]
@@ -111,15 +124,19 @@ export class ControllerLoader {
                     continue
                 }
 
-                //TODO: 检查控制器是否重复
-                console.assert(controllerDefines != null)
-                let controllerDefine = controllerDefines.filter(o => o.type == ctrlType)[0]
-                // if (controllerDefine && !controllerDefine.path) {
-                //     controllerDefine.path = path.join('/', path.relative(dir, controllerPath))
-                // }
+                if (ctrlType.prototype[CONTROLLER_REGISTER]) {
+                    ctrlType.prototype[CONTROLLER_REGISTER](serverContext);
+                    continue;
+                }
 
-                if (controllerDefine == null && ctrlType.prototype instanceof Controller) {
+                //TODO: 检查控制器是否重复
+                console.assert(serverContext.controllerDefines != null)
+                let controllerDefine = serverContext.controllerDefines.filter(o => o.type == ctrlType)[0]
+
+                // 判断类型使用 ctrlType.prototype instanceof Controller 不可靠
+                if (controllerDefine == null && ctrlType["typeName"] == Controller.typeName) {
                     controller(ctrlType.name)(ctrlType);
+                    ctrlType.prototype[CONTROLLER_REGISTER](serverContext);
                 }
             }
         }
@@ -129,7 +146,8 @@ export class ControllerLoader {
         }
     }
 
-    getAction(virtualPath: string) {
+
+    getAction(virtualPath: string, serverContext: ServerContext) {
 
         if (!virtualPath) throw errors.arugmentNull('virtualPath')
 
@@ -146,7 +164,7 @@ export class ControllerLoader {
         let routeData: { [key: string]: string } | null = null;
 
         if (actionInfo != null) {
-            controller = new actionInfo.controllerType()
+            controller = new actionInfo.controllerType();
             action = controller[actionInfo.memberName]
             console.assert(action != null)
         }
@@ -157,12 +175,16 @@ export class ControllerLoader {
                 routeData = r;
                 controller = new this.routeActions[i].controllerType();
                 action = controller[this.routeActions[i].memberName];
+                break;
             }
         }
 
+        if (action == null)
+            return null;
+
+        console.assert(controller != null);
         return { action, controller, routeData }
     }
-
 }
 
 

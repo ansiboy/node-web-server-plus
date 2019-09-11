@@ -1,9 +1,10 @@
 /// <reference types="node" />
 import http = require('http');
-import nodeStatic = require('maishu-node-static');
 import { ActionResult } from './action-results';
+import { ServerContext } from './server-context';
 interface ProxyItem {
     targetUrl: string;
+    rewrite?: [string, string];
     headers?: {
         [name: string]: string;
     } | ((req: http.IncomingMessage) => {
@@ -14,17 +15,15 @@ interface ProxyItem {
 }
 export interface Config {
     port: number;
-    rootPath: string;
     bindIP?: string;
     controllerDirectory?: string | string[];
     staticRootDirectory?: string;
     proxy?: {
         [path_pattern: string]: string | ProxyItem;
     };
-    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<{
-        errorResult: ActionResult;
-    }>;
-    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse) => Promise<ActionResult>)[];
+    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>;
+    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[];
+    serverName?: string;
     /** 设置默认的 Http Header */
     headers?: {
         [name: string]: string;
@@ -34,10 +33,10 @@ export interface Config {
     };
 }
 export declare function startServer(config: Config): {
-    staticServer: nodeStatic.Server;
+    server: http.Server;
 };
 export declare function outputError(err: Error, res: http.ServerResponse): void;
 export declare function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: {
     [key: string]: string;
-}): Promise<unknown>;
+}): Promise<{}>;
 export {};

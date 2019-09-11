@@ -13,4 +13,3 @@ function isRouteString(path) {
     return false;
 }
 exports.isRouteString = isRouteString;
-//# sourceMappingURL=router.js.map

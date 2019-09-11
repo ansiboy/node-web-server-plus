@@ -13,27 +13,35 @@ const constants_1 = require("./constants");
 require("reflect-metadata");
 const querystring = require("querystring");
 const url = require("url");
-const actionMetaKey = Symbol('action');
-const parameterMetaKey = Symbol('parameter');
+// const actionMetaKey = Symbol('action')
+// const parameterMetaKey = Symbol('parameter')
 exports.metaKeys = {
-    action: actionMetaKey,
-    parameter: parameterMetaKey
+    action: "actionMetaKey",
+    parameter: "parameterMetaKey"
 };
-exports.controllerDefines = [];
+//==============================================================================
+// controllerDefines 变量用作全局变量, 由于同一个文件可能会加载多次, 会导致变量失效
+// export let controllerDefines: ControllerInfo[] = []
+// export let controllerDefines: ControllerInfo[] =
+//     (global as any)["Node-MVC-ControllerInfos"] = (global as any)["Node-MVC-ControllerInfos"] || []
+//==============================================================================
+exports.CONTROLLER_REGISTER = "$register";
 /**
  * 标记一个类是否为控制器
  * @param path 路径
  */
 function controller(path) {
     return function (constructor) {
-        let controllerInfo = registerController(constructor, path);
-        let propertyNames = Object.getOwnPropertyNames(constructor.prototype);
-        for (let i = 0; i < propertyNames.length; i++) {
-            let metadata = Reflect.getMetadata(actionMetaKey, constructor, propertyNames[i]);
-            if (metadata) {
-                registerAction(controllerInfo, metadata.memberName, metadata.paths);
+        constructor.prototype[exports.CONTROLLER_REGISTER] = function (serverContext) {
+            let controllerInfo = registerController(constructor, serverContext, path);
+            let propertyNames = Object.getOwnPropertyNames(constructor.prototype);
+            for (let i = 0; i < propertyNames.length; i++) {
+                let metadata = Reflect.getMetadata(exports.metaKeys.action, constructor, propertyNames[i]);
+                if (metadata) {
+                    registerAction(controllerInfo, metadata.memberName, metadata.paths);
+                }
             }
-        }
+        };
     };
 }
 exports.controller = controller;
@@ -46,15 +54,15 @@ function action(...paths) {
         let memberName = descriptor.value.name;
         let obj = { memberName, paths };
         let controllerType = target.constructor;
-        let actionDefine = Reflect.getMetadata(actionMetaKey, controllerType, propertyKey);
+        let actionDefine = Reflect.getMetadata(exports.metaKeys.action, controllerType, propertyKey);
         if (actionDefine)
             throw errors.onlyOneAction(propertyKey);
-        Reflect.defineMetadata(actionMetaKey, obj, controllerType, propertyKey);
+        Reflect.defineMetadata(exports.metaKeys.action, obj, controllerType, propertyKey);
     };
 }
 exports.action = action;
-function register(type, path) {
-    let controllerDefine = registerController(type, path);
+function register(type, serverContext, path) {
+    let controllerDefine = registerController(type, serverContext, path);
     let obj = {
         action(member, paths) {
             registerAction(controllerDefine, member, paths || []);
@@ -64,18 +72,19 @@ function register(type, path) {
     return obj;
 }
 exports.register = register;
-function registerController(type, path) {
+function registerController(type, serverContext, path) {
     if (!path) {
         path = type.name.endsWith(constants_1.controllerSuffix) ?
             type.name.substring(0, type.name.length - constants_1.controllerSuffix.length) : type.name;
     }
     if (path && path[0] != '/')
         path = '/' + path;
-    let controllerDefine = exports.controllerDefines.filter(o => o.type == type)[0];
+    serverContext.controllerDefines = serverContext.controllerDefines || [];
+    let controllerDefine = serverContext.controllerDefines.filter(o => o.type == type)[0];
     if (controllerDefine != null)
         throw errors.controlRegister(type);
     controllerDefine = { type: type, actionDefines: [], path };
-    exports.controllerDefines.push(controllerDefine);
+    serverContext.controllerDefines.push(controllerDefine);
     return controllerDefine;
 }
 function registerAction(controllerDefine, memberName, paths) {
@@ -153,26 +162,28 @@ exports.routeData = (function () {
         }
         return obj;
     }
-    return createParameterDecorator((req, routeData) => __awaiter(this, void 0, void 0, function* () {
+    return createParameterDecorator((req, res, context, routeData) => __awaiter(this, void 0, void 0, function* () {
         let obj = routeData = routeData || {};
         let queryData = getQueryObject(req);
         console.assert(queryData != null);
         obj = Object.assign(obj, queryData);
-        // if (req.method == 'GET') {
-        //     let queryData = getQueryObject(req);
-        //     // dataPromise = Promise.resolve(queryData);
-        //     return queryData
-        // }
-        // else {
-        // let queryData = getQueryObject(req);
         if (req.method != 'GET') {
             let data = yield getPostObject(req);
             obj = Object.assign(obj, data);
         }
-        // console.assert(queryData != null)
         return obj;
-        // }
     }));
 })();
 exports.formData = exports.routeData;
-//# sourceMappingURL=attributes.js.map
+exports.request = createParameterDecorator((req) => __awaiter(this, void 0, void 0, function* () {
+    return req;
+}));
+exports.response = createParameterDecorator((req, res) => __awaiter(this, void 0, void 0, function* () {
+    return res;
+}));
+exports.requestHeaders = createParameterDecorator((req) => __awaiter(this, void 0, void 0, function* () {
+    return req.headers;
+}));
+exports.context = createParameterDecorator((req, res, context) => __awaiter(this, void 0, void 0, function* () {
+    return context;
+}));

@@ -68,4 +68,18 @@ function authenticateResultNull() {
     return error;
 }
 exports.authenticateResultNull = authenticateResultNull;
-//# sourceMappingURL=errors.js.map
+function notAbsolutePath(path) {
+    let msg = `Path '${path}' is not a absolute path.`;
+    let error = new Error(msg);
+    error.name = rootPathNotAbsolute.name;
+    return error;
+}
+exports.notAbsolutePath = notAbsolutePath;
+function pageNotFound(path) {
+    let msg = `Path '${path}' not found.`;
+    let error = new Error(msg);
+    error.name = pageNotFound.name;
+    error.statusCode = 404;
+    return error;
+}
+exports.pageNotFound = pageNotFound;
