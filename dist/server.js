@@ -1,11 +1,10 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function(thisArg, _arguments, P, generator) {
-    return new(P || (P = Promise))(function(resolve, reject) {
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-
-        function step(result) { result.done ? resolve(result.value) : new P(function(resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -19,7 +18,6 @@ const nodeStatic = require("maishu-node-static");
 const action_results_1 = require("./action-results");
 const attributes_1 = require("./attributes");
 let packageInfo = require('../package.json');
-
 function startServer(config) {
     if (!config)
         throw errors.arugmentNull('config');
@@ -48,11 +46,11 @@ function startServer(config) {
             gzip: true,
         });
         let fileServer_resolve = fileServer.resolve;
-        fileServer.resolve = function(pathname, req) {
+        fileServer.resolve = function (pathname, req) {
             return fileServer_resolve.apply(fileServer, [pathname, req]);
         };
     }
-    let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function*() {
+    let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
         if (config.headers) {
             for (let key in config.headers) {
                 res.setHeader(key, config.headers[key]);
@@ -114,13 +112,15 @@ function startServer(config) {
                             let p = r;
                             if (p != null && p.then && p.catch) {
                                 headers = yield p;
-                            } else {
+                            }
+                            else {
                                 headers = r;
                             }
-                        } else if (typeof proxyItem.headers == 'object') {
+                        }
+                        else if (typeof proxyItem.headers == 'object') {
                             headers = proxyItem.headers;
                         }
-                        proxyRequest(targetUrl, req, res, headers);
+                        proxyRequest(targetUrl, req, res, req.method, headers);
                         return;
                     }
                 }
@@ -131,7 +131,8 @@ function startServer(config) {
                 return;
             }
             throw errors.pageNotFound(requestUrl);
-        } catch (err) {
+        }
+        catch (err) {
             outputError(err, res);
         }
     }));
@@ -142,7 +143,6 @@ function startServer(config) {
     return { server };
 }
 exports.startServer = startServer;
-
 function executeAction(serverContext, controller, action, routeData, req, res) {
     if (!controller)
         throw errors.arugmentNull("controller");
@@ -178,14 +178,14 @@ function executeAction(serverContext, controller, action, routeData, req, res) {
         }
     });
 }
-
 function outputResult(result, res, req) {
-    return __awaiter(this, void 0, void 0, function*() {
+    return __awaiter(this, void 0, void 0, function* () {
         result = result === undefined ? null : result;
         let contentResult;
         if (isContentResult(result)) {
             contentResult = result;
-        } else {
+        }
+        else {
             contentResult = typeof result == 'string' ?
                 new action_results_1.ContentResult(result, action_results_1.contentTypes.textPlain, 200) :
                 new action_results_1.ContentResult(JSON.stringify(result), action_results_1.contentTypes.applicationJSON, 200);
@@ -194,7 +194,6 @@ function outputResult(result, res, req) {
         res.end();
     });
 }
-
 function isContentResult(result) {
     if (result == null)
         return false;
@@ -203,7 +202,6 @@ function isContentResult(result) {
         return true;
     return false;
 }
-
 function outputError(err, res) {
     if (err == null) {
         err = new Error(`Unkonwn error because original error is null.`);
@@ -223,7 +221,6 @@ function outputError(err, res) {
     res.end();
 }
 exports.outputError = outputError;
-
 function errorOutputObject(err) {
     let outputObject = { message: err.message, name: err.name, stack: err.stack };
     if (err.innerError) {
@@ -231,15 +228,16 @@ function errorOutputObject(err) {
     }
     return outputObject;
 }
-
-function proxyRequest(targetUrl, req, res, headers) {
+function proxyRequest(targetUrl, req, res, method, headers) {
     return new Promise((resolve, reject) => {
-        let request = createTargetResquest(targetUrl, req, res, headers);
-        request.on('error', function(err) {
-            outputError(err, res);
+        let request = createTargetResquest(targetUrl, req, res, method, headers);
+        request.on('error', function (err) {
+            debugger;
+            // outputError(err, res);
             reject(err);
         });
         request.on("close", () => {
+            debugger;
             resolve();
         });
         req.on('data', (data) => {
@@ -251,8 +249,7 @@ function proxyRequest(targetUrl, req, res, headers) {
     });
 }
 exports.proxyRequest = proxyRequest;
-
-function createTargetResquest(targetUrl, req, res, headers) {
+function createTargetResquest(targetUrl, req, res, method, headers) {
     let u = url.parse(targetUrl);
     let { protocol, hostname, port, path } = u;
     headers = headers || {};
@@ -262,11 +259,8 @@ function createTargetResquest(targetUrl, req, res, headers) {
     delete headers.host;
     //=====================================================
     let request = http.request({
-        protocol,
-        hostname,
-        port,
-        path,
-        method: req.method,
+        protocol, hostname, port, path,
+        method: method || req.method,
         headers: headers,
     }, (response) => {
         console.assert(response != null);
@@ -279,7 +273,6 @@ function createTargetResquest(targetUrl, req, res, headers) {
     });
     return request;
 }
-
 function getRequestUrl(req) {
     let requestUrl = req.url || '';
     // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/

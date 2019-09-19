@@ -17,7 +17,7 @@ export declare function createAPIControllerType(getActionInfos: () => ActionInfo
         content(value: string, type: string, statusCode?: number | undefined): import("./action-results").ContentResult;
         json(obj: any, statusCode?: number | undefined): import("./action-results").ContentResult;
         redirect(targetUrl: string): import("./action-results").RedirectResult;
-        proxy(targetUrl: string): import("./action-results").ProxyResut;
+        proxy(targetUrl: string, method?: string | undefined): import("./action-results").ProxyResut;
     };
     typeName: string;
 };

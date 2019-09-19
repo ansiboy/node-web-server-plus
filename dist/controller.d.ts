@@ -7,5 +7,5 @@ export declare class Controller {
     content(value: string, type: string, statusCode?: number): ContentResult;
     json(obj: any, statusCode?: number): ContentResult;
     redirect(targetUrl: string): RedirectResult;
-    proxy(targetUrl: string): ProxyResut;
+    proxy(targetUrl: string, method?: string): ProxyResut;
 }

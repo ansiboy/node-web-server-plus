@@ -21,6 +21,7 @@ export declare class RedirectResult implements ActionResult {
 }
 export declare class ProxyResut implements ActionResult {
     private targetURL;
-    constructor(targetURL: string);
-    execute(res: http.ServerResponse, req: http.IncomingMessage): Promise<{}>;
+    private method;
+    constructor(targetURL: string, method?: string);
+    execute(res: http.ServerResponse, req: http.IncomingMessage): Promise<unknown>;
 }

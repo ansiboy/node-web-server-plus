@@ -21,10 +21,10 @@ class Controller {
         let r = new action_results_1.RedirectResult(targetUrl);
         return r;
     }
-    proxy(targetUrl) {
-        let r = new action_results_1.ProxyResut(targetUrl);
+    proxy(targetUrl, method) {
+        let r = new action_results_1.ProxyResut(targetUrl, method);
         return r;
     }
 }
-Controller.typeName = "node-mvc.Controller";
 exports.Controller = Controller;
+Controller.typeName = "node-mvc.Controller";

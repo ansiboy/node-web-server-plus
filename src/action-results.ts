@@ -49,17 +49,24 @@ export class RedirectResult implements ActionResult {
 
 export class ProxyResut implements ActionResult {
     private targetURL: string;
-    constructor(targetURL: string) {
-        this.targetURL = targetURL
+    private method: string | undefined;
+
+    constructor(targetURL: string, method?: string) {
+        this.targetURL = targetURL;
+        this.method = method;
     }
     execute(res: http.ServerResponse, req: http.IncomingMessage) {
         let targetURL = this.targetURL;
-        if (req.url) {
+        let isFullUrl = !targetURL.endsWith("/");
+        if (req.url && isFullUrl == false) {
             let u = url.parse(req.url);
-            targetURL = path.join(targetURL, u.path || "");
+            if (targetURL.endsWith("/")) {
+                targetURL = targetURL.substr(0, targetURL.length - 1);
+            }
+            targetURL = targetURL + u.path;
         }
 
-        return proxyRequest(targetURL, req, res);
+        return proxyRequest(targetURL, req, res, this.method);
     }
 
 }

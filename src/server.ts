@@ -145,7 +145,7 @@ export function startServer(config: Config) {
                         else if (typeof proxyItem.headers == 'object') {
                             headers = proxyItem.headers
                         }
-                        proxyRequest(targetUrl, req, res, headers)
+                        proxyRequest(targetUrl, req, res, req.method, headers)
                         return
                     }
                 }
@@ -275,16 +275,18 @@ function errorOutputObject(err: Error) {
     return outputObject
 }
 
-export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: { [key: string]: string }) {
+export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, method?: string, headers?: { [key: string]: string }) {
     return new Promise((resolve, reject) => {
-        let request = createTargetResquest(targetUrl, req, res, headers);
+        let request = createTargetResquest(targetUrl, req, res, method, headers);
 
         request.on('error', function (err) {
-            outputError(err, res);
+            debugger
+            // outputError(err, res);
             reject(err);
         })
 
         request.on("close", () => {
+            debugger
             resolve();
         })
 
@@ -297,8 +299,7 @@ export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: 
     })
 }
 
-function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, headers?: { [key: string]: string }) {
-
+function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, method?: string, headers?: { [key: string]: string }) {
     let u = url.parse(targetUrl);
     let { protocol, hostname, port, path } = u;
     headers = headers || {};
@@ -310,7 +311,7 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
     let request = http.request(
         {
             protocol, hostname, port, path,
-            method: req.method,
+            method: method || req.method,
             headers: headers,
         },
         (response) => {

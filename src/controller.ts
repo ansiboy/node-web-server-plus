@@ -25,8 +25,8 @@ export class Controller {
         let r = new RedirectResult(targetUrl);
         return r
     }
-    proxy(targetUrl: string) {
-        let r = new ProxyResut(targetUrl);
+    proxy(targetUrl: string, method?: string) {
+        let r = new ProxyResut(targetUrl, method);
         return r
     }
 }
