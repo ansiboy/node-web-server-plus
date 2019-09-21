@@ -290,29 +290,21 @@ export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: 
             resolve();
         })
 
-        req.on('data', (data) => {
-            request.write(data);
-        })
-        req.on('end', () => {
-            request.end();
-        })
+
     })
 }
 
 function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, method?: string, headers?: { [key: string]: string }) {
-    let u = url.parse(targetUrl);
-    let { protocol, hostname, port, path } = u;
     headers = headers || {};
     headers = Object.assign(req.headers, headers);
     //=====================================================
     // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
     delete headers.host;
     //=====================================================
-    let request = http.request(
+    let request = http.request(targetUrl,
         {
-            protocol, hostname, port, path,
             method: method || req.method,
-            headers: headers,
+            headers: headers, timeout: 2000,
         },
         (response) => {
             console.assert(response != null);
@@ -323,8 +315,18 @@ function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res:
             res.statusCode = response.statusCode || 200;
             res.statusMessage = response.statusMessage || ''
             response.pipe(res);
-        },
+        }
     );
+
+    if (!req.readable)
+        throw errors.requestNotReadable();
+
+    req.on('data', (data) => {
+        request.write(data);
+    }).on('end', () => {
+        request.end();
+        req.resume();
+    });
 
     return request;
 }

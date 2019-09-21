@@ -5,7 +5,6 @@ import "reflect-metadata";
 import http = require('http')
 import querystring = require('querystring');
 import url = require('url');
-import { ControllerLoader } from './controller-loader';
 import { ServerContext } from './server-context';
 
 // const actionMetaKey = Symbol('action')
@@ -128,7 +127,7 @@ function registerAction<T>(controllerDefine: ControllerInfo, memberName: keyof T
 }
 
 export function createParameterDecorator<T>(
-    createParameter: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext, routeData: { [key: string]: string } | null) => Promise<T>, 
+    createParameter: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext, routeData: { [key: string]: string } | null) => Promise<T>,
     disposeParameter?: (parameter: T) => void) {
     return function (target: any, propertyKey: string | symbol, parameterIndex: number) {
         let value: ActionParameterDecoder<T>[] = Reflect.getMetadata(metaKeys.parameter, target, propertyKey) || []
@@ -151,27 +150,30 @@ export let routeData = (function () {
         if (length <= 0)
             return Promise.resolve({});
 
+        if (!request.readable)
+            throw errors.requestNotReadable();
+
         return new Promise((reslove, reject) => {
             var text = "";
-            request.on('data', (data: { toString: () => string }) => {
-                text = text + data.toString();
-            });
-
-            request.on('end', () => {
-                let obj;
-                try {
-                    if (contentType.indexOf('application/json') >= 0) {
-                        obj = JSON.parse(text)
+            request
+                .on('data', (data: { toString: () => string }) => {
+                    text = text + data.toString();
+                })
+                .on('end', () => {
+                    let obj;
+                    try {
+                        if (contentType.indexOf('application/json') >= 0) {
+                            obj = JSON.parse(text)
+                        }
+                        else {
+                            obj = querystring.parse(text);
+                        }
+                        reslove(obj || {});
                     }
-                    else {
-                        obj = querystring.parse(text);
+                    catch (err) {
+                        reject(err);
                     }
-                    reslove(obj || {});
-                }
-                catch (err) {
-                    reject(err);
-                }
-            })
+                })
         });
     }
 

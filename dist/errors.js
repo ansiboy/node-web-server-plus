@@ -83,3 +83,10 @@ function pageNotFound(path) {
     return error;
 }
 exports.pageNotFound = pageNotFound;
+function requestNotReadable() {
+    let msg = `The request is not readable.`;
+    let error = new Error(msg);
+    error.name = requestNotReadable.name;
+    return error;
+}
+exports.requestNotReadable = requestNotReadable;

@@ -11,3 +11,4 @@ export declare function rootPathNotAbsolute(path: string): Error;
 export declare function authenticateResultNull(): Error;
 export declare function notAbsolutePath(path: string): Error;
 export declare function pageNotFound(path: string): Error;
+export declare function requestNotReadable(): Error;

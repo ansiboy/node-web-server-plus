@@ -240,28 +240,19 @@ function proxyRequest(targetUrl, req, res, method, headers) {
             debugger;
             resolve();
         });
-        req.on('data', (data) => {
-            request.write(data);
-        });
-        req.on('end', () => {
-            request.end();
-        });
     });
 }
 exports.proxyRequest = proxyRequest;
 function createTargetResquest(targetUrl, req, res, method, headers) {
-    let u = url.parse(targetUrl);
-    let { protocol, hostname, port, path } = u;
     headers = headers || {};
     headers = Object.assign(req.headers, headers);
     //=====================================================
     // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
     delete headers.host;
     //=====================================================
-    let request = http.request({
-        protocol, hostname, port, path,
+    let request = http.request(targetUrl, {
         method: method || req.method,
-        headers: headers,
+        headers: headers, timeout: 2000,
     }, (response) => {
         console.assert(response != null);
         for (var key in response.headers) {
@@ -270,6 +261,14 @@ function createTargetResquest(targetUrl, req, res, method, headers) {
         res.statusCode = response.statusCode || 200;
         res.statusMessage = response.statusMessage || '';
         response.pipe(res);
+    });
+    if (!req.readable)
+        throw errors.requestNotReadable();
+    req.on('data', (data) => {
+        request.write(data);
+    }).on('end', () => {
+        request.end();
+        req.resume();
     });
     return request;
 }

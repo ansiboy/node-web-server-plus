@@ -113,12 +113,15 @@ exports.routeData = (function () {
         let contentType = request.headers['content-type'];
         if (length <= 0)
             return Promise.resolve({});
+        if (!request.readable)
+            throw errors.requestNotReadable();
         return new Promise((reslove, reject) => {
             var text = "";
-            request.on('data', (data) => {
+            request
+                .on('data', (data) => {
                 text = text + data.toString();
-            });
-            request.on('end', () => {
+            })
+                .on('end', () => {
                 let obj;
                 try {
                     if (contentType.indexOf('application/json') >= 0) {
