@@ -10,6 +10,7 @@ exports.createParameterDecorator = attributes_1.createParameterDecorator;
 exports.routeData = attributes_1.routeData;
 exports.request = attributes_1.request;
 exports.response = attributes_1.response;
+exports.context = attributes_1.context;
 var action_results_1 = require("./action-results");
 exports.ContentResult = action_results_1.ContentResult;
 exports.RedirectResult = action_results_1.RedirectResult;

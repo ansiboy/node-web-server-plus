@@ -120,7 +120,7 @@ function startServer(config) {
                         else if (typeof proxyItem.headers == 'object') {
                             headers = proxyItem.headers;
                         }
-                        proxyRequest(targetUrl, req, res, req.method, headers);
+                        yield proxyRequest(targetUrl, req, res, req.method, headers);
                         return;
                     }
                 }

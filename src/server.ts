@@ -145,7 +145,7 @@ export function startServer(config: Config) {
                         else if (typeof proxyItem.headers == 'object') {
                             headers = proxyItem.headers
                         }
-                        proxyRequest(targetUrl, req, res, req.method, headers)
+                        await proxyRequest(targetUrl, req, res, req.method, headers);
                         return
                     }
                 }
