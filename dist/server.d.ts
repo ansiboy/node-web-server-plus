@@ -38,5 +38,5 @@ export declare function startServer(config: Config): {
 export declare function outputError(err: Error, res: http.ServerResponse): void;
 export declare function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, method?: string, headers?: {
     [key: string]: string;
-}): Promise<unknown>;
+}): Promise<{}>;
 export {};

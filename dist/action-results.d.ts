@@ -23,5 +23,5 @@ export declare class ProxyResut implements ActionResult {
     private targetURL;
     private method;
     constructor(targetURL: string, method?: string);
-    execute(res: http.ServerResponse, req: http.IncomingMessage): Promise<unknown>;
+    execute(res: http.ServerResponse, req: http.IncomingMessage): Promise<{}>;
 }

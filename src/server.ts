@@ -285,8 +285,8 @@ export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: 
             reject(err);
         })
 
-        request.on("close", () => {
-            debugger
+        request.on("finish", () => {
+            // debugger
             resolve();
         })
 

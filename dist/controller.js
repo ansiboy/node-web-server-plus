@@ -26,5 +26,5 @@ class Controller {
         return r;
     }
 }
-exports.Controller = Controller;
 Controller.typeName = "node-mvc.Controller";
+exports.Controller = Controller;
