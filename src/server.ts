@@ -126,11 +126,16 @@ export function startServer(config: Config) {
                     if (arr != null && arr.length > 0) {
                         let proxyItem: ProxyItem = typeof config.proxy[key] == 'object' ? config.proxy[key] as ProxyItem : { targetUrl: config.proxy[key] } as ProxyItem
                         let targetUrl = proxyItem.targetUrl
-                        targetUrl = targetUrl.replace(/\$(\d+)/, (match, number) => {
-                            if (arr == null) throw errors.unexpectedNullValue('arr')
 
-                            return typeof arr[number] != 'undefined' ? arr[number] : match;
-                        })
+                        let regex = /\$(\d+)/;
+                        while (regex.test(targetUrl)) {
+                            targetUrl = targetUrl.replace(regex, (match, number) => {
+                                if (arr == null) throw errors.unexpectedNullValue('arr')
+
+                                return typeof arr[number] != 'undefined' ? arr[number] : match;
+                            })
+                        }
+
                         let headers: { [key: string]: string } | undefined = undefined
                         if (typeof proxyItem.headers == 'function') {
                             let r = proxyItem.headers(req)
