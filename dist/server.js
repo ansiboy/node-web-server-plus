@@ -100,7 +100,7 @@ function startServer(config) {
                     if (arr != null && arr.length > 0) {
                         let proxyItem = typeof config.proxy[key] == 'object' ? config.proxy[key] : { targetUrl: config.proxy[key] };
                         let targetUrl = proxyItem.targetUrl;
-                        let regex = /\$(\d+)/;
+                        let regex = /\$(\d+)/g;
                         while (regex.test(targetUrl)) {
                             targetUrl = targetUrl.replace(regex, (match, number) => {
                                 if (arr == null)
@@ -108,7 +108,6 @@ function startServer(config) {
                                 return typeof arr[number] != 'undefined' ? arr[number] : match;
                             });
                         }
-                        ;
                         let headers = undefined;
                         if (typeof proxyItem.headers == 'function') {
                             let r = proxyItem.headers(req);

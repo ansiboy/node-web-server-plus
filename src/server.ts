@@ -127,7 +127,7 @@ export function startServer(config: Config) {
                         let proxyItem: ProxyItem = typeof config.proxy[key] == 'object' ? config.proxy[key] as ProxyItem : { targetUrl: config.proxy[key] } as ProxyItem
                         let targetUrl = proxyItem.targetUrl
 
-                        let regex = /\$(\d+)/;
+                        let regex = /\$(\d+)/g;
                         while (regex.test(targetUrl)) {
                             targetUrl = targetUrl.replace(regex, (match, number) => {
                                 if (arr == null) throw errors.unexpectedNullValue('arr')
