@@ -2,6 +2,7 @@
 import http = require('http');
 import { ActionResult } from './action-results';
 import { ServerContext } from './server-context';
+import { LogLevel } from './logger';
 interface ProxyItem {
     targetUrl: string;
     rewrite?: [string, string];
@@ -13,7 +14,7 @@ interface ProxyItem {
         [name: string]: string;
     }>);
 }
-export interface Config {
+export interface Settings {
     port: number;
     bindIP?: string;
     controllerDirectory?: string | string[];
@@ -31,8 +32,9 @@ export interface Config {
     virtualPaths?: {
         [virtualPath: string]: string;
     };
+    logLevel?: LogLevel;
 }
-export declare function startServer(config: Config): {
+export declare function startServer(settings: Settings): {
     server: http.Server;
 };
 export declare function outputError(err: Error, res: http.ServerResponse): void;

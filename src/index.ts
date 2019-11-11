@@ -1,4 +1,4 @@
-export { startServer, Config } from './server';
+export { startServer, Settings as Config } from './server';
 export { controller, action, register, createParameterDecorator, routeData, request, response, context } from './attributes';
 export { ContentResult, RedirectResult } from './action-results';
 export { Controller } from './controller';

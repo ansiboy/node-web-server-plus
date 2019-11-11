@@ -16,32 +16,35 @@ const controller_loader_1 = require("./controller-loader");
 const nodeStatic = require("maishu-node-static");
 const action_results_1 = require("./action-results");
 const attributes_1 = require("./attributes");
+const logger_1 = require("./logger");
+const constants_1 = require("./constants");
 let packageInfo = require('../package.json');
-function startServer(config) {
-    if (!config)
+function startServer(settings) {
+    if (!settings)
         throw errors.arugmentNull('config');
+    let logger = logger_1.getLogger(constants_1.LOG_CATEGORY_NAME, settings.logLevel);
     let controllerDirectories = [];
-    if (config.controllerDirectory) {
-        if (typeof config.controllerDirectory == 'string')
-            controllerDirectories.push(config.controllerDirectory);
+    if (settings.controllerDirectory) {
+        if (typeof settings.controllerDirectory == 'string')
+            controllerDirectories.push(settings.controllerDirectory);
         else
-            controllerDirectories = config.controllerDirectory;
+            controllerDirectories = settings.controllerDirectory;
     }
     for (let i = 0; i < controllerDirectories.length; i++) {
         if (!path.isAbsolute(controllerDirectories[i]))
             throw errors.notAbsolutePath(controllerDirectories[i]);
     }
-    if (config.staticRootDirectory && !path.isAbsolute(config.staticRootDirectory))
-        throw errors.notAbsolutePath(config.staticRootDirectory);
+    if (settings.staticRootDirectory && !path.isAbsolute(settings.staticRootDirectory))
+        throw errors.notAbsolutePath(settings.staticRootDirectory);
     let serverContext = { data: {}, controllerDefines: [] };
     let controllerLoader;
     if (controllerDirectories.length > 0)
         controllerLoader = new controller_loader_1.ControllerLoader(serverContext, controllerDirectories);
     let fileServer = null;
-    if (config.staticRootDirectory) {
-        fileServer = new nodeStatic.Server(config.staticRootDirectory, {
-            virtualPaths: config.virtualPaths,
-            serverInfo: `maishu-node-mvc ${packageInfo.version} ${config.serverName}`,
+    if (settings.staticRootDirectory) {
+        fileServer = new nodeStatic.Server(settings.staticRootDirectory, {
+            virtualPaths: settings.virtualPaths,
+            serverInfo: `maishu-node-mvc ${packageInfo.version} ${settings.serverName}`,
             gzip: true,
         });
         let fileServer_resolve = fileServer.resolve;
@@ -50,9 +53,9 @@ function startServer(config) {
         };
     }
     let server = http.createServer((req, res) => __awaiter(this, void 0, void 0, function* () {
-        if (config.headers) {
-            for (let key in config.headers) {
-                res.setHeader(key, config.headers[key]);
+        if (settings.headers) {
+            for (let key in settings.headers) {
+                res.setHeader(key, settings.headers[key]);
             }
         }
         if (req.method == 'OPTIONS') {
@@ -60,15 +63,18 @@ function startServer(config) {
             return;
         }
         try {
-            if (config.authenticate) {
-                let r = yield config.authenticate(req, res, serverContext);
+            if (settings.authenticate) {
+                logger.info("Settings authenticate function is set and use it to auth the user.");
+                let r = yield settings.authenticate(req, res, serverContext);
                 if (r) {
+                    logger.warn("Settings authenticate function auth user fail.");
                     outputResult(r, res, req);
                     return;
                 }
             }
-            if (config.actionFilters) {
-                let actionFilters = config.actionFilters || [];
+            if (settings.actionFilters) {
+                logger.info("Settings actionFilters is not null.");
+                let actionFilters = settings.actionFilters || [];
                 for (let i = 0; i < actionFilters.length; i++) {
                     let result = yield actionFilters[i](req, res, serverContext);
                     if (result != null) {
@@ -92,16 +98,16 @@ function startServer(config) {
             }
             //=====================================================================
             // 处理 URL 转发
-            if (config.proxy) {
-                for (let key in config.proxy) {
+            if (settings.proxy) {
+                for (let key in settings.proxy) {
                     let regex = new RegExp(key);
                     let reqUrl = req.url || '';
                     let arr = regex.exec(reqUrl);
                     if (arr != null && arr.length > 0) {
-                        let proxyItem = typeof config.proxy[key] == 'object' ? config.proxy[key] : { targetUrl: config.proxy[key] };
+                        let proxyItem = typeof settings.proxy[key] == 'object' ? settings.proxy[key] : { targetUrl: settings.proxy[key] };
                         let targetUrl = proxyItem.targetUrl;
                         let regex = /\$(\d+)/g;
-                        while (regex.test(targetUrl)) {
+                        if (regex.test(targetUrl)) {
                             targetUrl = targetUrl.replace(regex, (match, number) => {
                                 if (arr == null)
                                     throw errors.unexpectedNullValue('arr');
@@ -139,9 +145,9 @@ function startServer(config) {
         }
     }));
     server.on('error', (err) => {
-        console.log(err);
+        logger.error(err);
     });
-    server.listen(config.port, config.bindIP);
+    server.listen(settings.port, settings.bindIP);
     return { server };
 }
 exports.startServer = startServer;
