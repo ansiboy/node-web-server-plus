@@ -16,3 +16,5 @@ exports.ContentResult = action_results_1.ContentResult;
 exports.RedirectResult = action_results_1.RedirectResult;
 var controller_1 = require("./controller");
 exports.Controller = controller_1.Controller;
+var logger_1 = require("./logger");
+exports.getLogger = logger_1.getLogger;

@@ -36,7 +36,7 @@ function startServer(settings) {
     }
     if (settings.staticRootDirectory && !path.isAbsolute(settings.staticRootDirectory))
         throw errors.notAbsolutePath(settings.staticRootDirectory);
-    let serverContext = { data: {}, controllerDefines: [] };
+    let serverContext = { controllerDefines: [] };
     let controllerLoader;
     if (controllerDirectories.length > 0)
         controllerLoader = new controller_loader_1.ControllerLoader(serverContext, controllerDirectories);
@@ -72,9 +72,9 @@ function startServer(settings) {
                     return;
                 }
             }
-            if (settings.actionFilters) {
-                logger.info("Settings actionFilters is not null.");
-                let actionFilters = settings.actionFilters || [];
+            if (settings.requestFilters) {
+                logger.info("Settings requestFilters is not null.");
+                let actionFilters = settings.requestFilters || [];
                 for (let i = 0; i < actionFilters.length; i++) {
                     let result = yield actionFilters[i](req, res, serverContext);
                     if (result != null) {
@@ -93,7 +93,9 @@ function startServer(settings) {
             if (controllerLoader) {
                 r = controllerLoader.getAction(pathName, serverContext);
             }
-            if (r != null && r.action != null && r.controller != null) {
+            if (r != null) {
+                console.assert(r.action != null);
+                console.assert(r.controller != null);
                 return executeAction(serverContext, r.controller, r.action, r.routeData, req, res);
             }
             //=====================================================================
@@ -147,7 +149,9 @@ function startServer(settings) {
     server.on('error', (err) => {
         logger.error(err);
     });
-    server.listen(settings.port, settings.bindIP);
+    if (settings.port != null) {
+        server.listen(settings.port, settings.bindIP);
+    }
     return { server };
 }
 exports.startServer = startServer;
@@ -258,27 +262,27 @@ function createTargetResquest(targetUrl, req, res, method, headers) {
     // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
     delete headers.host;
     //=====================================================
-    let request = http.request(targetUrl, {
+    let clientRequest = http.request(targetUrl, {
         method: method || req.method,
         headers: headers, timeout: 2000,
-    }, (response) => {
-        console.assert(response != null);
-        for (var key in response.headers) {
-            res.setHeader(key, response.headers[key] || '');
+    }, (request) => {
+        console.assert(request != null);
+        for (var key in request.headers) {
+            res.setHeader(key, request.headers[key] || '');
         }
-        res.statusCode = response.statusCode || 200;
-        res.statusMessage = response.statusMessage || '';
-        response.pipe(res);
+        res.statusCode = request.statusCode || 200;
+        res.statusMessage = request.statusMessage || '';
+        request.pipe(res);
     });
     if (!req.readable)
         throw errors.requestNotReadable();
     req.on('data', (data) => {
-        request.write(data);
+        clientRequest.write(data);
     }).on('end', () => {
-        request.end();
+        clientRequest.end();
         req.resume();
     });
-    return request;
+    return clientRequest;
 }
 function getRequestUrl(req) {
     let requestUrl = req.url || '';

@@ -15,7 +15,7 @@ interface ProxyItem {
     }>);
 }
 export interface Settings {
-    port: number;
+    port?: number;
     bindIP?: string;
     controllerDirectory?: string | string[];
     staticRootDirectory?: string;
@@ -23,7 +23,7 @@ export interface Settings {
         [path_pattern: string]: string | ProxyItem;
     };
     authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>;
-    actionFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[];
+    requestFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[];
     serverName?: string;
     /** 设置默认的 Http Header */
     headers?: {
