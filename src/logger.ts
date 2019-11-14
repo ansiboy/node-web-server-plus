@@ -29,6 +29,7 @@ let appenders: log4js.Configuration["appenders"] = {
 log4js.configure({ appenders, categories });
 
 export type LogLevel = keyof Pick<log4js.Logger, 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'> | "all" | "off" | 'mark';
+
 export function getLogger(categoryName: string, logLevel?: LogLevel) {
 
     if (!categoryName) throw errors.arugmentNull("categoryName");

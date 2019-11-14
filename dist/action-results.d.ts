@@ -1,12 +1,10 @@
 /// <reference types="node" />
 import http = require('http');
+import { ActionResult, ServerContext } from './types';
 export declare const contentTypes: {
     applicationJSON: string;
     textPlain: string;
 };
-export interface ActionResult {
-    execute(res: http.ServerResponse, req: http.IncomingMessage): Promise<any>;
-}
 export declare class ContentResult implements ActionResult {
     private contentType;
     private content;
@@ -23,5 +21,5 @@ export declare class ProxyResut implements ActionResult {
     private targetURL;
     private method;
     constructor(targetURL: string, method?: string);
-    execute(res: http.ServerResponse, req: http.IncomingMessage): Promise<{}>;
+    execute(res: http.ServerResponse, req: http.IncomingMessage, serverContext: ServerContext): Promise<{}>;
 }

@@ -6,6 +6,7 @@ import http = require('http')
 import querystring = require('querystring');
 import url = require('url');
 import { ServerContext } from './server-context';
+import { ActionInfo, ControllerType, ControllerInfo } from './types';
 
 // const actionMetaKey = Symbol('action')
 // const parameterMetaKey = Symbol('parameter')
@@ -26,18 +27,9 @@ export interface ActionParameterDecoder<T> {
     disposeParameter?: (parameter: T) => void
 }
 
-interface ActionInfo {
-    memberName: string,
-    paths: string[],
-}
 
-export interface ControllerInfo {
-    type: ControllerType<any>,
-    path: string,
-    actionDefines: ActionInfo[]
-}
 
-export type ControllerType<T> = { new(): T }
+
 
 //==============================================================================
 // controllerDefines 变量用作全局变量, 由于同一个文件可能会加载多次, 会导致变量失效

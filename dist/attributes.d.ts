@@ -2,6 +2,7 @@
 import "reflect-metadata";
 import http = require('http');
 import { ServerContext } from './server-context';
+import { ControllerType } from './types';
 export declare let metaKeys: {
     action: string;
     parameter: string;
@@ -13,18 +14,6 @@ export interface ActionParameterDecoder<T> {
     } | null) => Promise<T>;
     disposeParameter?: (parameter: T) => void;
 }
-interface ActionInfo {
-    memberName: string;
-    paths: string[];
-}
-export interface ControllerInfo {
-    type: ControllerType<any>;
-    path: string;
-    actionDefines: ActionInfo[];
-}
-export declare type ControllerType<T> = {
-    new (): T;
-};
 export declare let CONTROLLER_REGISTER: string;
 /**
  * 标记一个类是否为控制器
@@ -50,4 +39,3 @@ export declare let request: (target: any, propertyKey: string | symbol, paramete
 export declare let response: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare let requestHeaders: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare let context: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
-export {};

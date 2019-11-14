@@ -36,7 +36,7 @@ function startServer(settings) {
     }
     if (settings.staticRootDirectory && !path.isAbsolute(settings.staticRootDirectory))
         throw errors.notAbsolutePath(settings.staticRootDirectory);
-    let serverContext = { controllerDefines: [] };
+    let serverContext = { controllerDefines: [], settings };
     let controllerLoader;
     if (controllerDirectories.length > 0)
         controllerLoader = new controller_loader_1.ControllerLoader(serverContext, controllerDirectories);
@@ -68,7 +68,7 @@ function startServer(settings) {
                 let r = yield settings.authenticate(req, res, serverContext);
                 if (r) {
                     logger.warn("Settings authenticate function auth user fail.");
-                    outputResult(r, res, req);
+                    outputResult(r, res, req, serverContext);
                     return;
                 }
             }
@@ -78,7 +78,7 @@ function startServer(settings) {
                 for (let i = 0; i < actionFilters.length; i++) {
                     let result = yield actionFilters[i](req, res, serverContext);
                     if (result != null) {
-                        outputResult(result, res, req);
+                        outputResult(result, res, req, serverContext);
                         return;
                     }
                 }
@@ -105,34 +105,35 @@ function startServer(settings) {
                     let regex = new RegExp(key);
                     let reqUrl = req.url || '';
                     let arr = regex.exec(reqUrl);
-                    if (arr != null && arr.length > 0) {
-                        let proxyItem = typeof settings.proxy[key] == 'object' ? settings.proxy[key] : { targetUrl: settings.proxy[key] };
-                        let targetUrl = proxyItem.targetUrl;
-                        let regex = /\$(\d+)/g;
-                        if (regex.test(targetUrl)) {
-                            targetUrl = targetUrl.replace(regex, (match, number) => {
-                                if (arr == null)
-                                    throw errors.unexpectedNullValue('arr');
-                                return typeof arr[number] != 'undefined' ? arr[number] : match;
-                            });
-                        }
-                        let headers = undefined;
-                        if (typeof proxyItem.headers == 'function') {
-                            let r = proxyItem.headers(req);
-                            let p = r;
-                            if (p != null && p.then && p.catch) {
-                                headers = yield p;
-                            }
-                            else {
-                                headers = r;
-                            }
-                        }
-                        else if (typeof proxyItem.headers == 'object') {
-                            headers = proxyItem.headers;
-                        }
-                        yield proxyRequest(targetUrl, req, res, req.method, headers);
-                        return;
+                    if (arr == null || arr.length == 0) {
+                        continue;
                     }
+                    let proxyItem = typeof settings.proxy[key] == 'object' ? settings.proxy[key] : { targetUrl: settings.proxy[key] };
+                    let targetUrl = proxyItem.targetUrl;
+                    let regex1 = /\$(\d+)/g;
+                    if (regex1.test(targetUrl)) {
+                        targetUrl = targetUrl.replace(regex1, (match, number) => {
+                            if (arr == null)
+                                throw errors.unexpectedNullValue('arr');
+                            return typeof arr[number] != 'undefined' ? arr[number] : match;
+                        });
+                    }
+                    let headers = undefined;
+                    if (typeof proxyItem.headers == 'function') {
+                        let r = proxyItem.headers(req);
+                        let p = r;
+                        if (p != null && p.then && p.catch) {
+                            headers = yield p;
+                        }
+                        else {
+                            headers = r;
+                        }
+                    }
+                    else if (typeof proxyItem.headers == 'object') {
+                        headers = proxyItem.headers;
+                    }
+                    yield proxyRequest(targetUrl, req, res, serverContext, req.method, headers);
+                    return;
                 }
             }
             //=====================================================================
@@ -178,7 +179,7 @@ function executeAction(serverContext, controller, action, routeData, req, res) {
         }
         return p;
     }).then((r) => {
-        return outputResult(r, res, req);
+        return outputResult(r, res, req, serverContext);
     }).catch(err => {
         return outputError(err, res);
     }).finally(() => {
@@ -190,7 +191,7 @@ function executeAction(serverContext, controller, action, routeData, req, res) {
         }
     });
 }
-function outputResult(result, res, req) {
+function outputResult(result, res, req, serverContext) {
     return __awaiter(this, void 0, void 0, function* () {
         result = result === undefined ? null : result;
         let contentResult;
@@ -202,7 +203,7 @@ function outputResult(result, res, req) {
                 new action_results_1.ContentResult(result, action_results_1.contentTypes.textPlain, 200) :
                 new action_results_1.ContentResult(JSON.stringify(result), action_results_1.contentTypes.applicationJSON, 200);
         }
-        yield contentResult.execute(res, req);
+        yield contentResult.execute(res, req, serverContext);
         res.end();
     });
 }
@@ -240,50 +241,46 @@ function errorOutputObject(err) {
     }
     return outputObject;
 }
-function proxyRequest(targetUrl, req, res, method, headers) {
-    return new Promise((resolve, reject) => {
-        let request = createTargetResquest(targetUrl, req, res, method, headers);
-        request.on('error', function (err) {
-            debugger;
-            // outputError(err, res);
+function proxyRequest(targetUrl, req, res, serverContext, method, headers) {
+    debugger;
+    return new Promise(function (resolve, reject) {
+        headers = headers || {};
+        headers = Object.assign(req.headers, headers);
+        //=====================================================
+        // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+        delete headers.host;
+        //=====================================================
+        let clientRequest = http.request(targetUrl, {
+            method: method || req.method,
+            headers: headers, timeout: 2000,
+        }, (response) => {
+            console.assert(response != null);
+            for (var key in response.headers) {
+                res.setHeader(key, response.headers[key] || '');
+            }
+            res.statusCode = response.statusCode || 200;
+            res.statusMessage = response.statusMessage || '';
+            response.pipe(res);
+        });
+        if (!req.readable) {
+            reject(errors.requestNotReadable());
+        }
+        req.on('data', (data) => {
+            clientRequest.write(data);
+        }).on('end', () => {
+            clientRequest.end();
+        });
+        clientRequest.on("error", function (err) {
+            let logger = logger_1.getLogger(constants_1.LOG_CATEGORY_NAME, serverContext.settings.logLevel);
+            logger.error(err);
             reject(err);
         });
-        request.on("finish", () => {
-            // debugger
+        clientRequest.on("finish", function () {
             resolve();
         });
     });
 }
 exports.proxyRequest = proxyRequest;
-function createTargetResquest(targetUrl, req, res, method, headers) {
-    headers = headers || {};
-    headers = Object.assign(req.headers, headers);
-    //=====================================================
-    // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
-    delete headers.host;
-    //=====================================================
-    let clientRequest = http.request(targetUrl, {
-        method: method || req.method,
-        headers: headers, timeout: 2000,
-    }, (request) => {
-        console.assert(request != null);
-        for (var key in request.headers) {
-            res.setHeader(key, request.headers[key] || '');
-        }
-        res.statusCode = request.statusCode || 200;
-        res.statusMessage = request.statusMessage || '';
-        request.pipe(res);
-    });
-    if (!req.readable)
-        throw errors.requestNotReadable();
-    req.on('data', (data) => {
-        clientRequest.write(data);
-    }).on('end', () => {
-        clientRequest.end();
-        req.resume();
-    });
-    return clientRequest;
-}
 function getRequestUrl(req) {
     let requestUrl = req.url || '';
     // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/

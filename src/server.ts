@@ -4,34 +4,14 @@ import url = require('url');
 import path = require('path')
 import { ControllerLoader } from './controller-loader';
 import nodeStatic = require('maishu-node-static')
-import { ActionResult, ContentResult, contentTypes } from './action-results';
+import { ContentResult, contentTypes } from './action-results';
 import { metaKeys, ActionParameterDecoder } from './attributes';
 import { ServerContext } from './server-context';
-import { LogLevel, getLogger } from './logger';
+import { getLogger } from './logger';
 import { LOG_CATEGORY_NAME } from './constants';
+import { Settings, ProxyItem, ActionResult } from './types';
 
 let packageInfo = require('../package.json')
-
-interface ProxyItem {
-    targetUrl: string,
-    rewrite?: [string, string],
-    headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>)
-}
-
-export interface Settings {
-    port?: number,
-    bindIP?: string,
-    controllerDirectory?: string | string[],
-    staticRootDirectory?: string,
-    proxy?: { [path_pattern: string]: string | ProxyItem },
-    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>,
-    requestFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[],
-    serverName?: string,
-    /** 设置默认的 Http Header */
-    headers?: { [name: string]: string }
-    virtualPaths?: { [virtualPath: string]: string },
-    logLevel?: LogLevel
-}
 
 export function startServer(settings: Settings) {
     if (!settings) throw errors.arugmentNull('config')
@@ -53,7 +33,7 @@ export function startServer(settings: Settings) {
     if (settings.staticRootDirectory && !path.isAbsolute(settings.staticRootDirectory))
         throw errors.notAbsolutePath(settings.staticRootDirectory);
 
-    let serverContext: ServerContext = { controllerDefines: [] };
+    let serverContext: ServerContext = { controllerDefines: [], settings };
 
     let controllerLoader: ControllerLoader;
     if (controllerDirectories.length > 0)
@@ -89,7 +69,7 @@ export function startServer(settings: Settings) {
                 let r = await settings.authenticate(req, res, serverContext);
                 if (r) {
                     logger.warn("Settings authenticate function auth user fail.");
-                    outputResult(r, res, req)
+                    outputResult(r, res, req, serverContext);
                     return
                 }
             }
@@ -98,9 +78,9 @@ export function startServer(settings: Settings) {
                 logger.info("Settings requestFilters is not null.");
                 let actionFilters = settings.requestFilters || []
                 for (let i = 0; i < actionFilters.length; i++) {
-                    let result = await actionFilters[i](req, res, serverContext)
+                    let result = await actionFilters[i](req, res, serverContext);
                     if (result != null) {
-                        outputResult(result, res, req)
+                        outputResult(result, res, req, serverContext)
                         return
                     }
                 }
@@ -132,36 +112,39 @@ export function startServer(settings: Settings) {
                     let regex = new RegExp(key)
                     let reqUrl = req.url || ''
                     let arr = regex.exec(reqUrl)
-                    if (arr != null && arr.length > 0) {
-                        let proxyItem: ProxyItem = typeof settings.proxy[key] == 'object' ? settings.proxy[key] as ProxyItem : { targetUrl: settings.proxy[key] } as ProxyItem
-                        let targetUrl = proxyItem.targetUrl
-
-                        let regex = /\$(\d+)/g;
-                        if (regex.test(targetUrl)) {
-                            targetUrl = targetUrl.replace(regex, (match, number) => {
-                                if (arr == null) throw errors.unexpectedNullValue('arr')
-
-                                return typeof arr[number] != 'undefined' ? arr[number] : match;
-                            })
-                        }
-
-                        let headers: { [key: string]: string } | undefined = undefined
-                        if (typeof proxyItem.headers == 'function') {
-                            let r = proxyItem.headers(req)
-                            let p = r as Promise<any>
-                            if (p != null && p.then && p.catch) {
-                                headers = await p
-                            }
-                            else {
-                                headers = r as { [key: string]: string }
-                            }
-                        }
-                        else if (typeof proxyItem.headers == 'object') {
-                            headers = proxyItem.headers
-                        }
-                        await proxyRequest(targetUrl, req, res, req.method, headers);
-                        return
+                    if (arr == null || arr.length == 0) {
+                        continue;
                     }
+
+                    let proxyItem: ProxyItem = typeof settings.proxy[key] == 'object' ? settings.proxy[key] as ProxyItem : { targetUrl: settings.proxy[key] } as ProxyItem
+                    let targetUrl = proxyItem.targetUrl
+
+                    let regex1 = /\$(\d+)/g;
+                    if (regex1.test(targetUrl)) {
+                        targetUrl = targetUrl.replace(regex1, (match, number) => {
+                            if (arr == null) throw errors.unexpectedNullValue('arr')
+
+                            return typeof arr[number] != 'undefined' ? arr[number] : match;
+                        })
+                    }
+
+                    let headers: { [key: string]: string } | undefined = undefined
+                    if (typeof proxyItem.headers == 'function') {
+                        let r = proxyItem.headers(req)
+                        let p = r as Promise<any>
+                        if (p != null && p.then && p.catch) {
+                            headers = await p
+                        }
+                        else {
+                            headers = r as { [key: string]: string }
+                        }
+                    }
+                    else if (typeof proxyItem.headers == 'object') {
+                        headers = proxyItem.headers
+                    }
+
+                    await proxyRequest(targetUrl, req, res, serverContext, req.method, headers);
+                    return;
                 }
             }
             //=====================================================================
@@ -219,7 +202,7 @@ function executeAction(serverContext: ServerContext, controller: object, action:
         }
         return p;
     }).then((r) => {
-        return outputResult(r, res, req);
+        return outputResult(r, res, req, serverContext);
     }).catch(err => {
         return outputError(err, res);
     }).finally(() => {
@@ -232,7 +215,7 @@ function executeAction(serverContext: ServerContext, controller: object, action:
     })
 }
 
-async function outputResult(result: object | null, res: http.ServerResponse, req: http.IncomingMessage) {
+async function outputResult(result: object | null, res: http.ServerResponse, req: http.IncomingMessage, serverContext: ServerContext) {
     result = result === undefined ? null : result
     let contentResult: ActionResult
     if (isContentResult(result)) {
@@ -244,7 +227,7 @@ async function outputResult(result: object | null, res: http.ServerResponse, req
             new ContentResult(JSON.stringify(result), contentTypes.applicationJSON, 200)
     }
 
-    await contentResult.execute(res, req)
+    await contentResult.execute(res, req, serverContext);
     res.end()
 }
 
@@ -291,60 +274,54 @@ function errorOutputObject(err: Error) {
     return outputObject
 }
 
-export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, method?: string, headers?: { [key: string]: string }) {
-    return new Promise((resolve, reject) => {
-        let request = createTargetResquest(targetUrl, req, res, method, headers);
+export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, serverContext: ServerContext,
+    method?: string, headers?: { [key: string]: string }) {
+    debugger
+    return new Promise(function (resolve, reject) {
+        headers = headers || {};
+        headers = Object.assign(req.headers, headers);
+        //=====================================================
+        // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+        delete headers.host;
+        //=====================================================
+        let clientRequest = http.request(targetUrl,
+            {
+                method: method || req.method,
+                headers: headers, timeout: 2000,
+            },
+            (response) => {
+                console.assert(response != null);
 
-        request.on('error', function (err) {
-            debugger
-            // outputError(err, res);
+                for (var key in response.headers) {
+                    res.setHeader(key, response.headers[key] || '');
+                }
+                res.statusCode = response.statusCode || 200;
+                res.statusMessage = response.statusMessage || ''
+                response.pipe(res);
+            }
+        );
+
+        if (!req.readable) {
+            reject(errors.requestNotReadable());
+        }
+
+
+        req.on('data', (data) => {
+            clientRequest.write(data);
+        }).on('end', () => {
+            clientRequest.end();
+        });
+
+        clientRequest.on("error", function (err) {
+            let logger = getLogger(LOG_CATEGORY_NAME, serverContext.settings.logLevel);
+            logger.error(err);
             reject(err);
-        })
+        });
 
-        request.on("finish", () => {
-            // debugger
+        clientRequest.on("finish", function () {
             resolve();
         })
-
-
     })
-}
-
-function createTargetResquest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, method?: string, headers?: { [key: string]: string }) {
-    headers = headers || {};
-    headers = Object.assign(req.headers, headers);
-    //=====================================================
-    // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
-    delete headers.host;
-    //=====================================================
-    let clientRequest = http.request(targetUrl,
-        {
-            method: method || req.method,
-            headers: headers, timeout: 2000,
-        },
-        (request) => {
-            console.assert(request != null);
-
-            for (var key in request.headers) {
-                res.setHeader(key, request.headers[key] || '');
-            }
-            res.statusCode = request.statusCode || 200;
-            res.statusMessage = request.statusMessage || ''
-            request.pipe(res);
-        }
-    );
-
-    if (!req.readable)
-        throw errors.requestNotReadable();
-
-    req.on('data', (data) => {
-        clientRequest.write(data);
-    }).on('end', () => {
-        clientRequest.end();
-        req.resume();
-    });
-
-    return clientRequest;
 }
 
 function getRequestUrl(req: http.IncomingMessage) {

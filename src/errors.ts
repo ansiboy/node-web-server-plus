@@ -1,4 +1,4 @@
-import { ControllerType } from "./attributes";
+import { ControllerType } from "./types";
 
 export function postDataNotJSON(data: string): Error {
     let msg = `提交的数据不是 JSON 格式。提交数据为：${data}`;

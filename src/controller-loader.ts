@@ -2,7 +2,7 @@ import * as errors from './errors'
 import * as fs from 'fs'
 import * as path from 'path'
 import isClass = require('is-class')
-import { controller, ControllerType, ControllerInfo, CONTROLLER_REGISTER } from './attributes';
+import { controller, CONTROLLER_REGISTER } from './attributes';
 import { isRouteString } from "./router";
 // import Route = require("route-parser");
 import UrlPattern = require("url-pattern");

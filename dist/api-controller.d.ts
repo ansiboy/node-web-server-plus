@@ -1,5 +1,5 @@
-import { ControllerType } from "./attributes";
 import { ServerContext } from "./server-context";
+import { ControllerType } from "./types";
 export declare type ActionInfo = {
     controllerType: ControllerType<any>;
     memberName: string;

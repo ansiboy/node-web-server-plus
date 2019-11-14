@@ -1,8 +1,9 @@
-import http = require('http')
+import http = require('http');
 import { arugmentNull } from './errors';
 import { proxyRequest } from './server';
 import url = require('url');
 import path = require("path");
+import { ActionResult, ServerContext } from './types';
 
 
 const encoding = 'UTF-8'
@@ -11,9 +12,7 @@ export const contentTypes = {
     textPlain: `text/plain; charset=${encoding}`,
 }
 
-export interface ActionResult {
-    execute(res: http.ServerResponse, req: http.IncomingMessage): Promise<any>
-}
+
 
 export class ContentResult implements ActionResult {
     private contentType: string;
@@ -55,7 +54,7 @@ export class ProxyResut implements ActionResult {
         this.targetURL = targetURL;
         this.method = method;
     }
-    execute(res: http.ServerResponse, req: http.IncomingMessage) {
+    execute(res: http.ServerResponse, req: http.IncomingMessage, serverContext: ServerContext) {
         let targetURL = this.targetURL;
         let isFullUrl = !targetURL.endsWith("/");
         if (req.url && isFullUrl == false) {
@@ -66,7 +65,7 @@ export class ProxyResut implements ActionResult {
             targetURL = targetURL + u.path;
         }
 
-        return proxyRequest(targetURL, req, res, this.method);
+        return proxyRequest(targetURL, req, res, serverContext, this.method);
     }
 
 }

@@ -49,7 +49,7 @@ class ProxyResut {
         this.targetURL = targetURL;
         this.method = method;
     }
-    execute(res, req) {
+    execute(res, req, serverContext) {
         let targetURL = this.targetURL;
         let isFullUrl = !targetURL.endsWith("/");
         if (req.url && isFullUrl == false) {
@@ -59,7 +59,7 @@ class ProxyResut {
             }
             targetURL = targetURL + u.path;
         }
-        return server_1.proxyRequest(targetURL, req, res, this.method);
+        return server_1.proxyRequest(targetURL, req, res, serverContext, this.method);
     }
 }
 exports.ProxyResut = ProxyResut;
