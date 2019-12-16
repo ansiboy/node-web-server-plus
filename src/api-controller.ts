@@ -1,7 +1,6 @@
 import { Controller } from "./controller";
 import { register } from "./attributes";
-import { ServerContext } from "./server-context";
-import { ControllerType } from "./types";
+import { ControllerType, ServerContext } from "./types";
 
 export type ActionInfo = {
     controllerType: ControllerType<any>, memberName: string, actionPath: string

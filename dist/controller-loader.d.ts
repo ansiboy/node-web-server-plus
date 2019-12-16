@@ -1,4 +1,4 @@
-import { ServerContext } from './server-context';
+import { ServerContext } from './types';
 export declare class ControllerLoader {
     private pathActions;
     private routeActions;

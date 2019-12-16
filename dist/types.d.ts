@@ -3,7 +3,7 @@ import http = require('http');
 import { LogLevel } from "./logger";
 export interface ServerContext {
     controllerDefines: ControllerInfo[];
-    settings: Settings;
+    logLevel: Settings["logLevel"];
 }
 export interface ProxyItem {
     targetUrl: string;
@@ -15,6 +15,7 @@ export interface ProxyItem {
     } | Promise<{
         [name: string]: string;
     }>);
+    response?: (proxResponse: http.IncomingMessage, req: http.IncomingMessage, res: http.ServerResponse) => void;
 }
 export interface Settings {
     port?: number;

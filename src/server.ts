@@ -6,10 +6,9 @@ import { ControllerLoader } from './controller-loader';
 import nodeStatic = require('maishu-node-static')
 import { ContentResult, contentTypes } from './action-results';
 import { metaKeys, ActionParameterDecoder } from './attributes';
-import { ServerContext } from './server-context';
 import { getLogger } from './logger';
 import { LOG_CATEGORY_NAME } from './constants';
-import { Settings, ProxyItem, ActionResult } from './types';
+import { Settings, ProxyItem, ActionResult, ServerContext } from './types';
 
 let packageInfo = require('../package.json')
 
@@ -33,7 +32,7 @@ export function startServer(settings: Settings) {
     if (settings.staticRootDirectory && !path.isAbsolute(settings.staticRootDirectory))
         throw errors.notAbsolutePath(settings.staticRootDirectory);
 
-    let serverContext: ServerContext = { controllerDefines: [], settings };
+    let serverContext: ServerContext = { controllerDefines: [], logLevel: settings.logLevel };
 
     let controllerLoader: ControllerLoader;
     if (controllerDirectories.length > 0)
@@ -143,7 +142,7 @@ export function startServer(settings: Settings) {
                         headers = proxyItem.headers
                     }
 
-                    await proxyRequest(targetUrl, req, res, serverContext, req.method, headers);
+                    proxyRequest(targetUrl, req, res, serverContext, req.method, headers, proxyItem.response);
                     return;
                 }
             }
@@ -275,29 +274,36 @@ function errorOutputObject(err: Error) {
 }
 
 export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, serverContext: ServerContext,
-    method?: string, headers?: { [key: string]: string }) {
-    debugger
+    method?: string, headers?: http.IncomingMessage["headers"], proxyResponse?: ProxyItem["response"]) {
+
     return new Promise(function (resolve, reject) {
-        headers = headers || {};
-        headers = Object.assign(req.headers, headers);
+        headers = Object.assign({}, req.headers, headers || {});
+        // headers = Object.assign(req.headers, headers);
         //=====================================================
-        // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
-        delete headers.host;
+        if (headers.host) {
+            headers["delete-host"] = headers.host;
+            // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+            delete headers.host;
+        }
+
         //=====================================================
         let clientRequest = http.request(targetUrl,
             {
                 method: method || req.method,
                 headers: headers, timeout: 2000,
             },
-            (response) => {
-                console.assert(response != null);
-
+            function (response) {
                 for (var key in response.headers) {
                     res.setHeader(key, response.headers[key] || '');
                 }
                 res.statusCode = response.statusCode || 200;
-                res.statusMessage = response.statusMessage || ''
-                response.pipe(res);
+                res.statusMessage = response.statusMessage || '';
+                if (proxyResponse) {
+                    proxyResponse(response, req, res);
+                }
+                else {
+                    response.pipe(res);
+                }
             }
         );
 
@@ -313,7 +319,7 @@ export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: 
         });
 
         clientRequest.on("error", function (err) {
-            let logger = getLogger(LOG_CATEGORY_NAME, serverContext.settings.logLevel);
+            let logger = getLogger(LOG_CATEGORY_NAME, serverContext.logLevel);
             logger.error(err);
             reject(err);
         });

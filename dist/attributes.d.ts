@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import "reflect-metadata";
 import http = require('http');
-import { ServerContext } from './server-context';
+import { ServerContext } from './types';
 import { ControllerType } from './types';
 export declare let metaKeys: {
     action: string;
@@ -38,4 +38,4 @@ export declare let formData: (target: any, propertyKey: string | symbol, paramet
 export declare let request: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare let response: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
 export declare let requestHeaders: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
-export declare let context: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;
+export declare let serverContext: (target: any, propertyKey: string | symbol, parameterIndex: number) => void;

@@ -1,7 +1,8 @@
-import { ControllerInfo, Settings } from "./types";
+// import { ControllerInfo, Settings } from "./types";
 
 
-export interface ServerContext {
-    controllerDefines: ControllerInfo[],
-    settings: Settings,
-}
+// export interface ServerContext {
+//     controllerDefines: ControllerInfo[],
+//     // settings: Settings,
+//     logLevel: Settings["logLevel"]
+// }

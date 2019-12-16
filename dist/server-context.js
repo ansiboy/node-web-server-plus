@@ -1,2 +1,7 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+// import { ControllerInfo, Settings } from "./types";
+// export interface ServerContext {
+//     controllerDefines: ControllerInfo[],
+//     // settings: Settings,
+//     logLevel: Settings["logLevel"]
+// }

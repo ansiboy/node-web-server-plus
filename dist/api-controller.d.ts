@@ -1,5 +1,4 @@
-import { ServerContext } from "./server-context";
-import { ControllerType } from "./types";
+import { ControllerType, ServerContext } from "./types";
 export declare type ActionInfo = {
     controllerType: ControllerType<any>;
     memberName: string;
@@ -12,7 +11,6 @@ export declare function createAPIControllerType(getActionInfos: () => ActionInfo
             controller: string;
             action: string;
         }[]>;
-        serverContext: ServerContext | null;
         content(value: string, statusCode: number): import("./action-results").ContentResult;
         content(value: string, type: string, statusCode?: number | undefined): import("./action-results").ContentResult;
         json(obj: any, statusCode?: number | undefined): import("./action-results").ContentResult;

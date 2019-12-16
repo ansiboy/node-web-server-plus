@@ -1,11 +1,8 @@
 import { ContentResult, RedirectResult, ProxyResut, contentTypes } from "./action-results";
-import { ServerContext } from "./server-context";
 
 export class Controller {
 
     static typeName = "node-mvc.Controller";
-
-    serverContext: ServerContext | null = null;
 
     content(value: string, statusCode: number): ContentResult;
     content(value: string, type: string, statusCode?: number): ContentResult;

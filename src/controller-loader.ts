@@ -8,7 +8,7 @@ import { isRouteString } from "./router";
 import UrlPattern = require("url-pattern");
 import { Controller } from './controller';
 import { createAPIControllerType, ActionInfo } from './api-controller';
-import { ServerContext } from './server-context';
+import { ServerContext } from './types';
 
 export class ControllerLoader {
 

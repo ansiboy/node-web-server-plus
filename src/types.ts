@@ -2,15 +2,22 @@ import log4js = require("log4js");
 import http = require('http');
 import { LogLevel } from "./logger";
 
+// export interface ServerContext {
+//     controllerDefines: ControllerInfo[],
+//     settings: Settings,
+// }
+
 export interface ServerContext {
     controllerDefines: ControllerInfo[],
-    settings: Settings,
+    // settings: Settings,
+    logLevel: Settings["logLevel"]
 }
 
 export interface ProxyItem {
     targetUrl: string,
     rewrite?: [string, string],
-    headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>)
+    headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>),
+    response?: (proxResponse: http.IncomingMessage, req: http.IncomingMessage, res: http.ServerResponse) => void,
 }
 
 export interface Settings {
@@ -25,7 +32,7 @@ export interface Settings {
     /** 设置默认的 Http Header */
     headers?: { [name: string]: string }
     virtualPaths?: { [virtualPath: string]: string },
-    logLevel?: LogLevel
+    logLevel?: LogLevel,
 }
 
 export interface ControllerInfo {

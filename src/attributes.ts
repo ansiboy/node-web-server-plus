@@ -5,7 +5,7 @@ import "reflect-metadata";
 import http = require('http')
 import querystring = require('querystring');
 import url = require('url');
-import { ServerContext } from './server-context';
+import { ServerContext } from './types';
 import { ActionInfo, ControllerType, ControllerInfo } from './types';
 
 // const actionMetaKey = Symbol('action')
@@ -239,7 +239,7 @@ export let requestHeaders = createParameterDecorator(
     }
 )
 
-export let context = createParameterDecorator(
+export let serverContext = createParameterDecorator(
     async (req, res, context: ServerContext) => {
         return context;
     }

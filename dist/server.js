@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -36,7 +37,7 @@ function startServer(settings) {
     }
     if (settings.staticRootDirectory && !path.isAbsolute(settings.staticRootDirectory))
         throw errors.notAbsolutePath(settings.staticRootDirectory);
-    let serverContext = { controllerDefines: [], settings };
+    let serverContext = { controllerDefines: [], logLevel: settings.logLevel };
     let controllerLoader;
     if (controllerDirectories.length > 0)
         controllerLoader = new controller_loader_1.ControllerLoader(serverContext, controllerDirectories);
@@ -132,7 +133,7 @@ function startServer(settings) {
                     else if (typeof proxyItem.headers == 'object') {
                         headers = proxyItem.headers;
                     }
-                    yield proxyRequest(targetUrl, req, res, serverContext, req.method, headers);
+                    proxyRequest(targetUrl, req, res, serverContext, req.method, headers, proxyItem.response);
                     return;
                 }
             }
@@ -241,26 +242,32 @@ function errorOutputObject(err) {
     }
     return outputObject;
 }
-function proxyRequest(targetUrl, req, res, serverContext, method, headers) {
-    debugger;
+function proxyRequest(targetUrl, req, res, serverContext, method, headers, proxyResponse) {
     return new Promise(function (resolve, reject) {
-        headers = headers || {};
-        headers = Object.assign(req.headers, headers);
+        headers = Object.assign({}, req.headers, headers || {});
+        // headers = Object.assign(req.headers, headers);
         //=====================================================
-        // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
-        delete headers.host;
+        if (headers.host) {
+            headers["delete-host"] = headers.host;
+            // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+            delete headers.host;
+        }
         //=====================================================
         let clientRequest = http.request(targetUrl, {
             method: method || req.method,
             headers: headers, timeout: 2000,
-        }, (response) => {
-            console.assert(response != null);
+        }, function (response) {
             for (var key in response.headers) {
                 res.setHeader(key, response.headers[key] || '');
             }
             res.statusCode = response.statusCode || 200;
             res.statusMessage = response.statusMessage || '';
-            response.pipe(res);
+            if (proxyResponse) {
+                proxyResponse(response, req, res);
+            }
+            else {
+                response.pipe(res);
+            }
         });
         if (!req.readable) {
             reject(errors.requestNotReadable());
@@ -271,7 +278,7 @@ function proxyRequest(targetUrl, req, res, serverContext, method, headers) {
             clientRequest.end();
         });
         clientRequest.on("error", function (err) {
-            let logger = logger_1.getLogger(constants_1.LOG_CATEGORY_NAME, serverContext.settings.logLevel);
+            let logger = logger_1.getLogger(constants_1.LOG_CATEGORY_NAME, serverContext.logLevel);
             logger.error(err);
             reject(err);
         });
