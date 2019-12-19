@@ -15,7 +15,12 @@ export interface ProxyItem {
     } | Promise<{
         [name: string]: string;
     }>);
-    response?: (proxResponse: http.IncomingMessage, req: http.IncomingMessage, res: http.ServerResponse) => void;
+    pipe?: ProxyPipe;
+}
+export interface ProxyPipe {
+    onRequest?: (req: http.IncomingMessage, data: Buffer) => Promise<Buffer | null | undefined | void>;
+    onResponse?: (req: http.IncomingMessage, res: http.IncomingMessage, data: Buffer) => Promise<Buffer | null | undefined | void>;
+    next?: ProxyPipe;
 }
 export interface Settings {
     port?: number;

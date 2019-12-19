@@ -1,1 +1,0 @@
-export { controller, action, routeData, request, response, requestHeaders, context } from "./dist/attributes";

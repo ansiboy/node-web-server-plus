@@ -133,7 +133,7 @@ function startServer(settings) {
                     else if (typeof proxyItem.headers == 'object') {
                         headers = proxyItem.headers;
                     }
-                    proxyRequest(targetUrl, req, res, serverContext, req.method, headers, proxyItem.response);
+                    proxyRequest(targetUrl, req, res, serverContext, req.method, headers, proxyItem.pipe);
                     return;
                 }
             }
@@ -242,7 +242,127 @@ function errorOutputObject(err) {
     }
     return outputObject;
 }
-function proxyRequest(targetUrl, req, res, serverContext, method, headers, proxyResponse) {
+function proxyRequest(targetUrl, req, res, serverContext, method, headers, proxyPipe) {
+    headers = Object.assign({}, req.headers, headers || {});
+    // headers = Object.assign(req.headers, headers);
+    //=====================================================
+    if (headers.host) {
+        headers["delete-host"] = headers.host;
+        // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+        delete headers.host;
+    }
+    if (proxyPipe == null) {
+        return proxyRequestWithoutPipe(targetUrl, req, res, serverContext, headers, method);
+    }
+    return proxyRequestWithPipe(targetUrl, req, res, serverContext, proxyPipe, headers, method);
+}
+exports.proxyRequest = proxyRequest;
+function proxyRequestWithPipe(targetUrl, req, res, serverContext, proxyPipe, headers, method) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let logger = logger_1.getLogger(constants_1.LOG_CATEGORY_NAME, serverContext.logLevel);
+        let p = proxyPipe;
+        while (p.next) {
+            p.next.previous = p;
+            p = p.next;
+        }
+        return new Promise(function (resolve, reject) {
+            let buffers = [];
+            req.on('data', (chunk) => {
+                buffers.push(chunk);
+            }).on("error", (err) => {
+                logger.error(err);
+                reject(err);
+            }).on('end', () => {
+                let buffer = Buffer.concat(buffers);
+                console.assert(p != null);
+                let targetResponse;
+                processPipeRequest(req, proxyPipe, buffer)
+                    .then(data => {
+                    return sentRequest(data);
+                })
+                    .then(([data, response]) => {
+                    targetResponse = response;
+                    return processPipeResponse(req, response, p, data);
+                })
+                    .then((data) => {
+                    console.assert(targetResponse != null);
+                    for (var key in targetResponse.headers) {
+                        res.setHeader(key, targetResponse.headers[key] || '');
+                    }
+                    res.statusCode = targetResponse.statusCode || 200;
+                    res.statusMessage = targetResponse.statusMessage || '';
+                    res.write(data);
+                    res.end();
+                    resolve(data);
+                })
+                    .catch(err => {
+                    reject(err);
+                });
+            });
+        });
+        /** 处理 pipe request */
+        function processPipeRequest(req, pipe, buffer) {
+            return __awaiter(this, void 0, void 0, function* () {
+                let data;
+                if (!pipe.onRequest) {
+                    data = buffer;
+                }
+                else {
+                    let r = yield pipe.onRequest(req, buffer);
+                    data = r || buffer;
+                }
+                if (pipe.next) {
+                    return processPipeRequest(req, pipe.next, data);
+                }
+                return data;
+            });
+        }
+        /** 处理 pipe response */
+        function processPipeResponse(req, res, pipe, buffer) {
+            return __awaiter(this, void 0, void 0, function* () {
+                let data;
+                if (!pipe.onResponse) {
+                    data = buffer;
+                }
+                else {
+                    let r = yield pipe.onResponse(req, res, buffer);
+                    data = r || buffer;
+                }
+                if (pipe.previous) {
+                    return processPipeResponse(req, res, pipe.previous, data);
+                }
+                return data;
+            });
+        }
+        /** 转发请求 */
+        function sentRequest(buffer) {
+            return new Promise((resolve, reject) => {
+                let clientRequest = http.request(targetUrl, {
+                    method: method || req.method,
+                    headers: headers, timeout: 2000,
+                }, function (response) {
+                    for (var key in response.headers) {
+                        res.setHeader(key, response.headers[key] || '');
+                    }
+                    res.statusCode = response.statusCode || 200;
+                    res.statusMessage = response.statusMessage || '';
+                    let responseBuffers = [];
+                    response.on("data", function (chunk) {
+                        responseBuffers.push(chunk);
+                    }).on("end", function () {
+                        let buffer = Buffer.concat(responseBuffers);
+                        resolve([buffer, response]);
+                    }).on("error", (err) => {
+                        reject(err);
+                    });
+                });
+                clientRequest.write(buffer);
+            });
+        }
+    });
+}
+exports.proxyRequestWithPipe = proxyRequestWithPipe;
+function proxyRequestWithoutPipe(targetUrl, req, res, serverContext, headers, method) {
     return new Promise(function (resolve, reject) {
         headers = Object.assign({}, req.headers, headers || {});
         // headers = Object.assign(req.headers, headers);
@@ -262,12 +382,12 @@ function proxyRequest(targetUrl, req, res, serverContext, method, headers, proxy
             }
             res.statusCode = response.statusCode || 200;
             res.statusMessage = response.statusMessage || '';
-            if (proxyResponse) {
-                proxyResponse(response, req, res);
-            }
-            else {
-                response.pipe(res);
-            }
+            // if (proxyResponse) {
+            //     proxyResponse(response, req, res);
+            // }
+            // else {
+            response.pipe(res);
+            // }
         });
         if (!req.readable) {
             reject(errors.requestNotReadable());
@@ -276,6 +396,9 @@ function proxyRequest(targetUrl, req, res, serverContext, method, headers, proxy
             clientRequest.write(data);
         }).on('end', () => {
             clientRequest.end();
+        }).on('error', (err) => {
+            clientRequest.end();
+            reject(err);
         });
         clientRequest.on("error", function (err) {
             let logger = logger_1.getLogger(constants_1.LOG_CATEGORY_NAME, serverContext.logLevel);
@@ -287,7 +410,7 @@ function proxyRequest(targetUrl, req, res, serverContext, method, headers, proxy
         });
     });
 }
-exports.proxyRequest = proxyRequest;
+exports.proxyRequestWithoutPipe = proxyRequestWithoutPipe;
 function getRequestUrl(req) {
     let requestUrl = req.url || '';
     // 将一个或多个的 / 变为一个 /，例如：/shop/test// 转换为 /shop/test/
