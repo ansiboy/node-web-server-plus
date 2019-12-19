@@ -8,7 +8,7 @@ import { ContentResult, contentTypes } from './action-results';
 import { metaKeys, ActionParameterDecoder } from './attributes';
 import { getLogger } from './logger';
 import { LOG_CATEGORY_NAME } from './constants';
-import { Settings, ProxyItem, ActionResult, ServerContext } from './types';
+import { Settings, ProxyItem, ActionResult, ServerContext, ProxyPipe } from './types';
 
 let packageInfo = require('../package.json')
 
@@ -142,7 +142,7 @@ export function startServer(settings: Settings) {
                         headers = proxyItem.headers
                     }
 
-                    proxyRequest(targetUrl, req, res, serverContext, req.method, headers, proxyItem.response);
+                    proxyRequest(targetUrl, req, res, serverContext, req.method, headers, proxyItem.pipe);
                     return;
                 }
             }
@@ -274,8 +274,152 @@ function errorOutputObject(err: Error) {
 }
 
 export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, serverContext: ServerContext,
-    method?: string, headers?: http.IncomingMessage["headers"], proxyResponse?: ProxyItem["response"]) {
+    method?: string, headers?: http.IncomingMessage["headers"], proxyPipe?: ProxyPipe) {
 
+
+    headers = Object.assign({}, req.headers, headers || {});
+    // headers = Object.assign(req.headers, headers);
+    //=====================================================
+    if (headers.host) {
+        headers["delete-host"] = headers.host;
+        // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+        delete headers.host;
+    }
+
+    if (proxyPipe == null) {
+        return proxyRequestWithoutPipe(targetUrl, req, res, serverContext, headers, method)
+    }
+
+    return proxyRequestWithPipe(targetUrl, req, res, serverContext, proxyPipe, headers, method)
+}
+
+export async function proxyRequestWithPipe(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, serverContext: ServerContext,
+    proxyPipe: ProxyPipe, headers: http.IncomingMessage["headers"], method?: string): Promise<any> {
+
+    let logger = getLogger(LOG_CATEGORY_NAME, serverContext.logLevel);
+
+    let p: ProxyPipe & { previous?: ProxyPipe } = proxyPipe;
+    while (p.next) {
+        (p.next as typeof p).previous = p;
+        p = p.next;
+    }
+
+    return new Promise(function (resolve, reject) {
+
+        let buffers: Buffer[] = [];
+        req.on('data', (chunk: Buffer) => {
+            buffers.push(chunk);
+        }).on("error", (err) => {
+            logger.error(err);
+            reject(err);
+        }).on('end', () => {
+            let buffer = Buffer.concat(buffers);
+            console.assert(p != null);
+
+            let targetResponse: http.IncomingMessage;
+            processPipeRequest(req, proxyPipe, buffer)
+                .then(data => {
+                    return sentRequest(data);
+                })
+                .then(([data, response]) => {
+                    targetResponse = response;
+                    return processPipeResponse(req, response, p, data);
+                })
+                .then((data) => {
+
+                    console.assert(targetResponse != null);
+
+                    for (var key in  targetResponse.headers) {
+                        res.setHeader(key, targetResponse.headers[key] || '');
+                    }
+
+                    res.statusCode = targetResponse.statusCode || 200;
+                    res.statusMessage = targetResponse.statusMessage || '';
+
+                    res.write(data);
+                    res.end();
+
+                    resolve(data);
+                })
+                .catch(err => {
+                    reject(err)
+                });
+        });
+    })
+
+    /** 处理 pipe request */
+    async function processPipeRequest(req: http.IncomingMessage, pipe: ProxyPipe, buffer: Buffer): Promise<Buffer> {
+        let data: Buffer;
+        if (!pipe.onRequest) {
+            data = buffer;
+        }
+        else {
+            let r = await pipe.onRequest(req, buffer);
+            data = r || buffer;
+        }
+
+        if (pipe.next) {
+            return processPipeRequest(req, pipe.next, data);
+        }
+
+        return data;
+    }
+
+    /** 处理 pipe response */
+    async function processPipeResponse(req: http.IncomingMessage, res: http.IncomingMessage, pipe: typeof p, buffer: Buffer): Promise<Buffer> {
+        let data: Buffer;
+        if (!pipe.onResponse) {
+            data = buffer;
+        }
+        else {
+            let r = await pipe.onResponse(req, res, buffer);
+            data = r || buffer;
+        }
+
+        if (pipe.previous) {
+            return processPipeResponse(req, res, pipe.previous, data);
+        }
+
+        return data;
+    }
+
+    /** 转发请求 */
+    function sentRequest(buffer: Buffer) {
+        return new Promise<[Buffer, http.IncomingMessage]>((resolve, reject) => {
+            let clientRequest = http.request(targetUrl,
+                {
+                    method: method || req.method,
+                    headers: headers, timeout: 2000,
+                },
+                function (response) {
+                    for (var key in response.headers) {
+                        res.setHeader(key, response.headers[key] || '');
+                    }
+                    res.statusCode = response.statusCode || 200;
+                    res.statusMessage = response.statusMessage || '';
+
+                    let responseBuffers: Buffer[] = [];
+                    response.on("data", function (chunk) {
+                        responseBuffers.push(chunk);
+                    }).on("end", function () {
+                        let buffer = Buffer.concat(responseBuffers);
+                        resolve([buffer, response])
+                    }).on("error", (err) => {
+                        reject(err);
+                    })
+
+                }
+            );
+
+            clientRequest.write(buffer);
+        })
+    }
+
+
+}
+
+export function proxyRequestWithoutPipe(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, serverContext: ServerContext,
+    headers: http.IncomingMessage["headers"], method?: string) {
     return new Promise(function (resolve, reject) {
         headers = Object.assign({}, req.headers, headers || {});
         // headers = Object.assign(req.headers, headers);
@@ -298,12 +442,12 @@ export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: 
                 }
                 res.statusCode = response.statusCode || 200;
                 res.statusMessage = response.statusMessage || '';
-                if (proxyResponse) {
-                    proxyResponse(response, req, res);
-                }
-                else {
-                    response.pipe(res);
-                }
+                // if (proxyResponse) {
+                //     proxyResponse(response, req, res);
+                // }
+                // else {
+                response.pipe(res);
+                // }
             }
         );
 
@@ -316,6 +460,9 @@ export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: 
             clientRequest.write(data);
         }).on('end', () => {
             clientRequest.end();
+        }).on('error', (err) => {
+            clientRequest.end();
+            reject(err);
         });
 
         clientRequest.on("error", function (err) {
