@@ -37,7 +37,9 @@ function startServer(settings) {
     }
     if (settings.staticRootDirectory && !path.isAbsolute(settings.staticRootDirectory))
         throw errors.notAbsolutePath(settings.staticRootDirectory);
-    let serverContext = { controllerDefines: [], logLevel: settings.logLevel };
+    let serverContext = {
+        controllerDefines: [], logLevel: settings.logLevel, data: settings.serverContextData
+    };
     let controllerLoader;
     if (controllerDirectories.length > 0)
         controllerLoader = new controller_loader_1.ControllerLoader(serverContext, controllerDirectories);
@@ -308,7 +310,7 @@ function proxyRequestWithPipe(targetUrl, req, res, serverContext, proxyPipe, hea
                     data = buffer;
                 }
                 else {
-                    let r = yield pipe.onRequest(req, buffer);
+                    let r = yield pipe.onRequest({ req }, buffer);
                     data = r || buffer;
                 }
                 if (pipe.next) {
@@ -325,7 +327,7 @@ function proxyRequestWithPipe(targetUrl, req, res, serverContext, proxyPipe, hea
                     data = buffer;
                 }
                 else {
-                    let r = yield pipe.onResponse(req, res, buffer);
+                    let r = yield pipe.onResponse({ req, res }, buffer);
                     data = r || buffer;
                 }
                 if (pipe.previous) {

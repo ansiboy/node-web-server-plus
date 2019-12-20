@@ -32,7 +32,9 @@ export function startServer(settings: Settings) {
     if (settings.staticRootDirectory && !path.isAbsolute(settings.staticRootDirectory))
         throw errors.notAbsolutePath(settings.staticRootDirectory);
 
-    let serverContext: ServerContext = { controllerDefines: [], logLevel: settings.logLevel };
+    let serverContext: ServerContext = {
+        controllerDefines: [], logLevel: settings.logLevel, data: settings.serverContextData
+    };
 
     let controllerLoader: ControllerLoader;
     if (controllerDirectories.length > 0)
@@ -329,7 +331,7 @@ export async function proxyRequestWithPipe(targetUrl: string, req: http.Incoming
 
                     console.assert(targetResponse != null);
 
-                    for (var key in  targetResponse.headers) {
+                    for (var key in targetResponse.headers) {
                         res.setHeader(key, targetResponse.headers[key] || '');
                     }
 
@@ -354,7 +356,7 @@ export async function proxyRequestWithPipe(targetUrl: string, req: http.Incoming
             data = buffer;
         }
         else {
-            let r = await pipe.onRequest(req, buffer);
+            let r = await pipe.onRequest({ req }, buffer);
             data = r || buffer;
         }
 
@@ -372,7 +374,7 @@ export async function proxyRequestWithPipe(targetUrl: string, req: http.Incoming
             data = buffer;
         }
         else {
-            let r = await pipe.onResponse(req, res, buffer);
+            let r = await pipe.onResponse({ req, res }, buffer);
             data = r || buffer;
         }
 

@@ -1,9 +1,10 @@
 /// <reference types="node" />
 import http = require('http');
 import { LogLevel } from "./logger";
-export interface ServerContext {
+export interface ServerContext<T = {}> {
     controllerDefines: ControllerInfo[];
     logLevel: Settings["logLevel"];
+    data?: T;
 }
 export interface ProxyItem {
     targetUrl: string;
@@ -18,8 +19,13 @@ export interface ProxyItem {
     pipe?: ProxyPipe;
 }
 export interface ProxyPipe {
-    onRequest?: (req: http.IncomingMessage, data: Buffer) => Promise<Buffer | null | undefined | void>;
-    onResponse?: (req: http.IncomingMessage, res: http.IncomingMessage, data: Buffer) => Promise<Buffer | null | undefined | void>;
+    onRequest?: (args: {
+        req: http.IncomingMessage;
+    }, data: Buffer) => Promise<Buffer | null | undefined | void>;
+    onResponse?: (args: {
+        req: http.IncomingMessage;
+        res: http.IncomingMessage;
+    }, data: Buffer) => Promise<Buffer | null | undefined | void>;
     next?: ProxyPipe;
 }
 export interface Settings {
@@ -41,6 +47,7 @@ export interface Settings {
         [virtualPath: string]: string;
     };
     logLevel?: LogLevel;
+    serverContextData?: any;
 }
 export interface ControllerInfo {
     type: ControllerType<any>;

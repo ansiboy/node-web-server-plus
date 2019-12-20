@@ -7,10 +7,11 @@ import { LogLevel } from "./logger";
 //     settings: Settings,
 // }
 
-export interface ServerContext {
+export interface ServerContext<T = {}> {
     controllerDefines: ControllerInfo[],
     // settings: Settings,
-    logLevel: Settings["logLevel"]
+    logLevel: Settings["logLevel"],
+    data?: T
 }
 
 export interface ProxyItem {
@@ -21,9 +22,10 @@ export interface ProxyItem {
     pipe?: ProxyPipe
 }
 
+
 export interface ProxyPipe {
-    onRequest?: (req: http.IncomingMessage, data: Buffer) => Promise<Buffer | null | undefined | void>,
-    onResponse?: (req: http.IncomingMessage, res: http.IncomingMessage, data: Buffer) => Promise<Buffer | null | undefined | void>,
+    onRequest?: (args: { req: http.IncomingMessage }, data: Buffer) => Promise<Buffer | null | undefined | void>,
+    onResponse?: (args: { req: http.IncomingMessage, res: http.IncomingMessage }, data: Buffer) => Promise<Buffer | null | undefined | void>,
     next?: ProxyPipe,
 }
 
@@ -40,6 +42,7 @@ export interface Settings {
     headers?: { [name: string]: string }
     virtualPaths?: { [virtualPath: string]: string },
     logLevel?: LogLevel,
+    serverContextData?: any,
 }
 
 export interface ControllerInfo {
