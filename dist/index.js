@@ -18,3 +18,5 @@ var controller_1 = require("./controller");
 exports.Controller = controller_1.Controller;
 var logger_1 = require("./logger");
 exports.getLogger = logger_1.getLogger;
+var log4js_1 = require("log4js");
+exports.Logger = log4js_1.Logger;
