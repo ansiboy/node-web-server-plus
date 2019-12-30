@@ -90,3 +90,10 @@ export function requestNotReadable() {
     return error;
 }
 
+export function connectionClose() {
+    let msg = `Connection close.`;
+    let error = new Error(msg);
+    error.name = connectionClose.name;
+    return error;
+}
+

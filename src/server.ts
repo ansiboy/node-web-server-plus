@@ -450,6 +450,10 @@ export function proxyRequestWithoutPipe(targetUrl: string, req: http.IncomingMes
                 // else {
                 response.pipe(res);
                 // }
+
+                response.on("end", () => resolve());
+                response.on("error", err => reject(err));
+                response.on("close", () => reject(errors.connectionClose()));
             }
         );
 
@@ -473,9 +477,9 @@ export function proxyRequestWithoutPipe(targetUrl: string, req: http.IncomingMes
             reject(err);
         });
 
-        clientRequest.on("finish", function () {
-            resolve();
-        })
+        // clientRequest.on("finish", function () {
+        //     resolve();
+        // })
     })
 }
 
