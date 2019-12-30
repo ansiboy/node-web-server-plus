@@ -1,6 +1,6 @@
 {
     "name": "maishu-node-mvc",
-    "version": "1.81.0",
+    "version": "1.83.0",
     "description": "基于 nodejs 的 MVC 框架",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -31,5 +31,8 @@
         "reflect-metadata": "^0.1.13",
         "remove": "^0.1.5",
         "url-pattern": "^1.0.3"
-    }
+    },
+    "files": [
+        "dist"
+    ]
 }
