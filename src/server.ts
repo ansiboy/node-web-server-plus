@@ -9,6 +9,7 @@ import { metaKeys, ActionParameterDecoder } from './attributes';
 import { getLogger } from './logger';
 import { LOG_CATEGORY_NAME } from './constants';
 import { Settings, ProxyItem, ActionResult, ServerContext, ProxyPipe } from './types';
+import fs = require("fs");
 
 let packageInfo = require('../package.json')
 
@@ -16,43 +17,38 @@ export function startServer(settings: Settings) {
     if (!settings) throw errors.arugmentNull('config')
     let logger = getLogger(LOG_CATEGORY_NAME, settings.logLevel);
 
-    let controllerDirectories: string[] = []
-    if (settings.controllerDirectory) {
-        if (typeof settings.controllerDirectory == 'string')
-            controllerDirectories.push(settings.controllerDirectory)
-        else
-            controllerDirectories = settings.controllerDirectory
-    }
-
-    for (let i = 0; i < controllerDirectories.length; i++) {
-        if (!path.isAbsolute(controllerDirectories[i]))
-            throw errors.notAbsolutePath(controllerDirectories[i]);
-    }
-
-    if (settings.staticRootDirectory && !path.isAbsolute(settings.staticRootDirectory))
-        throw errors.notAbsolutePath(settings.staticRootDirectory);
-
     let serverContext: ServerContext = {
         controllerDefines: [], logLevel: settings.logLevel, data: settings.serverContextData
     };
 
     let controllerLoader: ControllerLoader;
-    if (controllerDirectories.length > 0)
-        controllerLoader = new ControllerLoader(serverContext, controllerDirectories);
+    if (settings.controllerDirectory) {
+        let controllerDir = settings.controllerDirectory;
+        controllerLoader = new ControllerLoader(serverContext, controllerDir);
+    }
 
     let fileServer: nodeStatic.Server | null = null;
-    if (settings.staticRootDirectory) {
-        fileServer = new nodeStatic.Server(settings.staticRootDirectory, {
-            virtualPaths: settings.virtualPaths,
-            serverInfo: `maishu-node-mvc ${packageInfo.version} ${settings.serverName}`,
-            gzip: true,
-        })
+    let staticRoot = settings.staticRootDirectory;
+    if (staticRoot == null) {
+        staticRoot = new nodeStatic.VirtualDirectory();
+    }
 
-        let fileServer_resolve = fileServer.resolve
-        fileServer.resolve = function (pathname: string, req: http.IncomingMessage) {
-            return fileServer_resolve.apply(fileServer, [pathname, req])
+    if (settings.virtualPaths) {
+        for (let key in settings.virtualPaths) {
+            let virtualPath = key
+            let physicalPath = settings.virtualPaths[key];
+            if (fs.statSync(physicalPath).isDirectory()) {
+                staticRoot.addVirtualDirectory(virtualPath, physicalPath, "merge");
+            }
+            else {
+                staticRoot.addVirtualFile(virtualPath, physicalPath);
+            }
         }
     }
+
+    fileServer = new nodeStatic.Server(staticRoot, {
+        serverInfo: `maishu-node-mvc ${packageInfo.version} ${settings.serverName}`,
+    })
 
     let server = http.createServer(async (req, res) => {
         if (settings.headers) {
@@ -144,13 +140,13 @@ export function startServer(settings: Settings) {
                         headers = proxyItem.headers
                     }
 
-                    proxyRequest(targetUrl, req, res, serverContext, req.method, headers, proxyItem.pipe);
+                    await proxyRequest(targetUrl, req, res, serverContext, req.method, headers, proxyItem.pipe);
                     return;
                 }
             }
             //=====================================================================
             if (fileServer) {
-                fileServer.serve(req, res)
+                await fileServer.serve(req, res)
                 return;
             }
 

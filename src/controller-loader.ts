@@ -9,6 +9,7 @@ import UrlPattern = require("url-pattern");
 import { Controller } from './controller';
 import { createAPIControllerType, ActionInfo } from './api-controller';
 import { ServerContext } from './types';
+import { VirtualDirectory } from 'maishu-node-static';
 
 export class ControllerLoader {
 
@@ -18,24 +19,42 @@ export class ControllerLoader {
     // 使用路由进行匹配的 action
     private routeActions: (ActionInfo & { route: UrlPattern })[] = [];
 
-    constructor(serverContext: ServerContext, controllerDirectories: string[]) {
-        if (controllerDirectories == null || controllerDirectories.length == 0)
-            throw errors.arugmentNull('controllerDirectories')
+    constructor(serverContext: ServerContext, controllerDirectory: VirtualDirectory) {
+        if (controllerDirectory == null)
+            throw errors.arugmentNull('controllerDirectory')
 
-        let controllerPaths: { [dir: string]: string[] } = {}
-        controllerDirectories.forEach(dir => {
-            if (!fs.existsSync(dir)) {
-                throw errors.controllerDirectoryNotExists(dir)
-            }
+        // let controllerPaths: { [dir: string]: string[] } = {}
+        // controllerDirectory.forEach(dir => {
+        //     if (!fs.existsSync(dir)) {
+        //         throw errors.controllerDirectoryNotExists(dir)
+        //     }
 
-            controllerPaths[dir] = this.getControllerPaths(dir)
-        })
+        //     controllerPaths[dir] = this.getControllerPaths(dir)
+        // })
 
-        for (let dir in controllerPaths) {
-            controllerPaths[dir].forEach(controllerPath => {
-                this.loadController(controllerPath, serverContext)
-            })
+        // for (let dir in controllerPaths) {
+        //     controllerPaths[dir].forEach(controllerPath => {
+        //         this.loadController(controllerPath, serverContext)
+        //     })
+        // }
+
+        let controllerPaths: string[] = [];
+        // let controllerDirectories: VirtualDirectory[] = [];
+        let stack: VirtualDirectory[] = [controllerDirectory];
+        while (stack.length > 0) {
+            let item = stack.shift() as VirtualDirectory;
+            // controllerDirectories.push(item);
+
+            controllerPaths.push(...this.getControllerPaths(item));
+
+            let dirDic = item.getChildDirectories();
+            let dirs = Object.getOwnPropertyNames(dirDic).map(n => dirDic[n]);
+            stack.unshift(...dirs);
         }
+
+        controllerPaths.forEach(c => {
+            this.loadController(c, serverContext);
+        })
 
         //=============================================
         // 注册内置的控制器
@@ -90,28 +109,37 @@ export class ControllerLoader {
      * 获取指定文件夹中（包括子目录），控制器的路径。
      * @param dir 控制器的文件夹
      */
-    private getControllerPaths(dir: string) {
+    private getControllerPaths(dir: VirtualDirectory) {
         let controllerPaths: string[] = []
-        let dirs: string[] = []
-        dirs.push(dir)
-        while (dirs.length > 0) {
-            let item = dirs.pop()
-            let files = fs.readdirSync(item as string)
-            files.forEach(f => {
-                let p = path.join(item as string, f)
-                let state = fs.lstatSync(p)
-                if (state.isDirectory()) {
-                    dirs.push(p)
-                }
-                else if (state.isFile() && p.endsWith('.js')) {
-                    // 去掉 .js 后缀
-                    controllerPaths.push(p.substring(0, p.length - 3))
-                }
-            })
-        }
-
+        let filesDic = dir.getChildFiles();
+        let files = Object.getOwnPropertyNames(filesDic).map(n => filesDic[n]);
+        files.forEach(p => {
+            if (p.endsWith('.js')) {
+                // 去掉 .js 后缀
+                controllerPaths.push(p.substring(0, p.length - 3))
+            }
+        })
         return controllerPaths
     }
+
+    // private loadControllerByDir(dir: VirtualDirectory, serverContext: ServerContext) {
+    //     let filesDic = dir.getChildFiles();
+    //     let files = Object.getOwnPropertyNames(filesDic).map(n => filesDic[n]);
+    //     files.forEach(f => {
+    //         // let p = path.join(item as string, f)
+    //         // let state = fs.lstatSync(f)
+    //         // if (state.isDirectory()) {
+    //         //     dirs.push(p)
+    //         // }
+    //         // else if (state.isFile() && p.endsWith('.js')) {
+    //         //     // 去掉 .js 后缀
+    //         //     controllerPaths.push(p.substring(0, p.length - 3))
+    //         // }
+    //         if (f.endsWith(".js")) {
+
+    //         }
+    //     })
+    // }
 
     private loadController(controllerPath: string, serverContext: ServerContext): void {
         try {

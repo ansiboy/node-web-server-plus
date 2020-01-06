@@ -1,6 +1,7 @@
 import log4js = require("log4js");
 import http = require('http');
 import { LogLevel } from "./logger";
+import { VirtualDirectory } from "maishu-node-static";
 
 // export interface ServerContext {
 //     controllerDefines: ControllerInfo[],
@@ -32,8 +33,8 @@ export interface ProxyPipe {
 export interface Settings {
     port?: number,
     bindIP?: string,
-    controllerDirectory?: string | string[],
-    staticRootDirectory?: string,
+    controllerDirectory?: VirtualDirectory,
+    staticRootDirectory?: VirtualDirectory,
     proxy?: { [path_pattern: string]: string | ProxyItem },
     authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>,
     requestFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[],
