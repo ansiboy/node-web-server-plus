@@ -2,7 +2,7 @@
     "compilerOptions": {
         "module": "commonjs",
         "target": "es6",
-        "outDir": "../dist",
+        "outDir": "../out",
         "declaration": true,
         "sourceMap": false,
         "experimentalDecorators": true,

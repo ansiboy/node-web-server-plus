@@ -97,3 +97,17 @@ export function connectionClose() {
     return error;
 }
 
+export function physicalPathNotExists(physicalPath: string) {
+    let msg = `Physical path '${physicalPath}' is not exists`;
+    let error = new Error(msg);
+    error.name = physicalPathNotExists.name;
+    return error;
+}
+
+export function virtualPathConfigError(virtualPath: string, physicalPath: string) {
+    let msg = `Virtual path '${virtualPath}' config error, physical path ${physicalPath} is not exists.`;
+    let error = new Error(msg);
+    error.name = virtualPathConfigError.name;
+    return error;
+}
+

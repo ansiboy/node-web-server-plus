@@ -37,6 +37,9 @@ export function startServer(settings: Settings) {
         for (let key in settings.virtualPaths) {
             let virtualPath = key
             let physicalPath = settings.virtualPaths[key];
+            if (fs.existsSync(physicalPath) == false)
+                throw errors.virtualPathConfigError(virtualPath, physicalPath);
+
             if (fs.statSync(physicalPath).isDirectory()) {
                 staticRoot.addVirtualDirectory(virtualPath, physicalPath, "merge");
             }
