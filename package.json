@@ -1,6 +1,6 @@
 {
     "name": "maishu-node-mvc",
-    "version": "1.91.0",
+    "version": "1.92.0",
     "description": "基于 nodejs 的 MVC 框架",
     "main": "out/index.js",
     "types": "out/index.d.ts",
@@ -19,7 +19,6 @@
     },
     "homepage": "https://github.com/ansiboy/node-mvc#readme",
     "devDependencies": {
-        "@types/log4js": "^2.3.5",
         "@types/node": "^10.12.18",
         "mocha": "^6.1.4"
     },
