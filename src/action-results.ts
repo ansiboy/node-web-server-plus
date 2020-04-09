@@ -2,7 +2,6 @@ import http = require('http');
 import { arugmentNull } from './errors';
 import { proxyRequest } from './server';
 import url = require('url');
-import path = require("path");
 import { ActionResult, ServerContext } from './types';
 
 
@@ -11,8 +10,6 @@ export const contentTypes = {
     applicationJSON: `application/json; charset=${encoding}`,
     textPlain: `text/plain; charset=${encoding}`,
 }
-
-
 
 export class ContentResult implements ActionResult {
     private contentType: string;

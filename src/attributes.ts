@@ -8,9 +8,6 @@ import url = require('url');
 import { ServerContext } from './types';
 import { ActionInfo, ControllerType, ControllerInfo } from './types';
 
-// const actionMetaKey = Symbol('action')
-// const parameterMetaKey = Symbol('parameter')
-
 export let metaKeys = {
     action: "actionMetaKey",
     parameter: "parameterMetaKey"
@@ -26,17 +23,6 @@ export interface ActionParameterDecoder<T> {
     ) => Promise<T>,
     disposeParameter?: (parameter: T) => void
 }
-
-
-
-
-
-//==============================================================================
-// controllerDefines 变量用作全局变量, 由于同一个文件可能会加载多次, 会导致变量失效
-// export let controllerDefines: ControllerInfo[] = []
-// export let controllerDefines: ControllerInfo[] =
-//     (global as any)["Node-MVC-ControllerInfos"] = (global as any)["Node-MVC-ControllerInfos"] || []
-//==============================================================================
 
 
 export let CONTROLLER_REGISTER = "$register";

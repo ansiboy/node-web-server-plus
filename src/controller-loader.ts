@@ -23,27 +23,10 @@ export class ControllerLoader {
         if (controllerDirectory == null)
             throw errors.arugmentNull('controllerDirectory')
 
-        // let controllerPaths: { [dir: string]: string[] } = {}
-        // controllerDirectory.forEach(dir => {
-        //     if (!fs.existsSync(dir)) {
-        //         throw errors.controllerDirectoryNotExists(dir)
-        //     }
-
-        //     controllerPaths[dir] = this.getControllerPaths(dir)
-        // })
-
-        // for (let dir in controllerPaths) {
-        //     controllerPaths[dir].forEach(controllerPath => {
-        //         this.loadController(controllerPath, serverContext)
-        //     })
-        // }
-
         let controllerPaths: string[] = [];
-        // let controllerDirectories: VirtualDirectory[] = [];
         let stack: VirtualDirectory[] = [controllerDirectory];
         while (stack.length > 0) {
             let item = stack.shift() as VirtualDirectory;
-            // controllerDirectories.push(item);
 
             controllerPaths.push(...this.getControllerPaths(item));
 
@@ -122,25 +105,6 @@ export class ControllerLoader {
         return controllerPaths
     }
 
-    // private loadControllerByDir(dir: VirtualDirectory, serverContext: ServerContext) {
-    //     let filesDic = dir.getChildFiles();
-    //     let files = Object.getOwnPropertyNames(filesDic).map(n => filesDic[n]);
-    //     files.forEach(f => {
-    //         // let p = path.join(item as string, f)
-    //         // let state = fs.lstatSync(f)
-    //         // if (state.isDirectory()) {
-    //         //     dirs.push(p)
-    //         // }
-    //         // else if (state.isFile() && p.endsWith('.js')) {
-    //         //     // 去掉 .js 后缀
-    //         //     controllerPaths.push(p.substring(0, p.length - 3))
-    //         // }
-    //         if (f.endsWith(".js")) {
-
-    //         }
-    //     })
-    // }
-
     private loadController(controllerPath: string, serverContext: ServerContext): void {
         try {
             let mod = require(controllerPath);
@@ -173,7 +137,6 @@ export class ControllerLoader {
             throw innerErrors.loadControllerFail(controllerPath, err)
         }
     }
-
 
     getAction(virtualPath: string, serverContext: ServerContext) {
 
