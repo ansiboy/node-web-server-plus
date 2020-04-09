@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "is-class": "0.0.5",
-    "log4js": "^6.1.0",
+    "log4js": "^6.1.2",
     "maishu-node-static": "^1.6.0",
     "mime": "^2.4.4",
     "reflect-metadata": "^0.1.13",

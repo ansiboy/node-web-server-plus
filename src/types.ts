@@ -1,12 +1,6 @@
-import log4js = require("log4js");
 import http = require('http');
 import { LogLevel } from "./logger";
 import { VirtualDirectory } from "maishu-node-static";
-
-// export interface ServerContext {
-//     controllerDefines: ControllerInfo[],
-//     settings: Settings,
-// }
 
 export interface ServerContext<T = {}> {
     controllerDefines: ControllerInfo[],
@@ -56,9 +50,10 @@ export type ControllerType<T> = { new(): T }
 
 export interface ActionInfo {
     memberName: string,
-    paths: string[],
+    paths: ActionPath[],
 }
 
+export type ActionPath = string | ((virtualPath: string) => object | null);
 
 export interface ActionResult {
     execute(res: http.ServerResponse, req: http.IncomingMessage, serverContext: ServerContext): Promise<any>

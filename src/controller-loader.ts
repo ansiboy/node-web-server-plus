@@ -1,5 +1,4 @@
 import * as errors from './errors'
-import * as fs from 'fs'
 import * as path from 'path'
 import isClass = require('is-class')
 import { controller, CONTROLLER_REGISTER } from './attributes';
@@ -17,7 +16,7 @@ export class ControllerLoader {
     private pathActions: { [path: string]: ActionInfo } = {};
 
     // 使用路由进行匹配的 action
-    private routeActions: (ActionInfo & { route: UrlPattern })[] = [];
+    private routeActions: (ActionInfo & { route: (virtualPath: string) => any })[] = [];
 
     constructor(serverContext: ServerContext, controllerDirectory: VirtualDirectory) {
         if (controllerDirectory == null)
@@ -62,19 +61,27 @@ export class ControllerLoader {
                     actionPaths.push(this.joinPaths(c.path, a.memberName))
                 }
                 for (let i = 0; i < actionPaths.length; i++) {
-                    let actionPath: string = actionPaths[i]
-                    if (actionPath[0] != '/') {
+                    let actionPath = actionPaths[i];
+                    if (typeof actionPath == "string" && actionPath[0] != '/') {
                         actionPath = this.joinPaths(c.path, actionPath)
                     }
 
-                    if (isRouteString(actionPath)) {
-                        let route = new UrlPattern(actionPath);
-                        this.routeActions.push({ route, controllerType: c.type, memberName: a.memberName, actionPath });
+                    if (typeof actionPath == "function") {
+                        this.routeActions.push({ route: actionPath, controllerType: c.type, memberName: a.memberName, actionPath: actionPath });
                     }
                     else {
-                        this.pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName, actionPath }
-                    }
+                        if (isRouteString(actionPath)) {
+                            let p = new UrlPattern(actionPath);
+                            let route = (virtualPath: string) => {
+                                return p.match(virtualPath);
+                            };
+                            this.routeActions.push({ route, controllerType: c.type, memberName: a.memberName, actionPath });
+                        }
+                        else {
+                            this.pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName, actionPath }
 
+                        }
+                    }
                 }
             })
         })
@@ -160,13 +167,15 @@ export class ControllerLoader {
             console.assert(action != null)
         }
 
-        for (let i = 0; i < this.routeActions.length; i++) {
-            let r = this.routeActions[i].route.match(virtualPath)
-            if (r) {
-                routeData = r;
-                controller = new this.routeActions[i].controllerType();
-                action = controller[this.routeActions[i].memberName];
-                break;
+        if (action == null) {
+            for (let i = 0; i < this.routeActions.length; i++) {
+                let r = this.routeActions[i].route(virtualPath);
+                if (r) {
+                    routeData = r;
+                    controller = new this.routeActions[i].controllerType();
+                    action = controller[this.routeActions[i].memberName];
+                    break;
+                }
             }
         }
 

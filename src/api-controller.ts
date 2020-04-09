@@ -1,9 +1,9 @@
 import { Controller } from "./controller";
 import { register } from "./attributes";
-import { ControllerType, ServerContext } from "./types";
+import { ControllerType, ServerContext, ActionPath } from "./types";
 
 export type ActionInfo = {
-    controllerType: ControllerType<any>, memberName: string, actionPath: string
+    controllerType: ControllerType<any>, memberName: string, actionPath: ActionPath
 }
 
 export function createAPIControllerType(getActionInfos: () => ActionInfo[], serverContext: ServerContext) {

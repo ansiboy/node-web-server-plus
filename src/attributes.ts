@@ -5,7 +5,7 @@ import "reflect-metadata";
 import http = require('http')
 import querystring = require('querystring');
 import url = require('url');
-import { ServerContext } from './types';
+import { ServerContext, ActionPath } from './types';
 import { ActionInfo, ControllerType, ControllerInfo } from './types';
 
 export let metaKeys = {
@@ -47,11 +47,12 @@ export function controller<T extends { new(...args: any[]): any }>(path?: string
     }
 }
 
+
 /**
  * 标记一个方法是否为 Action
  * @param paths 路径
  */
-export function action(...paths: string[]) {
+export function action(...paths: ActionPath[]) {
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
         let memberName = descriptor.value.name
         let obj: ActionInfo = { memberName, paths }
@@ -96,7 +97,7 @@ function registerController<T>(type: ControllerType<T>, serverContext: ServerCon
     return controllerDefine
 }
 
-function registerAction<T>(controllerDefine: ControllerInfo, memberName: keyof T, paths: string[]) {
+function registerAction<T>(controllerDefine: ControllerInfo, memberName: keyof T, paths: ActionPath[]) {
     if (controllerDefine == null)
         throw errors.arugmentNull('controllerDefine')
 
