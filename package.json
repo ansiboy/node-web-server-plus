@@ -1,41 +1,44 @@
 {
-  "author": {
-    "name": "mai.shu"
-  },
-  "bugs": {
-    "url": "https://github.com/ansiboy/node-mvc/issues"
-  },
-  "dependencies": {
-    "is-class": "0.0.5",
-    "log4js": "^6.1.2",
-    "maishu-node-static": "^1.6.0",
-    "mime": "^2.4.4",
-    "reflect-metadata": "^0.1.13",
-    "remove": "^0.1.5",
-    "url-pattern": "^1.0.3"
-  },
-  "deprecated": false,
-  "description": "基于 nodejs 的 MVC 框架",
-  "devDependencies": {
-    "@types/node": "^10.12.18",
-    "mocha": "^6.1.4"
-  },
-  "files": [
-    "dist",
-    "out"
-  ],
-  "homepage": "https://github.com/ansiboy/node-mvc#readme",
-  "license": "MIT",
-  "main": "out/index.js",
-  "name": "maishu-node-mvc",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ansiboy/node-mvc.git"
-  },
-  "scripts": {
-    "build": "tsc -p src",
-    "test": "mocha"
-  },
-  "types": "out/index.d.ts",
-  "version": "1.92.0"
+    "author": {
+        "name": "mai.shu"
+    },
+    "bugs": {
+        "url": "https://github.com/ansiboy/node-mvc/issues"
+    },
+    "dependencies": {
+        "is-class": "0.0.5",
+        "log4js": "^6.1.2",
+        "maishu-node-static": "^1.6.0",
+        "mime": "^2.4.4",
+        "reflect-metadata": "^0.1.13",
+        "remove": "^0.1.5",
+        "url-pattern": "^1.0.3"
+    },
+    "deprecated": false,
+    "description": "基于 nodejs 的 MVC 框架",
+    "devDependencies": {
+        "@types/node": "^10.12.18",
+        "mocha": "^6.1.4",
+        "grunt-shell": "^2.1.0",
+        "grunt": "^1.0.1",
+        "load-grunt-tasks": "^4.0.0"
+    },
+    "files": [
+        "dist",
+        "out"
+    ],
+    "homepage": "https://github.com/ansiboy/node-mvc#readme",
+    "license": "MIT",
+    "main": "out/index.js",
+    "name": "maishu-node-mvc",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ansiboy/node-mvc.git"
+    },
+    "scripts": {
+        "build": "grunt",
+        "test": "mocha"
+    },
+    "types": "out/index.d.ts",
+    "version": "1.98.4"
 }
