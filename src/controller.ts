@@ -1,6 +1,6 @@
-import { ContentResult, RedirectResult, ProxyResut, contentTypes } from "./action-results";
+import { ContentResult, RedirectResult, ProxyResut, contentTypes, Headers } from "./action-results";
 
-type Headers = { [key: string]: string | string[] };
+// type Headers = { [key: string]: string | string[] };
 export class Controller {
 
     static typeName = "node-mvc.Controller";
@@ -14,13 +14,17 @@ export class Controller {
             type = undefined;
         }
 
-        let r: ContentResult;
+        let headers: Headers;
         if (typeof type == "number") {
-            r = new ContentResult(value, type);
+            headers = {};
+        }
+        else if (typeof type == "string") {
+            headers = { "content-type": type };
         }
         else {
-            r = new ContentResult(value, type as any, statusCode);
+            headers = type || {};
         }
+        let r: ContentResult = new ContentResult(value, headers, statusCode);
         return r;
     }
     json(obj: any, statusCode?: number) {

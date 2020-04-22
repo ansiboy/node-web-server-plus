@@ -1,7 +1,6 @@
 import http = require('http')
 import errors = require('./errors');
 import url = require('url');
-import path = require('path')
 import { ControllerLoader } from './controller-loader';
 import nodeStatic = require('maishu-node-static')
 import { ContentResult, contentTypes } from './action-results';
@@ -223,8 +222,8 @@ async function outputResult(result: object | null, res: http.ServerResponse, req
     }
     else {
         contentResult = typeof result == 'string' ?
-            new ContentResult(result, contentTypes.textPlain, 200) :
-            new ContentResult(JSON.stringify(result), contentTypes.applicationJSON, 200)
+            new ContentResult(result, { "content-type": contentTypes.textPlain }, 200) :
+            new ContentResult(JSON.stringify(result), { "content-type": contentTypes.applicationJSON }, 200)
     }
 
     await contentResult.execute(res, req, serverContext);

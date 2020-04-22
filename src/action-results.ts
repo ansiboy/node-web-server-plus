@@ -11,22 +11,26 @@ export const contentTypes = {
     textPlain: `text/plain; charset=${encoding}`,
 }
 
+export type Headers = { [key: string]: string | string[] };
+
 export class ContentResult implements ActionResult {
-    private contentType: string;
+    private headers: Headers;
     private content: string | Buffer;
     private statusCode: number;
 
-    constructor(content: string | Buffer, contentType?: string, statusCode?: number) {
+    constructor(content: string | Buffer, headers: Headers, statusCode?: number) {
         if (content == null)
             throw arugmentNull('content')
 
         this.content = content
-        this.contentType = contentType || contentTypes.textPlain
+        this.headers = headers;
         this.statusCode = statusCode || 200
     }
 
     async execute(res: http.ServerResponse) {
-        res.setHeader("content-type", this.contentType)
+        for (let key in this.headers) {
+            res.setHeader(key, this.headers[key]);
+        }
         res.statusCode = this.statusCode;
         res.write(this.content)
     }
