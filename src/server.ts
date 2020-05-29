@@ -89,10 +89,6 @@ export function startServer(settings: Settings) {
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
 
-            if (pathName == "/socket.io/socket.io.js") {
-                return
-            }
-
             let r: ReturnType<ControllerLoader["getAction"]> | null = null;
             if (controllerLoader) {
                 r = controllerLoader.getAction(pathName, serverContext);
