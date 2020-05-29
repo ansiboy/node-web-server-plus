@@ -18,12 +18,17 @@ export class ContentResult implements ActionResult {
     private content: string | Buffer;
     private statusCode: number;
 
-    constructor(content: string | Buffer, headers: Headers, statusCode?: number) {
+    constructor(content: string | Buffer, headers: Headers | string, statusCode?: number) {
         if (content == null)
             throw arugmentNull('content')
 
         this.content = content
-        this.headers = headers;
+        if (typeof headers == "string") {
+            this.headers = { "content-type": headers };
+        }
+        else {
+            this.headers = headers;
+        }
         this.statusCode = statusCode || 200
     }
 
