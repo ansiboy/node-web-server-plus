@@ -89,17 +89,6 @@ export function startServer(settings: Settings) {
             let urlInfo = url.parse(requestUrl);
             let pathName = urlInfo.pathname || '';
 
-            let r: ReturnType<ControllerLoader["getAction"]> | null = null;
-            if (controllerLoader) {
-                r = controllerLoader.getAction(pathName, serverContext);
-            }
-
-            if (r != null) {
-                console.assert(r.action != null);
-                console.assert(r.controller != null);
-                return executeAction(serverContext, r.controller, r.action, r.routeData, req, res);
-            }
-
             //=====================================================================
             // 处理 URL 转发
             if (settings.proxy) {
@@ -143,6 +132,19 @@ export function startServer(settings: Settings) {
                 }
             }
             //=====================================================================
+
+            let r: ReturnType<ControllerLoader["getAction"]> | null = null;
+            if (controllerLoader) {
+                r = controllerLoader.getAction(pathName, serverContext);
+            }
+
+            if (r != null) {
+                console.assert(r.action != null);
+                console.assert(r.controller != null);
+                return executeAction(serverContext, r.controller, r.action, r.routeData, req, res);
+            }
+
+
             if (fileServer) {
                 await fileServer.serve(req, res)
                 return;
