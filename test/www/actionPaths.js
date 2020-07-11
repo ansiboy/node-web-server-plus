@@ -9,4 +9,3 @@ exports.actionPaths = {
         redirect: "/home/d"
     }
 };
-//# sourceMappingURL=actionPaths.js.map

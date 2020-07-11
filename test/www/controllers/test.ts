@@ -1,6 +1,6 @@
 import { join } from "path";
 
-import { controller, action, Controller, routeData } from '../../../dist/index';
+import { controller, action, Controller, routeData } from '../../../out/index';
 
 export class Test extends Controller {
     @action()

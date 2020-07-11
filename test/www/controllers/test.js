@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const index_1 = require("../../../dist/index");
+const index_1 = require("../../../out/index");
 class Test extends index_1.Controller {
     index() {
         return this.content("<html><body><h1>Hello World</h1><body><html>", "text/html; charset=UTF-8");
@@ -44,4 +44,3 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], Test.prototype, "product", null);
 exports.Test = Test;
-//# sourceMappingURL=test.js.map
