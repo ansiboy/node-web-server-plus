@@ -13,6 +13,12 @@ export function arugmentNull(name: string) {
     return error
 }
 
+export function arugmentFieldNull(fieldName: string, argumentName: string) {
+    let error = new Error(`Field '${fieldName}' of argument ${argumentName} can not be null or empty.`)
+    error.name = arugmentFieldNull.name;
+    return error
+}
+
 export function controllerDirectoryNotExists(dir: string) {
     let error = new Error(`Controller directory ${dir} is not exists.`)
     error.name = controllerDirectoryNotExists.name

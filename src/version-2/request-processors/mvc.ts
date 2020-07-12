@@ -1,19 +1,28 @@
 import { RequestProcessor, RequestContext, Content, ExecuteResult, VirtualDirectory } from "maishu-node-web-server";
-import { ControllerLoader } from "./controller-loader";
-import { ServerContext } from "./types";
-import * as errors from "../errors";
-import { ActionParameterDecoder, metaKeys } from "./attributes";
+import { ControllerLoader } from "../controller-loader";
+import { ServerContext } from "../types";
+import * as errors from "../../errors";
+import { ActionParameterDecoder, metaKeys } from "../attributes";
 import * as http from "http";
+
+export interface MVCConfig {
+    serverContext?: ServerContext,
+    controllersDirecotry: VirtualDirectory,
+}
 
 export class MVCRequestProcessor implements RequestProcessor {
 
     #controllerLoader: ControllerLoader;
     #serverContext: ServerContext;
 
-    constructor(controllersDirecotry: VirtualDirectory) {
+    constructor(config: MVCConfig) {
+        if (config == null) throw errors.arugmentNull("config");
+        if (config.controllersDirecotry == null) throw errors.arugmentFieldNull("controllersDirecotry", "config");
+
         this.#serverContext = {};
-        this.#controllerLoader = new ControllerLoader(controllersDirecotry);
+        this.#controllerLoader = new ControllerLoader(config.controllersDirecotry);
     }
+
     async execute(args: RequestContext): Promise<ExecuteResult> {
 
         let actionResult = this.#controllerLoader.findAction(args.virtualPath);
@@ -22,7 +31,7 @@ export class MVCRequestProcessor implements RequestProcessor {
 
         let r = await this.executeAction(this.#serverContext, actionResult.controller, actionResult.action,
             actionResult.routeData, args.req, args.res);
-            
+
         return { content: JSON.stringify(r) };
 
     }
