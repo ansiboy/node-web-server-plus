@@ -1,11 +1,11 @@
 import http = require('http');
-import { LogLevel } from "../logger";
-import { VirtualDirectory } from "maishu-node-web-server";
+import { LogLevel } from "./logger";
+import { VirtualDirectory } from "maishu-node-static";
 
 export interface ServerContext<T = {}> {
-    // controllerDefines: ControllerInfo[],
+    controllerDefines: ControllerInfo[],
     // settings: Settings,
-    // logLevel: Settings["logLevel"],
+    logLevel: Settings["logLevel"],
     data?: T
 }
 
@@ -27,8 +27,8 @@ export interface ProxyPipe {
 export interface Settings {
     port?: number,
     bindIP?: string,
-    controllerDirectory?: string,
-    staticRootDirectory?: string,
+    controllerDirectory?: VirtualDirectory,
+    staticRootDirectory?: VirtualDirectory,
     proxy?: { [path_pattern: string]: string | ProxyItem },
     authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>,
     requestFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[],

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 // const { ControllerLoader } = require("../dist/controller-loader");
-const controller_loader_1 = require("../out/version-2/controller-loader");
+const controller_loader_1 = require("../out/controller-loader");
 const assert = require("assert");
 const path = require("path");
 const actionPaths_1 = require("./www/actionPaths");

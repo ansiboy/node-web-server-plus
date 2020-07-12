@@ -1,6 +1,6 @@
 
-import * as errors from '../errors'
-import { controllerSuffix } from '../constants';
+import * as errors from './errors'
+import { controllerSuffix } from './constants';
 import "reflect-metadata";
 import http = require('http')
 import querystring = require('querystring');
@@ -26,15 +26,15 @@ export interface ActionParameterDecoder<T> {
 
 
 export let CONTROLLER_REGISTER = "$register";
-export type RegisterCotnroller = (controllerInfos: ControllerInfo[]) => void;
+
 /**
  * 标记一个类是否为控制器
  * @param path 路径
  */
 export function controller<T extends { new(...args: any[]): any }>(path?: string) {
     return function (constructor: T) {
-        let func: RegisterCotnroller = function (controllerInfos: ControllerInfo[]) {
-            let controllerInfo = registerController(constructor, controllerInfos, path)
+        constructor.prototype[CONTROLLER_REGISTER] = function (serverContext: ServerContext) {
+            let controllerInfo = registerController(constructor, serverContext, path)
             let propertyNames = Object.getOwnPropertyNames(constructor.prototype)
             for (let i = 0; i < propertyNames.length; i++) {
                 let metadata: ActionInfo = Reflect.getMetadata(metaKeys.action, constructor, propertyNames[i])
@@ -43,7 +43,7 @@ export function controller<T extends { new(...args: any[]): any }>(path?: string
                 }
             }
         }
-        constructor.prototype[CONTROLLER_REGISTER] = func;
+
     }
 }
 
@@ -65,7 +65,7 @@ export function action(...paths: ActionPath[]) {
     };
 }
 
-export function register<T>(type: ControllerType<T>, serverContext: ControllerInfo[], path?: string) {
+export function register<T>(type: ControllerType<T>, serverContext: ServerContext, path?: string) {
     let controllerDefine = registerController(type, serverContext, path)
     let obj = {
         action(member: keyof T, paths?: string[]) {
@@ -77,7 +77,7 @@ export function register<T>(type: ControllerType<T>, serverContext: ControllerIn
     return obj
 }
 
-function registerController<T>(type: ControllerType<T>, controllerDefines: ControllerInfo[], path?: string) {
+function registerController<T>(type: ControllerType<T>, serverContext: ServerContext, path?: string) {
     if (!path) {
         path = type.name.endsWith(controllerSuffix) ?
             type.name.substring(0, type.name.length - controllerSuffix.length) : type.name
@@ -86,13 +86,13 @@ function registerController<T>(type: ControllerType<T>, controllerDefines: Contr
     if (path && path[0] != '/')
         path = '/' + path
 
-    // serverContext.controllerDefines = serverContext.controllerDefines || [];
-    let controllerDefine = controllerDefines.filter(o => o.type == type)[0]
+    serverContext.controllerDefines = serverContext.controllerDefines || [];
+    let controllerDefine = serverContext.controllerDefines.filter(o => o.type == type)[0]
     if (controllerDefine != null)
         throw errors.controlRegister(type)
 
     controllerDefine = { type: type, actionDefines: [], path }
-    controllerDefines.push(controllerDefine)
+    serverContext.controllerDefines.push(controllerDefine)
 
     return controllerDefine
 }

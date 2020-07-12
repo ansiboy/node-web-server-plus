@@ -9,7 +9,7 @@
         "is-class": "0.0.5",
         "log4js": "^6.1.2",
         "maishu-node-static": "^1.9.5",
-        "maishu-node-web-server": "^1.0.0",
+        "maishu-node-web-server": "file:../node-web-server",
         "mime": "^2.4.4",
         "reflect-metadata": "^0.1.13",
         "remove": "^0.1.5",

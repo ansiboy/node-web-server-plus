@@ -1,4 +1,4 @@
-import { controller, action, createParameterDecorator, routeData } from '../../../out/version-2'
+import { controller, action, createParameterDecorator, routeData } from '../../../out'
 import { ConnectionOptions } from 'tls';
 import { actionPaths } from '../actionPaths';
 

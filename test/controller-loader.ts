@@ -1,5 +1,5 @@
 // const { ControllerLoader } = require("../dist/controller-loader");
-import { ControllerLoader } from "../out/version-2/controller-loader";
+import { ControllerLoader } from "../out/controller-loader";
 
 import * as assert from "assert";
 import * as  path from "path";

@@ -1,41 +1,47 @@
-import * as errors from './errors'
-import * as path from 'path'
-import isClass = require('is-class')
-import { controller, CONTROLLER_REGISTER } from './attributes';
-import { isRouteString } from "./router";
-// import Route = require("route-parser");
+import { VirtualDirectory } from "maishu-node-web-server";
+import * as errors from './errors';
+import isClass = require('is-class');
+import { CONTROLLER_REGISTER, controller } from "./attributes";
+import { ControllerInfo } from "./types";
+import { Controller } from "./controller";
+import { ActionInfo, createAPIControllerType } from "./api-controller";
+import { RegisterCotnroller } from "./attributes";
+import * as path from "path";
 import UrlPattern = require("url-pattern");
-import { Controller } from './controller';
-import { createAPIControllerType, ActionInfo } from './api-controller';
-import { ServerContext } from './types';
-import { VirtualDirectory } from 'maishu-node-static';
+import { isRouteString } from "./router";
 
 export class ControllerLoader {
 
+    #controllerDefines: ControllerInfo[] = [];
     // 使用路径进行匹配的 action
-    private pathActions: { [path: string]: ActionInfo } = {};
-
+    #pathActions: { [path: string]: ActionInfo } = {};
     // 使用路由进行匹配的 action
-    private routeActions: (ActionInfo & { route: (virtualPath: string) => any })[] = [];
+    #routeActions: (ActionInfo & { route: (virtualPath: string) => any })[] = [];
+    #controllersDirectory: VirtualDirectory;
 
-    constructor(serverContext: ServerContext, controllerDirectory: VirtualDirectory) {
-        if (controllerDirectory == null)
-            throw errors.arugmentNull('controllerDirectory')
+    constructor(controllersDirectory: VirtualDirectory) {
+        if (controllersDirectory == null)
+            throw errors.arugmentNull("controllersDirectory");
 
+        this.#controllersDirectory = controllersDirectory;
+        this.load();
+    }
+
+    private load() {
         let controllerPaths: string[] = [];
-        let stack: VirtualDirectory[] = [controllerDirectory];
+        let stack: VirtualDirectory[] = [this.#controllersDirectory];
         while (stack.length > 0) {
             let item = stack.shift() as VirtualDirectory;
 
             controllerPaths.push(...this.getControllerPaths(item));
 
-            let dirDic = item.getChildDirectories();
+            let dirDic = item.directories();
             let dirs = Object.getOwnPropertyNames(dirDic).map(n => dirDic[n]);
             stack.unshift(...dirs);
         }
 
         controllerPaths.forEach(c => {
-            this.loadController(c, serverContext);
+            this.loadController(c);
         })
 
         //=============================================
@@ -43,16 +49,16 @@ export class ControllerLoader {
 
         createAPIControllerType(() => {
             let actionInfos: ActionInfo[] = [
-                ...Object.getOwnPropertyNames(this.pathActions).map(name => this.pathActions[name]),
-                ...this.routeActions
+                ...Object.getOwnPropertyNames(this.#pathActions).map(name => this.#pathActions[name]),
+                ...this.#routeActions
             ];
 
             return actionInfos;
-        }, serverContext);
+        }, this.#controllerDefines);
         //==============================================
 
-        console.assert(serverContext.controllerDefines != null);
-        serverContext.controllerDefines.forEach(c => {
+        console.assert(this.#controllerDefines != null);
+        this.#controllerDefines.forEach(c => {
             console.assert((c.path || '') != '')
             c.actionDefines.forEach(a => {
 
@@ -67,7 +73,7 @@ export class ControllerLoader {
                     }
 
                     if (typeof actionPath == "function") {
-                        this.routeActions.push({ route: actionPath, controllerType: c.type, memberName: a.memberName, actionPath: actionPath });
+                        this.#routeActions.push({ route: actionPath, controllerType: c.type, memberName: a.memberName, actionPath: actionPath });
                     }
                     else {
                         if (isRouteString(actionPath)) {
@@ -75,10 +81,10 @@ export class ControllerLoader {
                             let route = (virtualPath: string) => {
                                 return p.match(virtualPath);
                             };
-                            this.routeActions.push({ route, controllerType: c.type, memberName: a.memberName, actionPath });
+                            this.#routeActions.push({ route, controllerType: c.type, memberName: a.memberName, actionPath });
                         }
                         else {
-                            this.pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName, actionPath }
+                            this.#pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName, actionPath }
 
                         }
                     }
@@ -87,21 +93,13 @@ export class ControllerLoader {
         })
     }
 
-    private joinPaths(path1: string, path2: string) {
-        if (path1 == null) throw errors.arugmentNull('path1')
-        if (path2 == null) throw errors.arugmentNull('path2')
-        let p = path.join(path1, path2)
-        p = p.replace(/\\/g, '/')
-        return p
-    }
-
     /**
-     * 获取指定文件夹中（包括子目录），控制器的路径。
-     * @param dir 控制器的文件夹
-     */
+   * 获取指定文件夹中（包括子目录），控制器的路径。
+   * @param dir 控制器的文件夹
+   */
     private getControllerPaths(dir: VirtualDirectory) {
         let controllerPaths: string[] = []
-        let filesDic = dir.getChildFiles();
+        let filesDic = dir.files();
         let files = Object.getOwnPropertyNames(filesDic).map(n => filesDic[n]);
         files.forEach(p => {
             if (p.endsWith('.js')) {
@@ -112,7 +110,16 @@ export class ControllerLoader {
         return controllerPaths
     }
 
-    private loadController(controllerPath: string, serverContext: ServerContext): void {
+    private joinPaths(path1: string, path2: string) {
+        if (path1 == null) throw errors.arugmentNull('path1')
+        if (path2 == null) throw errors.arugmentNull('path2')
+        let p = path.join(path1, path2)
+        p = p.replace(/\\/g, '/')
+        return p
+    }
+
+
+    private loadController(controllerPath: string): void {
         try {
             let mod = require(controllerPath);
             console.assert(mod != null);
@@ -123,19 +130,21 @@ export class ControllerLoader {
                     continue
                 }
 
-                if (ctrlType.prototype[CONTROLLER_REGISTER]) {
-                    ctrlType.prototype[CONTROLLER_REGISTER](serverContext);
+                let func: RegisterCotnroller = ctrlType.prototype[CONTROLLER_REGISTER];
+                if (func != null) {
+                    func(this.#controllerDefines);
                     continue;
                 }
 
                 //TODO: 检查控制器是否重复
-                console.assert(serverContext.controllerDefines != null)
-                let controllerDefine = serverContext.controllerDefines.filter(o => o.type == ctrlType)[0]
+                console.assert(this.#controllerDefines != null)
+                let controllerDefine = this.#controllerDefines.filter(o => o.type == ctrlType)[0]
 
                 // 判断类型使用 ctrlType.prototype instanceof Controller 不可靠
                 if (controllerDefine == null && ctrlType["typeName"] == Controller.typeName) {
                     controller(ctrlType.name)(ctrlType);
-                    ctrlType.prototype[CONTROLLER_REGISTER](serverContext);
+                    let func: RegisterCotnroller = ctrlType.prototype[CONTROLLER_REGISTER];
+                    func(this.#controllerDefines);
                 }
             }
         }
@@ -145,7 +154,7 @@ export class ControllerLoader {
         }
     }
 
-    getAction(virtualPath: string, serverContext: ServerContext) {
+    findAction(virtualPath: string) {
 
         if (!virtualPath) throw errors.arugmentNull('virtualPath')
 
@@ -156,7 +165,7 @@ export class ControllerLoader {
         if (virtualPath[virtualPath.length - 1] == '/' && virtualPath.length > 1)
             virtualPath = virtualPath.substr(0, virtualPath.length - 1);
 
-        let actionInfo = this.pathActions[virtualPath];
+        let actionInfo = this.#pathActions[virtualPath];
         let controller: any = null;
         let action: any = null;
         let routeData: { [key: string]: string } | null = null;
@@ -168,12 +177,12 @@ export class ControllerLoader {
         }
 
         if (action == null) {
-            for (let i = 0; i < this.routeActions.length; i++) {
-                let r = this.routeActions[i].route(virtualPath);
+            for (let i = 0; i < this.#routeActions.length; i++) {
+                let r = this.#routeActions[i].route(virtualPath);
                 if (r) {
                     routeData = r;
-                    controller = new this.routeActions[i].controllerType();
-                    action = controller[this.routeActions[i].memberName];
+                    controller = new this.#routeActions[i].controllerType();
+                    action = controller[this.#routeActions[i].memberName];
                     break;
                 }
             }
@@ -186,7 +195,6 @@ export class ControllerLoader {
         return { action, controller, routeData }
     }
 }
-
 
 let innerErrors = {
     invalidAreaType(areaName: string, actualType: string) {
@@ -233,4 +241,3 @@ let innerErrors = {
         return error
     }
 }
-

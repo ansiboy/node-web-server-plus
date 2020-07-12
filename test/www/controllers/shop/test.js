@@ -9,19 +9,19 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const version_2_1 = require("../../../../out/version-2");
+const out_1 = require("../../../../out/");
 let TestController = class TestController {
     index() {
         return "shop test index";
     }
 };
 __decorate([
-    version_2_1.action("/shop/test"),
+    out_1.action("/shop/test"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], TestController.prototype, "index", null);
 TestController = __decorate([
-    version_2_1.controller()
+    out_1.controller()
 ], TestController);
 exports.default = TestController;

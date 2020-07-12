@@ -1,18 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const maishu_node_web_server_1 = require("maishu-node-web-server");
 const Browser = require("zombie");
 const fs = require("fs");
 const path = require("path");
+const out_1 = require("../out");
 exports.websitePhysicalPath = path.join(__dirname, "www");
 function createWebserver(settings) {
-    // let settings: Settings = { root: new VirtualDirectory(pathConcat(__dirname, "website")) };
-    settings = settings || {};
-    settings = Object.assign(settings, {
-        root: new maishu_node_web_server_1.VirtualDirectory(exports.websitePhysicalPath)
-    });
-    let w = new maishu_node_web_server_1.WebServer(settings);
-    console.log(`Web server port is ${settings.port}.`);
+    let defaultSettings = {
+        staticRootDirectory: path.join(__dirname, "www"),
+        controllerDirectory: path.join(__dirname, "www", "controllers"),
+    };
+    settings = Object.assign(settings || {}, defaultSettings);
+    let w = out_1.startServer(settings);
+    console.log(`Web server port is ${w.port}.`);
     return w;
 }
 exports.createWebserver = createWebserver;

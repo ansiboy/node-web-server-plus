@@ -1,9 +1,10 @@
 import http = require('http');
 import { arugmentNull } from './errors';
-import { proxyRequest } from './server';
 import url = require('url');
 import { ActionResult, ServerContext } from './types';
-
+import * as errors from "./errors";
+import { getLogger } from './logger';
+import { LOG_CATEGORY_NAME } from './constants';
 
 const encoding = 'UTF-8'
 export const contentTypes = {
@@ -74,4 +75,85 @@ export class ProxyResut implements ActionResult {
         return proxyRequest(targetURL, req, res, serverContext, this.method);
     }
 
+}
+
+export function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, serverContext: ServerContext,
+    method?: string, headers?: http.IncomingMessage["headers"],) {
+
+
+    headers = Object.assign({}, req.headers, headers || {});
+    // headers = Object.assign(req.headers, headers);
+    //=====================================================
+    if (headers.host) {
+        headers["delete-host"] = headers.host;
+        // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+        delete headers.host;
+    }
+
+    return proxyRequestWithoutPipe(targetUrl, req, res, serverContext, headers, method)
+
+}
+
+
+export function proxyRequestWithoutPipe(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse, serverContext: ServerContext,
+    headers: http.IncomingMessage["headers"], method?: string) {
+    return new Promise(function (resolve, reject) {
+        headers = Object.assign({}, req.headers, headers || {});
+        // headers = Object.assign(req.headers, headers);
+        //=====================================================
+        if (headers.host) {
+            headers["delete-host"] = headers.host;
+            // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+            delete headers.host;
+        }
+
+        //=====================================================
+        let clientRequest = http.request(targetUrl,
+            {
+                method: method || req.method,
+                headers: headers, timeout: 2000,
+            },
+            function (response) {
+                for (var key in response.headers) {
+                    res.setHeader(key, response.headers[key] || '');
+                }
+                res.statusCode = response.statusCode || 200;
+                res.statusMessage = response.statusMessage || '';
+                // if (proxyResponse) {
+                //     proxyResponse(response, req, res);
+                // }
+                // else {
+                response.pipe(res);
+                // }
+
+                response.on("end", () => resolve());
+                response.on("error", err => reject(err));
+                response.on("close", () => reject(errors.connectionClose()));
+            }
+        );
+
+        if (!req.readable) {
+            reject(errors.requestNotReadable());
+        }
+
+
+        req.on('data', (data) => {
+            clientRequest.write(data);
+        }).on('end', () => {
+            clientRequest.end();
+        }).on('error', (err) => {
+            clientRequest.end();
+            reject(err);
+        });
+
+        clientRequest.on("error", function (err) {
+            let logger = getLogger(LOG_CATEGORY_NAME, "all");
+            logger.error(err);
+            reject(err);
+        });
+
+        // clientRequest.on("finish", function () {
+        //     resolve();
+        // })
+    })
 }

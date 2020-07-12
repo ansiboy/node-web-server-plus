@@ -1,7 +1,7 @@
 import { RequestProcessor, RequestContext, Content, ExecuteResult, VirtualDirectory } from "maishu-node-web-server";
 import { ControllerLoader } from "../controller-loader";
 import { ServerContext } from "../types";
-import * as errors from "../../errors";
+import * as errors from "../errors";
 import { ActionParameterDecoder, metaKeys } from "../attributes";
 import * as http from "http";
 

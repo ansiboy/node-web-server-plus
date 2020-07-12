@@ -21,7 +21,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const version_2_1 = require("../../../out/version-2");
+const out_1 = require("../../../out");
 const actionPaths_1 = require("../actionPaths");
 // function connection() {
 // }
@@ -29,7 +29,7 @@ const actionPaths_1 = require("../actionPaths");
 //     return function (target: Object, propertyKey: string | symbol, parameterIndex: number) {
 //     }
 // }
-let connection = version_2_1.createParameterDecorator(function () {
+let connection = out_1.createParameterDecorator(function () {
     return __awaiter(this, void 0, void 0, function* () {
         debugger;
         return {};
@@ -62,41 +62,41 @@ class HomeController {
     }
 };
 __decorate([
-    version_2_1.action(actionPaths_1.actionPaths.home.index),
-    __param(0, connection), __param(1, version_2_1.routeData),
+    out_1.action(actionPaths_1.actionPaths.home.index),
+    __param(0, connection), __param(1, out_1.routeData),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "index", null);
 __decorate([
-    version_2_1.action(),
-    __param(0, version_2_1.routeData),
+    out_1.action(),
+    __param(0, out_1.routeData),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "test", null);
 __decorate([
-    version_2_1.action(`${actionPaths_1.actionPaths.home.distributor}/*`),
+    out_1.action(`${actionPaths_1.actionPaths.home.distributor}/*`),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "distributor", null);
 __decorate([
-    version_2_1.action(`${actionPaths_1.actionPaths.home.product}/:id`),
-    __param(0, version_2_1.routeData),
+    out_1.action(`${actionPaths_1.actionPaths.home.product}/:id`),
+    __param(0, out_1.routeData),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "product", null);
 __decorate([
-    version_2_1.action(`${actionPaths_1.actionPaths.home.redirect}/:module(/*)`),
-    __param(0, version_2_1.routeData),
+    out_1.action(`${actionPaths_1.actionPaths.home.redirect}/:module(/*)`),
+    __param(0, out_1.routeData),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "redirect", null);
 HomeController = __decorate([
-    version_2_1.controller()
+    out_1.controller()
     /** 主页模块 */
 ], HomeController);
 exports.HomeController = HomeController;

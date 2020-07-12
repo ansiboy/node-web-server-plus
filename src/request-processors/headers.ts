@@ -1,5 +1,5 @@
 import { RequestProcessor, RequestContext } from "maishu-node-web-server";
-import * as errors from "../../errors";
+import * as errors from "../errors";
 
 export type Headers = { [name: string]: string }
 export class HeadersRequestProcessor implements RequestProcessor {

@@ -1,17 +1,19 @@
-import { WebServer, Settings, VirtualDirectory } from "maishu-node-web-server";
 import Browser = require('zombie');
 import * as fs from "fs";
 import * as path from "path";
+import { startServer, Settings } from "../out";
 
 export let websitePhysicalPath = path.join(__dirname, "www");
 export function createWebserver(settings?: Settings) {
-    // let settings: Settings = { root: new VirtualDirectory(pathConcat(__dirname, "website")) };
-    settings = settings || {};
-    settings = Object.assign(settings, {
-        root: new VirtualDirectory(websitePhysicalPath)
-    })
-    let w = new WebServer(settings);
-    console.log(`Web server port is ${settings.port}.`);
+    let defaultSettings: Settings = {
+        staticRootDirectory: path.join(__dirname, "www"),
+        controllerDirectory: path.join(__dirname, "www", "controllers"),
+    }
+
+    settings = Object.assign(settings || {}, defaultSettings);
+
+    let w = startServer(settings);
+    console.log(`Web server port is ${w.port}.`);
 
     return w;
 }
