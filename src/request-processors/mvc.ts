@@ -19,21 +19,28 @@ export class MVCRequestProcessor implements RequestProcessor {
         if (config == null) throw errors.arugmentNull("config");
         if (config.controllersDirecotry == null) throw errors.arugmentFieldNull("controllersDirecotry", "config");
 
-        this.#serverContext = {};
+        this.#serverContext = config.serverContext || { logLevel: "all" };
         this.#controllerLoader = new ControllerLoader(config.controllersDirecotry);
     }
 
-    async execute(args: RequestContext): Promise<ExecuteResult> {
+    execute(args: RequestContext): Promise<ExecuteResult> | null {
 
         let actionResult = this.#controllerLoader.findAction(args.virtualPath);
         if (actionResult == null)
             return null;
 
-        let r = await this.executeAction(this.#serverContext, actionResult.controller, actionResult.action,
-            actionResult.routeData, args.req, args.res);
+        return this.executeAction(this.#serverContext, actionResult.controller, actionResult.action,
+            actionResult.routeData, args.req, args.res)
+            .then(r => {
+                let StatusCode: keyof ExecuteResult = "statusCode";
+                let ContentType: keyof ExecuteResult = "contentType";
+                let Content: keyof ExecuteResult = "content";
 
-        return { content: JSON.stringify(r) };
-
+                if (r[Content] != null && (r[StatusCode] != null || r[ContentType] != null)) {
+                    return r;
+                }
+                return { content: JSON.stringify(r) };
+            })
     }
 
     private executeAction(serverContext: ServerContext, controller: object, action: Function, routeData: { [key: string]: string } | null,
@@ -65,10 +72,6 @@ export class MVCRequestProcessor implements RequestProcessor {
                 p = Promise.resolve(actionResult);
             }
             return p;
-            // }).then((r) => {
-            //     return outputResult(r, res, req, serverContext);
-            // }).catch(err => {
-            //     return outputError(err, res);
         }).finally(() => {
             for (let i = 0; i < parameterDecoders.length; i++) {
                 let d = parameterDecoders[i]

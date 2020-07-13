@@ -2,3 +2,4 @@ export { controller, action, createParameterDecorator, routeData } from "./attri
 export { startServer, } from "./server";
 export { Settings } from "./types";
 export { Controller } from "./controller";
+export { createVirtualDirecotry } from "./virtual-directory";

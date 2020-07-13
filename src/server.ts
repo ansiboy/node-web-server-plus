@@ -12,7 +12,7 @@ export function startServer(settings: Settings) {
 
     let mvcConfig: MVCConfig = {
         controllersDirecotry: new VirtualDirectory(settings.controllerDirectory || __dirname),
-        serverContext: { data: settings.serverContextData }
+        serverContext: { data: settings.serverContextData, logLevel: settings.logLevel || "all" }
     }
     requestProcessorConfigs[MVCRequestProcessor.name] = mvcConfig;
 
@@ -26,6 +26,12 @@ export function startServer(settings: Settings) {
         requestProcessorConfigs,
         requestProcessorTypes: [HeadersRequestProcessor, MVCRequestProcessor, ...WebServer.defaultRequestProcessorTypes]
     })
+
+    if (settings.virtualPaths) {
+        for (let key in settings.virtualPaths) {
+            server.root.addPath(key, settings.virtualPaths[key]);
+        }
+    }
 
     return server;
 }

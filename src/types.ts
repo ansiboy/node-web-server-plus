@@ -1,11 +1,11 @@
 import http = require('http');
 import { LogLevel } from "./logger";
-import { VirtualDirectory } from "maishu-node-web-server";
 
 export interface ServerContext<T = {}> {
     // controllerDefines: ControllerInfo[],
     // settings: Settings,
-    data?: T
+    data?: T,
+    logLevel: LogLevel
 }
 
 export interface ProxyItem {
@@ -29,8 +29,8 @@ export interface Settings {
     controllerDirectory?: string,
     staticRootDirectory?: string,
     proxy?: { [path_pattern: string]: string | ProxyItem },
-    authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>,
-    requestFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[],
+    // authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>,
+    // requestFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[],
     serverName?: string,
     /** 设置默认的 Http Header */
     headers?: { [name: string]: string }
