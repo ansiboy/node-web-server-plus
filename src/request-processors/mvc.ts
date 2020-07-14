@@ -4,6 +4,7 @@ import { ServerContext } from "../types";
 import * as errors from "../errors";
 import { ActionParameterDecoder, metaKeys } from "../attributes";
 import * as http from "http";
+import { ContentResult, contentTypes } from "../action-results";
 
 export interface MVCConfig {
     serverContext?: ServerContext,
@@ -39,7 +40,7 @@ export class MVCRequestProcessor implements RequestProcessor {
                 if (r[Content] != null && (r[StatusCode] != null || r[ContentType] != null)) {
                     return r;
                 }
-                return { content: JSON.stringify(r) };
+                return { content: JSON.stringify(r), contentType: contentTypes.applicationJSON } as ExecuteResult;
             })
     }
 

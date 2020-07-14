@@ -1,6 +1,7 @@
 import { controller, action, createParameterDecorator, routeData } from '../../../out'
 import { ConnectionOptions } from 'tls';
 import { actionPaths } from '../actionPaths';
+import { ContentResult } from '../../../out/action-results';
 
 // function connection() {
 
@@ -54,5 +55,10 @@ export class HomeController {
     @action(`${actionPaths.home.redirect}/:module(/*)`)
     redirect(@routeData data) {
         return data
+    }
+
+    @action(actionPaths.home.content)
+    content() {
+        return new ContentResult("Hello World", {})
     }
 }

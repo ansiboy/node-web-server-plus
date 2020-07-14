@@ -7,20 +7,23 @@ export function createVirtualDirecotry(...physicalPaths: string[]) {
         throw errors.arugmentNull("physicalPaths");
 
     let root = new VirtualDirectory(physicalPaths[0]);
-    let dirStack = [...physicalPaths.map(o => ({ physicalPath: o, virtualPath: "/" }))];
+    if (physicalPaths.length == 1)
+        return root;
+
+    let dirStack = [...physicalPaths.filter((o, i) => i > 0).map(o => ({ physicalPath: o, virtualPath: "/" }))];
     while (dirStack.length > 0) {
         let item = dirStack.pop();
         if (item == null)
             continue;
 
-        let dir = root.findDirectory(item.virtualPath);
-        if (dir == null) {
-            root.addPath(item.virtualPath, item.physicalPath);
-            dir = root.findDirectory(item.virtualPath);
-        }
+        // let dir = root.findDirectory(item.virtualPath);
+        // if (dir == null) {
+        //     root.addPath(item.virtualPath, item.physicalPath);
+        //     dir = root.findDirectory(item.virtualPath);
+        // }
 
-        if (dir == null)
-            throw errors.unexpectedNullValue("dir");
+        // if (dir == null)
+        //     throw errors.unexpectedNullValue("dir");
 
         let names = fs.readdirSync(item.physicalPath);
         for (let i = 0; i < names.length; i++) {
@@ -30,7 +33,10 @@ export function createVirtualDirecotry(...physicalPaths: string[]) {
                 dirStack.push({ physicalPath, virtualPath });
             }
             else if (fs.statSync(physicalPath).isFile()) {
-                dir.addPath(virtualPath, physicalPath);
+                root.addPath(virtualPath, physicalPath);
+                if (root.directories()["controllers"].directories()["controllers"]) {
+                    debugger;
+                }
             }
         }
     }

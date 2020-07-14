@@ -1,5 +1,6 @@
 import http = require('http');
 import { LogLevel } from "./logger";
+import { VirtualDirectory, FileProcessor } from 'maishu-node-web-server';
 
 export interface ServerContext<T = {}> {
     // controllerDefines: ControllerInfo[],
@@ -26,17 +27,16 @@ export interface ProxyPipe {
 export interface Settings {
     port?: number,
     bindIP?: string,
-    controllerDirectory?: string,
-    staticRootDirectory?: string,
+    controllerDirectory?: string | VirtualDirectory,
+    staticRootDirectory?: string | VirtualDirectory,
     proxy?: { [path_pattern: string]: string | ProxyItem },
-    // authenticate?: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>,
-    // requestFilters?: ((req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext) => Promise<ActionResult | null>)[],
     serverName?: string,
     /** 设置默认的 Http Header */
     headers?: { [name: string]: string }
     virtualPaths?: { [virtualPath: string]: string },
     logLevel?: LogLevel,
     serverContextData?: any,
+    fileProcessors?: { [fileExtention: string]: FileProcessor }
 }
 
 export interface ControllerInfo {

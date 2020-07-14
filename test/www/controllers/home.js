@@ -23,6 +23,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const out_1 = require("../../../out");
 const actionPaths_1 = require("../actionPaths");
+const action_results_1 = require("../../../out/action-results");
 // function connection() {
 // }
 // function createParameterDecorator<T>(createParameter: () => T, disposeParameter: (parameter: T) => void) {
@@ -60,6 +61,9 @@ class HomeController {
     redirect(data) {
         return data;
     }
+    content() {
+        return new action_results_1.ContentResult("Hello World", {});
+    }
 };
 __decorate([
     out_1.action(actionPaths_1.actionPaths.home.index),
@@ -95,6 +99,12 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "redirect", null);
+__decorate([
+    out_1.action(actionPaths_1.actionPaths.home.content),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], HomeController.prototype, "content", null);
 HomeController = __decorate([
     out_1.controller()
     /** 主页模块 */
