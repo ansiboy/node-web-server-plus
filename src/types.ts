@@ -1,7 +1,7 @@
 import http = require('http');
 import { LogLevel } from "./logger";
 import { VirtualDirectory, FileProcessor } from 'maishu-node-web-server';
-import { ContentTransform } from 'maishu-node-web-server';
+import { RequestResultTransform } from 'maishu-node-web-server';
 import { ProxyItem } from 'maishu-node-web-server';
 
 export interface ServerContext<T = {}> {
@@ -28,8 +28,8 @@ export interface ServerContext<T = {}> {
 export interface Settings {
     port?: number,
     bindIP?: string,
-    controllerDirectory?: string,
-    staticRootDirectory?: string,
+    controllerDirectory?: string | VirtualDirectory,
+    staticRootDirectory?: string | VirtualDirectory,
     proxy?: { [path_pattern: string]: string | ProxyItem },
     serverName?: string,
     /** 设置默认的 Http Header */
@@ -38,7 +38,7 @@ export interface Settings {
     logLevel?: LogLevel,
     serverContextData?: any,
     fileProcessors?: { [fileExtention: string]: FileProcessor },
-    contentTransforms?: ContentTransform[],
+    contentTransforms?: RequestResultTransform[],
 }
 
 export interface ControllerInfo {

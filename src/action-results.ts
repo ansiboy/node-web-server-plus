@@ -5,7 +5,7 @@ import { ActionResult, ServerContext } from './types';
 import * as errors from "./errors";
 import { getLogger } from './logger';
 import { LOG_CATEGORY_NAME } from './constants';
-import { RequestProcessor, RequestContext, ExecuteResult } from 'maishu-node-web-server';
+import { RequestProcessor, RequestContext, RequestResult } from 'maishu-node-web-server';
 
 const encoding = 'UTF-8'
 export const contentTypes = {
@@ -34,7 +34,7 @@ export class ContentResult implements RequestProcessor {
         this.statusCode = statusCode || 200
     }
 
-    execute(args: RequestContext): ExecuteResult {
+    execute(args: RequestContext): RequestResult {
         return { statusCode: this.statusCode, headers: this.headers, content: this.content };
     }
 }
@@ -45,7 +45,7 @@ export class RedirectResult implements RequestProcessor {
         this.targetURL = targetURL
     }
 
-    execute(): ExecuteResult {
+    execute(): RequestResult {
         // res.writeHead(302, { 'Location': this.targetURL })
         return { statusCode: 302, headers: { "Location": this.targetURL }, content: "" };
     }
@@ -77,8 +77,8 @@ export class ProxyResut implements RequestProcessor {
 }
 
 function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse,
-    headers: http.IncomingMessage["headers"], method?: string): Promise<ExecuteResult> {
-    return new Promise<ExecuteResult>(function (resolve, reject) {
+    headers: http.IncomingMessage["headers"], method?: string): Promise<RequestResult> {
+    return new Promise<RequestResult>(function (resolve, reject) {
         headers = Object.assign({}, req.headers, headers || {});
         // headers = Object.assign(req.headers, headers);
         //=====================================================

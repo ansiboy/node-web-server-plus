@@ -13,7 +13,7 @@ export function startServer(settings: Settings) {
         websiteDirectory: settings.staticRootDirectory,
         requestProcessorConfigs: createequestProcessorConfigs(settings),
         requestProcessorTypes: defaultRequestProcessorTypes,
-        contentTransforms: settings.contentTransforms
+        requestResultTransforms: settings.contentTransforms
     }
 
     let server = new WebServer(r);

@@ -1,4 +1,4 @@
-import { RequestProcessor, RequestContext, Content, ExecuteResult, VirtualDirectory } from "maishu-node-web-server";
+import { RequestProcessor, RequestContext, Content, RequestResult, VirtualDirectory } from "maishu-node-web-server";
 import { ControllerLoader } from "../controller-loader";
 import { ServerContext } from "../types";
 import * as errors from "../errors";
@@ -24,7 +24,7 @@ export class MVCRequestProcessor implements RequestProcessor {
         this.#controllerLoader = new ControllerLoader(config.controllersDirecotry);
     }
 
-    execute(args: RequestContext): Promise<ExecuteResult> | null {
+    execute(args: RequestContext): Promise<RequestResult> | null {
 
         let actionResult = this.#controllerLoader.findAction(args.virtualPath);
         if (actionResult == null)
@@ -33,18 +33,18 @@ export class MVCRequestProcessor implements RequestProcessor {
         return this.executeAction(this.#serverContext, actionResult.controller, actionResult.action,
             actionResult.routeData, args.req, args.res)
             .then(r => {
-                let StatusCode: keyof ExecuteResult = "statusCode";
-                let ContentType: keyof ExecuteResult = "contentType";
-                let Content: keyof ExecuteResult = "content";
+                let StatusCode: keyof RequestResult = "statusCode";
+                let Headers: keyof RequestResult = "headers";
+                let Content: keyof RequestResult = "content";
 
-                if (r[Content] != null && (r[StatusCode] != null || r[ContentType] != null)) {
+                if (r[Content] != null && (r[StatusCode] != null || r[Headers] != null)) {
                     return r;
                 }
 
                 if (typeof r == "string")
-                    return { content: r } as ExecuteResult;
+                    return { content: r } as RequestResult;
 
-                return { content: JSON.stringify(r), contentType: contentTypes.applicationJSON } as ExecuteResult;
+                return { content: JSON.stringify(r), contentType: contentTypes.applicationJSON } as RequestResult;
             })
     }
 
