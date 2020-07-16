@@ -38,7 +38,7 @@ export interface Settings {
     logLevel?: LogLevel,
     serverContextData?: any,
     fileProcessors?: { [fileExtention: string]: FileProcessor },
-    contentTransforms?: RequestResultTransform[],
+    requestResultTransforms?: RequestResultTransform[],
 }
 
 export interface ControllerInfo {
