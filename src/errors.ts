@@ -1,6 +1,8 @@
 import { ControllerType } from "./types";
 
-export function postDataNotJSON(data: string): Error {
+
+
+export function postDataNotJSON(data: string) {
     let msg = `提交的数据不是 JSON 格式。提交数据为：${data}`;
     let err = new Error(msg);
     err.name = postDataNotJSON.name

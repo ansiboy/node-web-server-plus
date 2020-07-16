@@ -12,7 +12,8 @@ export function startServer(settings: Settings) {
         bindIP: settings.bindIP,
         root: settings.staticRootDirectory,
         requestProcessorConfigs: createequestProcessorConfigs(settings),
-        requestProcessorTypes: defaultRequestProcessorTypes
+        requestProcessorTypes: defaultRequestProcessorTypes,
+        contentTransforms: settings.contentTransforms
     }
 
     let server = new WebServer(r);
@@ -30,7 +31,7 @@ export function startServer(settings: Settings) {
 
 
 export let defaultRequestProcessorTypes = [HeadersRequestProcessor, MVCRequestProcessor, ...WebServer.defaultRequestProcessorTypes];
-export function createequestProcessorConfigs(settings: Settings) {
+export function createequestProcessorConfigs(settings: Pick<Settings, "controllerDirectory" | "proxy" | "fileProcessors" | "headers" | "logLevel" | "serverContextData">) {
     let requestProcessorConfigs = {} as any;
     let proxyConfig: ProxyConfig = {
         proxyTargets: settings.proxy || {},

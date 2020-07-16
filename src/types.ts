@@ -1,6 +1,7 @@
 import http = require('http');
 import { LogLevel } from "./logger";
 import { VirtualDirectory, FileProcessor } from 'maishu-node-web-server';
+import { ContentTransform } from 'maishu-node-web-server';
 
 export interface ServerContext<T = {}> {
     // controllerDefines: ControllerInfo[],
@@ -14,15 +15,15 @@ export interface ProxyItem {
     rewrite?: [string, string],
     headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>),
     // response?: (proxResponse: http.IncomingMessage, req: http.IncomingMessage, res: http.ServerResponse) => void,
-    pipe?: ProxyPipe
+    // pipe?: ProxyPipe
 }
 
 
-export interface ProxyPipe {
-    onRequest?: (args: { req: http.IncomingMessage }, data: Buffer) => Promise<Buffer | null | undefined | void>,
-    onResponse?: (args: { req: http.IncomingMessage, res: http.IncomingMessage }, data: Buffer) => Promise<Buffer | null | undefined | void>,
-    next?: ProxyPipe,
-}
+// export interface ProxyPipe {
+//     onRequest?: (args: { req: http.IncomingMessage }, data: Buffer) => Promise<Buffer | null | undefined | void>,
+//     onResponse?: (args: { req: http.IncomingMessage, res: http.IncomingMessage }, data: Buffer) => Promise<Buffer | null | undefined | void>,
+//     next?: ProxyPipe,
+// }
 
 export interface Settings {
     port?: number,
@@ -36,7 +37,8 @@ export interface Settings {
     virtualPaths?: { [virtualPath: string]: string },
     logLevel?: LogLevel,
     serverContextData?: any,
-    fileProcessors?: { [fileExtention: string]: FileProcessor }
+    fileProcessors?: { [fileExtention: string]: FileProcessor },
+    contentTransforms?: ContentTransform[],
 }
 
 export interface ControllerInfo {
