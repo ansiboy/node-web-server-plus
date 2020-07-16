@@ -16,15 +16,6 @@ export function createVirtualDirecotry(...physicalPaths: string[]) {
         if (item == null)
             continue;
 
-        // let dir = root.findDirectory(item.virtualPath);
-        // if (dir == null) {
-        //     root.addPath(item.virtualPath, item.physicalPath);
-        //     dir = root.findDirectory(item.virtualPath);
-        // }
-
-        // if (dir == null)
-        //     throw errors.unexpectedNullValue("dir");
-
         let names = fs.readdirSync(item.physicalPath);
         for (let i = 0; i < names.length; i++) {
             let physicalPath = pathConcat(item.physicalPath, names[i]);
@@ -33,10 +24,7 @@ export function createVirtualDirecotry(...physicalPaths: string[]) {
                 dirStack.push({ physicalPath, virtualPath });
             }
             else if (fs.statSync(physicalPath).isFile()) {
-                root.addPath(virtualPath, physicalPath);
-                if (root.directories()["controllers"].directories()["controllers"]) {
-                    debugger;
-                }
+                root.setPath(virtualPath, physicalPath);
             }
         }
     }

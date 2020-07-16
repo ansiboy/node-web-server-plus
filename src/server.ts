@@ -10,7 +10,7 @@ export function startServer(settings: Settings) {
     let r: WebServerSettings = {
         port: settings.port,
         bindIP: settings.bindIP,
-        root: settings.staticRootDirectory,
+        websiteDirectory: settings.staticRootDirectory,
         requestProcessorConfigs: createequestProcessorConfigs(settings),
         requestProcessorTypes: defaultRequestProcessorTypes,
         contentTransforms: settings.contentTransforms
@@ -22,7 +22,7 @@ export function startServer(settings: Settings) {
             if (virtualPath[0] != "/")
                 virtualPath = "/" + virtualPath;
 
-            server.root.addPath(virtualPath, settings.virtualPaths[virtualPath]);
+            server.websiteDirectory.setPath(virtualPath, settings.virtualPaths[virtualPath]);
         }
     }
 

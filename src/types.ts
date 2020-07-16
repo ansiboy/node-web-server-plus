@@ -2,6 +2,7 @@ import http = require('http');
 import { LogLevel } from "./logger";
 import { VirtualDirectory, FileProcessor } from 'maishu-node-web-server';
 import { ContentTransform } from 'maishu-node-web-server';
+import { ProxyItem } from 'maishu-node-web-server';
 
 export interface ServerContext<T = {}> {
     // controllerDefines: ControllerInfo[],
@@ -10,13 +11,12 @@ export interface ServerContext<T = {}> {
     logLevel: LogLevel
 }
 
-export interface ProxyItem {
-    targetUrl: string,
-    rewrite?: [string, string],
-    headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>),
-    // response?: (proxResponse: http.IncomingMessage, req: http.IncomingMessage, res: http.ServerResponse) => void,
-    // pipe?: ProxyPipe
-}
+// export interface ProxyItem {
+//     targetUrl: string,
+//     rewrite?: [string, string],
+//     headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>),
+
+// }
 
 
 // export interface ProxyPipe {
@@ -28,8 +28,8 @@ export interface ProxyItem {
 export interface Settings {
     port?: number,
     bindIP?: string,
-    controllerDirectory?: string | VirtualDirectory,
-    staticRootDirectory?: string | VirtualDirectory,
+    controllerDirectory?: string,
+    staticRootDirectory?: string,
     proxy?: { [path_pattern: string]: string | ProxyItem },
     serverName?: string,
     /** 设置默认的 Http Header */

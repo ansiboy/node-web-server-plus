@@ -40,6 +40,10 @@ export class MVCRequestProcessor implements RequestProcessor {
                 if (r[Content] != null && (r[StatusCode] != null || r[ContentType] != null)) {
                     return r;
                 }
+
+                if (typeof r == "string")
+                    return { content: r } as ExecuteResult;
+
                 return { content: JSON.stringify(r), contentType: contentTypes.applicationJSON } as ExecuteResult;
             })
     }
