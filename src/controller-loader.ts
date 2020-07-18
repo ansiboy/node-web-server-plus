@@ -73,7 +73,10 @@ export class ControllerLoader {
                     }
 
                     if (typeof actionPath == "function") {
-                        this.#routeActions.push({ route: actionPath, controllerType: c.type, memberName: a.memberName, actionPath: actionPath });
+                        this.#routeActions.push({
+                            route: actionPath, controllerType: c.type, memberName: a.memberName,
+                            actionPath: actionPath, controllerPhysicalPath: c.physicalPath
+                        });
                     }
                     else {
                         if (isRouteString(actionPath)) {
@@ -81,10 +84,16 @@ export class ControllerLoader {
                             let route = (virtualPath: string) => {
                                 return p.match(virtualPath);
                             };
-                            this.#routeActions.push({ route, controllerType: c.type, memberName: a.memberName, actionPath });
+                            this.#routeActions.push({
+                                route, controllerType: c.type, memberName: a.memberName,
+                                actionPath, controllerPhysicalPath: c.physicalPath
+                            });
                         }
                         else {
-                            this.#pathActions[actionPath] = { controllerType: c.type, memberName: a.memberName, actionPath }
+                            this.#pathActions[actionPath] = {
+                                controllerType: c.type, memberName: a.memberName,
+                                actionPath, controllerPhysicalPath: c.physicalPath
+                            }
 
                         }
                     }
@@ -132,7 +141,7 @@ export class ControllerLoader {
 
                 let func: RegisterCotnroller = ctrlType.prototype[CONTROLLER_REGISTER];
                 if (func != null) {
-                    func(this.#controllerDefines);
+                    func(this.#controllerDefines, controllerPath);
                     continue;
                 }
 
@@ -144,7 +153,7 @@ export class ControllerLoader {
                 if (controllerDefine == null && ctrlType["typeName"] == Controller.typeName) {
                     controller(ctrlType.name)(ctrlType);
                     let func: RegisterCotnroller = ctrlType.prototype[CONTROLLER_REGISTER];
-                    func(this.#controllerDefines);
+                    func(this.#controllerDefines, controllerPath);
                 }
             }
         }
@@ -169,11 +178,13 @@ export class ControllerLoader {
         let controller: any = null;
         let action: any = null;
         let routeData: { [key: string]: string } | null = null;
+        let controllerPhysicalPath: string | undefined;
 
         if (actionInfo != null) {
             controller = new actionInfo.controllerType();
+            controllerPhysicalPath = actionInfo.controllerPhysicalPath;
             action = controller[actionInfo.memberName]
-            console.assert(action != null)
+            console.assert(action != null);
         }
 
         if (action == null) {
@@ -182,6 +193,7 @@ export class ControllerLoader {
                 if (r) {
                     routeData = r;
                     controller = new this.#routeActions[i].controllerType();
+                    controllerPhysicalPath = this.#routeActions[i].controllerPhysicalPath;
                     action = controller[this.#routeActions[i].memberName];
                     break;
                 }
@@ -192,7 +204,7 @@ export class ControllerLoader {
             return null;
 
         console.assert(controller != null);
-        return { action, controller, routeData }
+        return { action, controller, routeData, controllerPhysicalPath };
     }
 }
 

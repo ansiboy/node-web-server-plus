@@ -1,10 +1,7 @@
 import http = require('http');
 import { arugmentNull } from './errors';
 import url = require('url');
-import { ActionResult, ServerContext } from './types';
 import * as errors from "./errors";
-import { getLogger } from './logger';
-import { LOG_CATEGORY_NAME } from './constants';
 import { RequestProcessor, RequestContext, RequestResult } from 'maishu-node-web-server';
 
 const encoding = 'UTF-8'
@@ -53,11 +50,9 @@ export class RedirectResult implements RequestProcessor {
 
 export class ProxyResut implements RequestProcessor {
     private targetURL: string;
-    private method: string | undefined;
 
     constructor(targetURL: string, method?: string) {
         this.targetURL = targetURL;
-        this.method = method;
     }
     async execute(args: RequestContext) {
         let targetURL = this.targetURL;

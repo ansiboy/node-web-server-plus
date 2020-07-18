@@ -25,4 +25,14 @@ describe("action results", function () {
             assert.equal(browser.source, r.content);
         });
     });
+    it("controller physical path header", function () {
+        return __awaiter(this, void 0, void 0, function* () {
+            let webServer = common_1.createWebserver();
+            let browser = common_1.createBrowser();
+            let url = `http://127.0.0.1:${webServer.port}/${actionPaths_1.actionPaths.home.content}`;
+            yield browser.visit(url);
+            let h = browser.response.headers.get("controller-physical-path");
+            assert.notEqual(h || "", "");
+        });
+    });
 });

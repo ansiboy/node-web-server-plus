@@ -20,11 +20,9 @@ export function createVirtualDirecotry(...physicalPaths: string[]) {
         for (let i = 0; i < names.length; i++) {
             let physicalPath = pathConcat(item.physicalPath, names[i]);
             let virtualPath = pathConcat(item.virtualPath, names[i]);
+            root.setPath(virtualPath, physicalPath);
             if (fs.statSync(physicalPath).isDirectory()) {
                 dirStack.push({ physicalPath, virtualPath });
-            }
-            else if (fs.statSync(physicalPath).isFile()) {
-                root.setPath(virtualPath, physicalPath);
             }
         }
     }

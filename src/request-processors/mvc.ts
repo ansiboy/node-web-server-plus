@@ -1,26 +1,26 @@
-import { RequestProcessor, RequestContext, Content, RequestResult, VirtualDirectory } from "maishu-node-web-server";
+import { RequestProcessor, RequestContext, RequestResult, VirtualDirectory } from "maishu-node-web-server";
 import { ControllerLoader } from "../controller-loader";
-import { ServerContext } from "../types";
+import { MVCRequestContext } from "../types";
 import * as errors from "../errors";
 import { ActionParameterDecoder, metaKeys } from "../attributes";
 import * as http from "http";
-import { ContentResult, contentTypes } from "../action-results";
+import { contentTypes } from "../action-results";
 
 export interface MVCConfig {
-    serverContext?: ServerContext,
+    serverContextData?: any,
     controllersDirecotry: VirtualDirectory,
 }
 
 export class MVCRequestProcessor implements RequestProcessor {
 
     #controllerLoader: ControllerLoader;
-    #serverContext: ServerContext;
+    #serverContextData: any;
 
     constructor(config: MVCConfig) {
         if (config == null) throw errors.arugmentNull("config");
         if (config.controllersDirecotry == null) throw errors.arugmentFieldNull("controllersDirecotry", "config");
 
-        this.#serverContext = config.serverContext || { logLevel: "all" };
+        this.#serverContextData = config.serverContextData || { logLevel: "all" };
         this.#controllerLoader = new ControllerLoader(config.controllersDirecotry);
     }
 
@@ -30,15 +30,18 @@ export class MVCRequestProcessor implements RequestProcessor {
         if (actionResult == null)
             return null;
 
-        return this.executeAction(this.#serverContext, actionResult.controller, actionResult.action,
-            actionResult.routeData, args.req, args.res)
+
+        let context = args as MVCRequestContext;
+        context.data = this.#serverContextData;
+        return this.executeAction(context, actionResult.controller, actionResult.action,
+            actionResult.routeData)
             .then(r => {
                 let StatusCode: keyof RequestResult = "statusCode";
                 let Headers: keyof RequestResult = "headers";
                 let Content: keyof RequestResult = "content";
 
                 if (r[Content] != null && (r[StatusCode] != null || r[Headers] != null)) {
-                    return r;
+                    return r as RequestResult;
                 }
 
                 if (typeof r == "string")
@@ -46,10 +49,18 @@ export class MVCRequestProcessor implements RequestProcessor {
 
                 return { content: JSON.stringify(r), contentType: contentTypes.applicationJSON } as RequestResult;
             })
+            .then(r => {
+                if (context.logLevel == "all") {
+                    r.headers = r.headers || {};
+                    r.headers["controller-physical-path"] = actionResult?.controllerPhysicalPath || "";
+                    if (typeof actionResult?.action == "function")
+                        r.headers["member-name"] = (actionResult?.action as Function).name;
+                }
+                return r;
+            })
     }
 
-    private executeAction(serverContext: ServerContext, controller: object, action: Function, routeData: { [key: string]: string } | null,
-        req: http.IncomingMessage, res: http.ServerResponse) {
+    private executeAction(context: MVCRequestContext, controller: object, action: Function, routeData: { [key: string]: string } | null) {
 
         if (!controller)
             throw errors.arugmentNull("controller")
@@ -57,11 +68,11 @@ export class MVCRequestProcessor implements RequestProcessor {
         if (!action)
             throw errors.arugmentNull("action")
 
-        if (!req)
-            throw errors.arugmentNull("req");
+        // if (!req)
+        //     throw errors.arugmentNull("req");
 
-        if (!res)
-            throw errors.arugmentNull("res");
+        // if (!res)
+        //     throw errors.arugmentNull("res");
 
         routeData = routeData || {};
 
@@ -69,7 +80,7 @@ export class MVCRequestProcessor implements RequestProcessor {
         parameterDecoders = Reflect.getMetadata(metaKeys.parameter, controller, action.name) || [];
         parameterDecoders.sort((a, b) => a.parameterIndex < b.parameterIndex ? -1 : 1);
         let parameters: object[] = []
-        return Promise.all(parameterDecoders.map(p => p.createParameter(req, res, serverContext, routeData))).then(r => {
+        return Promise.all(parameterDecoders.map(p => p.createParameter(context, routeData))).then(r => {
             parameters = r;
             let actionResult = action.apply(controller, parameters);
             let p = actionResult as Promise<any>;

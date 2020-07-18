@@ -51,7 +51,7 @@ export function createequestProcessorConfigs(settings: Pick<Settings, "controlle
 
     let mvcConfig: MVCConfig = {
         controllersDirecotry,
-        serverContext: { data: settings.serverContextData, logLevel: settings.logLevel || "all" }
+        serverContextData: settings.serverContextData,//{ data: settings.serverContextData, logLevel: settings.logLevel || "all" },
     }
     requestProcessorConfigs[MVCRequestProcessor.name] = mvcConfig;
 

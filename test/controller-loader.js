@@ -12,6 +12,7 @@ describe("controller-loader", function () {
     it("find controller", function () {
         let r1 = controllerLoader.findAction(actionPaths_1.actionPaths.home.index);
         assert.notEqual(r1, null);
+        assert.notEqual(r1.controllerPhysicalPath || "", "");
         let r2 = controllerLoader.findAction(`${actionPaths_1.actionPaths.home.product}/1`);
         assert.notEqual(r2, null);
         let r3 = controllerLoader.findAction(`${actionPaths_1.actionPaths.home.product}`);

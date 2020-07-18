@@ -1,6 +1,6 @@
 declare module "zombie" {
     class Browser {
-        visit(url: string): void;
+        visit(url: string): Promise<void>;
         source: string;
         response: {
             headers: Headers

@@ -1,15 +1,16 @@
 import http = require('http');
 import { LogLevel } from "./logger";
-import { VirtualDirectory, FileProcessor } from 'maishu-node-web-server';
+import { VirtualDirectory, FileProcessor, RequestContext } from 'maishu-node-web-server';
 import { RequestResultTransform } from 'maishu-node-web-server';
 import { ProxyItem } from 'maishu-node-web-server';
 
-export interface ServerContext<T = {}> {
-    // controllerDefines: ControllerInfo[],
-    // settings: Settings,
+export interface MVCRequestContext<T = {}> extends RequestContext {
     data?: T,
-    logLevel: LogLevel
 }
+
+export type ServerContext<T = {}> = MVCRequestContext<T>;
+
+
 
 // export interface ProxyItem {
 //     targetUrl: string,
@@ -44,7 +45,8 @@ export interface Settings {
 export interface ControllerInfo {
     type: ControllerType<any>,
     path: string,
-    actionDefines: ActionInfo[]
+    actionDefines: ActionInfo[],
+    physicalPath: string
 }
 
 export type ControllerType<T> = { new(): T }
@@ -57,5 +59,5 @@ export interface ActionInfo {
 export type ActionPath = string | ((virtualPath: string) => object | null);
 
 export interface ActionResult {
-    execute(res: http.ServerResponse, req: http.IncomingMessage, serverContext: ServerContext): Promise<any>
+    execute(res: http.ServerResponse, req: http.IncomingMessage, context: MVCRequestContext): Promise<any>
 }

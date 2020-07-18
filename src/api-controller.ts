@@ -3,7 +3,8 @@ import { register } from "./attributes";
 import { ControllerType, ActionPath, ControllerInfo } from "./types";
 
 export type ActionInfo = {
-    controllerType: ControllerType<any>, memberName: string, actionPath: ActionPath
+    controllerType: ControllerType<any>, memberName: string, actionPath: ActionPath,
+    controllerPhysicalPath: string
 }
 
 export function createAPIControllerType(getActionInfos: () => ActionInfo[], serverContext: ControllerInfo[]) {
@@ -19,7 +20,7 @@ export function createAPIControllerType(getActionInfos: () => ActionInfo[], serv
             return r;
         }
     }
-    register(APIControllerType, serverContext).action("list", ["/api/action/list"]);
+    register(APIControllerType, serverContext, __filename).action("list", ["/api/action/list"]);
 
     return APIControllerType;
 }
