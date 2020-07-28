@@ -9,7 +9,3 @@ declare module 'is-class' {
     function isClass(obj: Function): boolean;
     export = isClass;
 }
-
-declare module "crossroads" {
-    
-}

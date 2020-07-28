@@ -1,6 +1,8 @@
 import { ControllerType } from "./types";
 
-export function postDataNotJSON(data: string): Error {
+
+
+export function postDataNotJSON(data: string) {
     let msg = `提交的数据不是 JSON 格式。提交数据为：${data}`;
     let err = new Error(msg);
     err.name = postDataNotJSON.name
@@ -10,6 +12,12 @@ export function postDataNotJSON(data: string): Error {
 export function arugmentNull(name: string) {
     let error = new Error(`Argument ${name} can not be null or empty.`)
     error.name = arugmentNull.name
+    return error
+}
+
+export function arugmentFieldNull(fieldName: string, argumentName: string) {
+    let error = new Error(`Field '${fieldName}' of argument ${argumentName} can not be null or empty.`)
+    error.name = arugmentFieldNull.name;
     return error
 }
 

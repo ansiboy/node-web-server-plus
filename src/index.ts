@@ -1,8 +1,8 @@
-export { startServer } from './server';
-export { controller, action, register, createParameterDecorator, routeData, request, response, serverContext } from './attributes';
-export { ContentResult, RedirectResult, ProxyResut } from './action-results';
-export { Controller } from './controller';
-export { ActionResult, Settings, ServerContext, ProxyPipe } from './types';
-export { getLogger, LogLevel } from './logger';
-export { Logger } from "log4js";
-export { VirtualDirectory } from "maishu-node-static";
+export { controller, action, createParameterDecorator, routeData, request, response, serverContext } from "./attributes";
+export { startServer, } from "./server";
+export { Settings, ActionResult, ServerContext } from "./types";
+export { Controller } from "./controller";
+export { createVirtualDirecotry } from "./virtual-directory";
+export { ContentResult, RedirectResult, ProxyResut } from "./action-results";
+export { LogLevel, getLogger } from "./logger";
+export * from "maishu-node-web-server";

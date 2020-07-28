@@ -4,6 +4,7 @@ export let actionPaths = {
         test: "/Home/test",
         distributor: "/home/distributor",
         product: "/home/product",
-        redirect: "/home/d"
+        redirect: "/home/d",
+        content: "/home/content"
     }
 }

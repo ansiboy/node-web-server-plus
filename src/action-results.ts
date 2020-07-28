@@ -1,9 +1,8 @@
 import http = require('http');
 import { arugmentNull } from './errors';
-import { proxyRequest } from './server';
 import url = require('url');
-import { ActionResult, ServerContext } from './types';
-
+import * as errors from "./errors";
+import { RequestProcessor, RequestContext, RequestResult } from 'maishu-node-web-server';
 
 const encoding = 'UTF-8'
 export const contentTypes = {
@@ -11,14 +10,14 @@ export const contentTypes = {
     textPlain: `text/plain; charset=${encoding}`,
 }
 
-export type Headers = { [key: string]: string | string[] };
+export type Headers = { [key: string]: string };
 
-export class ContentResult implements ActionResult {
+export class ContentResult implements RequestProcessor {
     private headers: Headers;
     private content: string | Buffer;
     private statusCode: number;
 
-    constructor(content: string | Buffer, headers: Headers | string, statusCode?: number) {
+    constructor(content: string | Buffer, headers?: Headers | string, statusCode?: number) {
         if (content == null)
             throw arugmentNull('content')
 
@@ -27,42 +26,38 @@ export class ContentResult implements ActionResult {
             this.headers = { "content-type": headers };
         }
         else {
-            this.headers = headers;
+            this.headers = headers || {};
         }
         this.statusCode = statusCode || 200
     }
 
-    async execute(res: http.ServerResponse) {
-        for (let key in this.headers) {
-            res.setHeader(key, this.headers[key]);
-        }
-        res.statusCode = this.statusCode;
-        res.write(this.content)
+    execute(args: RequestContext): RequestResult {
+        return { statusCode: this.statusCode, headers: this.headers, content: this.content };
     }
 }
 
-export class RedirectResult implements ActionResult {
+export class RedirectResult implements RequestProcessor {
     private targetURL: string;
     constructor(targetURL: string) {
         this.targetURL = targetURL
     }
 
-    async execute(res: http.ServerResponse) {
-        res.writeHead(302, { 'Location': this.targetURL })
+    execute(): RequestResult {
+        // res.writeHead(302, { 'Location': this.targetURL })
+        return { statusCode: 302, headers: { "Location": this.targetURL }, content: "" };
     }
 }
 
-export class ProxyResut implements ActionResult {
+export class ProxyResut implements RequestProcessor {
     private targetURL: string;
-    private method: string | undefined;
 
     constructor(targetURL: string, method?: string) {
         this.targetURL = targetURL;
-        this.method = method;
     }
-    execute(res: http.ServerResponse, req: http.IncomingMessage, serverContext: ServerContext) {
+    async execute(args: RequestContext) {
         let targetURL = this.targetURL;
         let isFullUrl = !targetURL.endsWith("/");
+        let req = args.req;
         if (req.url && isFullUrl == false) {
             let u = url.parse(req.url);
             if (targetURL.endsWith("/")) {
@@ -71,7 +66,70 @@ export class ProxyResut implements ActionResult {
             targetURL = targetURL + u.path;
         }
 
-        return proxyRequest(targetURL, req, res, serverContext, this.method);
+        return proxyRequest(targetURL, args.req, args.res, {}, args.req.method);
     }
 
+}
+
+function proxyRequest(targetUrl: string, req: http.IncomingMessage, res: http.ServerResponse,
+    headers: http.IncomingMessage["headers"], method?: string): Promise<RequestResult> {
+    return new Promise<RequestResult>(function (resolve, reject) {
+        headers = Object.assign({}, req.headers, headers || {});
+        // headers = Object.assign(req.headers, headers);
+        //=====================================================
+        if (headers.host) {
+            headers["delete-host"] = headers.host;
+            // 在转发请求到 nginx 服务器,如果有 host 字段,转发失败
+            delete headers.host;
+        }
+
+        //=====================================================
+        let clientRequest = http.request(targetUrl,
+            {
+                method: method || req.method,
+                headers: headers, timeout: 2000,
+            },
+            function (response) {
+                for (var key in response.headers) {
+                    res.setHeader(key, response.headers[key] || '');
+                }
+                res.statusCode = response.statusCode || 200;
+                res.statusMessage = response.statusMessage || '';
+
+                let b = Buffer.from([]);
+
+                response.on("data", (data) => {
+                    b = Buffer.concat([b, data]);
+                });
+
+                response.on("end", () => {
+                    resolve({ content: b });
+                });
+                response.on("error", err => reject(err));
+                response.on("close", () => {
+                    reject(errors.connectionClose())
+                });
+            }
+        );
+
+        if (!req.readable) {
+            reject(errors.requestNotReadable());
+        }
+
+
+        req.on('data', (data) => {
+            clientRequest.write(data);
+        }).on('end', () => {
+            clientRequest.end();
+        }).on('error', (err) => {
+            clientRequest.end();
+            reject(err);
+        });
+
+        clientRequest.on("error", function (err) {
+            // let logger = getLogger(LOG_CATEGORY_NAME, serverContext.logLevel);
+            // logger.error(err);
+            reject(err);
+        });
+    })
 }

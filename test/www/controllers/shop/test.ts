@@ -1,4 +1,4 @@
-import { controller, action } from '../../../../dist/index'
+import { controller, action } from '../../../../out/'
 @controller()
 export default class TestController {
     @action("/shop/test")

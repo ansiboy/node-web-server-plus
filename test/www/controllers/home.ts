@@ -1,7 +1,7 @@
-import { controller, action, createParameterDecorator, formData } from '../../../dist/index'
+import { controller, action, createParameterDecorator, routeData } from '../../../out'
 import { ConnectionOptions } from 'tls';
 import { actionPaths } from '../actionPaths';
-import { routeData } from '../../../dist/index';
+import { ContentResult } from '../../../out/action-results';
 
 // function connection() {
 
@@ -25,7 +25,7 @@ let connection = createParameterDecorator(
 
 @controller()
 /** 主页模块 */
-class HomeController {
+export class HomeController {
 
     /**
      * 首页
@@ -33,12 +33,12 @@ class HomeController {
      * @param data 表单数据
      */
     @action(actionPaths.home.index)
-    index(@connection conn: ConnectionOptions, @formData data: Object) {
+    index(@connection conn: ConnectionOptions, @routeData data: Object) {
         return 'home index'
     }
 
     @action()
-    test(@formData { arg }) {
+    test(@routeData { arg }) {
         return arg
     }
 
@@ -48,14 +48,17 @@ class HomeController {
     }
 
     @action(`${actionPaths.home.product}/:id`)
-    product() {
-        return {}
+    product(@routeData { id }) {
+        return { id }
     }
 
     @action(`${actionPaths.home.redirect}/:module(/*)`)
     redirect(@routeData data) {
         return data
     }
-}
 
-exports.default = HomeController
+    @action(actionPaths.home.content)
+    content() {
+        return new ContentResult("Hello World", {})
+    }
+}

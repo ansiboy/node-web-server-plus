@@ -5,7 +5,7 @@ import "reflect-metadata";
 import http = require('http')
 import querystring = require('querystring');
 import url = require('url');
-import { ServerContext, ActionPath } from './types';
+import { ActionPath, MVCRequestContext } from './types';
 import { ActionInfo, ControllerType, ControllerInfo } from './types';
 
 export let metaKeys = {
@@ -16,9 +16,7 @@ export let metaKeys = {
 export interface ActionParameterDecoder<T> {
     parameterIndex: number,
     createParameter: (
-        req: http.IncomingMessage,
-        res: http.ServerResponse,
-        context: ServerContext,
+        context: MVCRequestContext,
         routeData: { [key: string]: string } | null,
     ) => Promise<T>,
     disposeParameter?: (parameter: T) => void
@@ -26,24 +24,25 @@ export interface ActionParameterDecoder<T> {
 
 
 export let CONTROLLER_REGISTER = "$register";
-
+export let CONTROLLER_PHYSICAL_PATH = "$physical_path";
+export type RegisterCotnroller = (controllerInfos: ControllerInfo[], controllerPhysicalPath: string) => void;
 /**
  * 标记一个类是否为控制器
  * @param path 路径
  */
 export function controller<T extends { new(...args: any[]): any }>(path?: string) {
     return function (constructor: T) {
-        constructor.prototype[CONTROLLER_REGISTER] = function (serverContext: ServerContext) {
-            let controllerInfo = registerController(constructor, serverContext, path)
+        let func: RegisterCotnroller = function (controllerInfos: ControllerInfo[], controllerPhysicalPath: string) {
+            let controllerInfo = registerController(constructor, controllerInfos, controllerPhysicalPath, path)
             let propertyNames = Object.getOwnPropertyNames(constructor.prototype)
             for (let i = 0; i < propertyNames.length; i++) {
                 let metadata: ActionInfo = Reflect.getMetadata(metaKeys.action, constructor, propertyNames[i])
                 if (metadata) {
-                    registerAction(controllerInfo, metadata.memberName, metadata.paths)
+                    registerAction(controllerInfo, metadata.memberName, metadata.paths, controllerPhysicalPath)
                 }
             }
         }
-
+        constructor.prototype[CONTROLLER_REGISTER] = func;
     }
 }
 
@@ -65,11 +64,11 @@ export function action(...paths: ActionPath[]) {
     };
 }
 
-export function register<T>(type: ControllerType<T>, serverContext: ServerContext, path?: string) {
-    let controllerDefine = registerController(type, serverContext, path)
+export function register<T>(type: ControllerType<T>, serverContext: ControllerInfo[], controllerPhysicalPath: string, path?: string) {
+    let controllerDefine = registerController(type, serverContext, controllerPhysicalPath, path)
     let obj = {
         action(member: keyof T, paths?: string[]) {
-            registerAction(controllerDefine, member, paths || [])
+            registerAction(controllerDefine, member, paths || [], controllerPhysicalPath)
             return obj
         }
     }
@@ -77,7 +76,7 @@ export function register<T>(type: ControllerType<T>, serverContext: ServerContex
     return obj
 }
 
-function registerController<T>(type: ControllerType<T>, serverContext: ServerContext, path?: string) {
+function registerController<T>(type: ControllerType<T>, controllerDefines: ControllerInfo[], controllerPhysicalPath: string, path?: string) {
     if (!path) {
         path = type.name.endsWith(controllerSuffix) ?
             type.name.substring(0, type.name.length - controllerSuffix.length) : type.name
@@ -86,18 +85,18 @@ function registerController<T>(type: ControllerType<T>, serverContext: ServerCon
     if (path && path[0] != '/')
         path = '/' + path
 
-    serverContext.controllerDefines = serverContext.controllerDefines || [];
-    let controllerDefine = serverContext.controllerDefines.filter(o => o.type == type)[0]
+    // serverContext.controllerDefines = serverContext.controllerDefines || [];
+    let controllerDefine = controllerDefines.filter(o => o.type == type)[0]
     if (controllerDefine != null)
         throw errors.controlRegister(type)
 
-    controllerDefine = { type: type, actionDefines: [], path }
-    serverContext.controllerDefines.push(controllerDefine)
+    controllerDefine = { type: type, actionDefines: [], path, physicalPath: controllerPhysicalPath };
+    controllerDefines.push(controllerDefine)
 
     return controllerDefine
 }
 
-function registerAction<T>(controllerDefine: ControllerInfo, memberName: keyof T, paths: ActionPath[]) {
+function registerAction<T>(controllerDefine: ControllerInfo, memberName: keyof T, paths: ActionPath[], controllerPhysicalPath: string) {
     if (controllerDefine == null)
         throw errors.arugmentNull('controllerDefine')
 
@@ -106,7 +105,7 @@ function registerAction<T>(controllerDefine: ControllerInfo, memberName: keyof T
 }
 
 export function createParameterDecorator<T>(
-    createParameter: (req: http.IncomingMessage, res: http.ServerResponse, context: ServerContext, routeData: { [key: string]: string } | null) => Promise<T>,
+    createParameter: (context: MVCRequestContext, routeData: { [key: string]: string } | null) => Promise<T>,
     disposeParameter?: (parameter: T) => void) {
     return function (target: any, propertyKey: string | symbol, parameterIndex: number) {
         let value: ActionParameterDecoder<T>[] = Reflect.getMetadata(metaKeys.parameter, target, propertyKey) || []
@@ -189,15 +188,15 @@ export let routeData = (function () {
         return obj;
     }
 
-    return createParameterDecorator<any>(async (req: http.IncomingMessage, res, context, routeData?: { [key: string]: string } | null) => {
+    return createParameterDecorator<any>(async (context, routeData?: { [key: string]: string } | null) => {
         let obj: any = routeData = routeData || {}
 
-        let queryData = getQueryObject(req);
+        let queryData = getQueryObject(context.req);
         console.assert(queryData != null)
         obj = Object.assign(obj, queryData);
 
-        if (req.method != 'GET') {
-            let data = await getPostObject(req);
+        if (context.req.method != 'GET') {
+            let data = await getPostObject(context.req);
             obj = Object.assign(obj, data)
         }
 
@@ -215,19 +214,19 @@ export let request = createParameterDecorator(
 )
 
 export let response = createParameterDecorator(
-    async (req, res: http.ServerResponse) => {
-        return res;
+    async (context) => {
+        return context.res;
     }
 )
 
 export let requestHeaders = createParameterDecorator(
-    async (req) => {
-        return req.headers;
+    async (context) => {
+        return context.req.headers;
     }
 )
 
 export let serverContext = createParameterDecorator(
-    async (req, res, context: ServerContext) => {
+    async (context: MVCRequestContext) => {
         return context;
     }
 )
