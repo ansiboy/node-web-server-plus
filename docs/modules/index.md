@@ -11,6 +11,5 @@ nodejs 的 MVC 框架。使用 typescript 开发，需要配合 typescript 使�
 <menu>
 
 1. [快速入门](#quick-start)
-1. [使用手册](#manual)
 
 </menu>
