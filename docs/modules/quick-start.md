@@ -28,6 +28,18 @@
 
    <code path="../web/controllers/home.ts"></code>
 
+1. tsconfig.json 文件
+
+   ```json
+   {
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "experimentalDecorators": true
+    }
+   }
+   ```
+
 1. 启动程序
 
    把 ts 文件转换为 js 文件，输入命令启动程序
