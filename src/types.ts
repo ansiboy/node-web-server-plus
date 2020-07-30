@@ -32,6 +32,10 @@ export interface Settings {
     controllerDirectory?: string | VirtualDirectory,
     staticRootDirectory?: string | VirtualDirectory,
     proxy?: { [path_pattern: string]: string | ProxyItem },
+
+    /** 项目根目录 */
+    rootPath: string,
+
     serverName?: string,
     /** 设置默认的 Http Header */
     headers?: { [name: string]: string }

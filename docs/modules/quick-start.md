@@ -1,4 +1,4 @@
-## 快速入门
+# 快速入门
 
 1. 创建 nodejs 项目文件夹，安装 node-mvc
 
@@ -20,13 +20,13 @@
 
 1. 创建 index.ts 文件
 
-   <code path="../web/index.ts"></code>
+   <code path="../sample-codes/web/index.ts"></code>
 
 1. 创建 controllers 文件夹
 
    在 controllers 文件夹下创建 home.ts 文件
 
-   <code path="../web/controllers/home.ts"></code>
+   <code path="../sample-codes/web/home.ts"></code>
 
 1. tsconfig.json 文件
 

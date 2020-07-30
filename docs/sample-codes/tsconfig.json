@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "experimentalDecorators": true,
+        "baseUrl": "./",
+        "paths": {
+            "maishu-node-mvc": [
+                "../../out/index.d.ts"
+            ]
+        }
+    },
+}

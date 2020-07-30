@@ -1,11 +1,31 @@
 import { Settings } from "./types";
 import {
     WebServer, Settings as WebServerSettings, VirtualDirectory, ProxyConfig, ProxyRequestProcessor, textFileProcessor,
-    StaticFileProcessorConfig, StaticFileRequestProcessor
+    StaticFileProcessorConfig, StaticFileRequestProcessor, pathConcat
 } from "maishu-node-web-server";
 import { MVCRequestProcessor, MVCConfig, HeadersRequestProcessor, Headers } from "./request-processors";
+import * as fs from "fs";
+import * as errors from "./errors";
+
 
 export function startServer(settings: Settings) {
+
+    if (!settings.rootPath && !fs.existsSync(settings.rootPath))
+        throw errors.physicalPathNotExists(settings.rootPath);
+
+    if (settings.staticRootDirectory == null && settings.rootPath != null) {
+        let staticPath = pathConcat(settings.rootPath, "static");
+        if (fs.existsSync(staticPath)) {
+            settings.staticRootDirectory = pathConcat(settings.rootPath, "static");
+        }
+    }
+
+    if (settings.controllerDirectory == null && settings.rootPath != null) {
+        let controllerPath = pathConcat(settings.rootPath, "controllers");
+        if (fs.existsSync(controllerPath)) {
+            settings.controllerDirectory = pathConcat(settings.rootPath, "controllers");
+        }
+    }
 
     let r: WebServerSettings = {
         port: settings.port,
