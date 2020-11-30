@@ -1,8 +1,5 @@
 import http = require('http');
-import { LogLevel } from "./logger";
-import { VirtualDirectory, FileProcessor, RequestContext } from 'maishu-node-web-server';
-import { RequestResultTransform } from 'maishu-node-web-server';
-import { ProxyItem } from 'maishu-node-web-server';
+import { VirtualDirectory, FileProcessor, RequestContext, LogLevel, ProxyItem, ContentTransformFunc } from 'maishu-node-web-server';
 
 export interface MVCRequestContext<T = {}> extends RequestContext {
     data?: T,
@@ -43,7 +40,7 @@ export interface Settings {
     logLevel?: LogLevel,
     serverContextData?: any,
     fileProcessors?: { [fileExtention: string]: FileProcessor },
-    requestResultTransforms?: RequestResultTransform[],
+    requestResultTransforms?: ContentTransformFunc[],
 }
 
 export interface ControllerInfo {

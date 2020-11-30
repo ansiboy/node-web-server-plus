@@ -1,26 +1,24 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 // const { ControllerLoader } = require("../dist/controller-loader");
-const controller_loader_1 = require("../out/controller-loader");
-const assert = require("assert");
-const path = require("path");
-const actionPaths_1 = require("./www/actionPaths");
-const maishu_node_web_server_1 = require("maishu-node-web-server");
-describe("controller-loader", function () {
-    let dir = new maishu_node_web_server_1.VirtualDirectory(path.join(__dirname, "www/controllers"));
-    let controllerLoader = new controller_loader_1.ControllerLoader(dir);
-    it("find controller", function () {
-        let r1 = controllerLoader.findAction(actionPaths_1.actionPaths.home.index);
-        assert.notEqual(r1, null);
-        assert.notEqual(r1.controllerPhysicalPath || "", "");
-        let r2 = controllerLoader.findAction(`${actionPaths_1.actionPaths.home.product}/1`);
-        assert.notEqual(r2, null);
-        let r3 = controllerLoader.findAction(`${actionPaths_1.actionPaths.home.product}`);
-        assert.equal(r3, null);
-        let r4 = controllerLoader.findAction(`${actionPaths_1.actionPaths.home.distributor}/a`);
-        assert.notEqual(r4, null);
-    });
-});
+// import { ControllerLoader } from "../out";
+// import * as assert from "assert";
+// import * as  path from "path";
+// import { actionPaths } from "./www/actionPaths";
+// import { VirtualDirectory } from "maishu-node-web-server";
+// describe("controller-loader", function () {
+//     let dir = new VirtualDirectory(path.join(__dirname, "www/controllers"));
+//     let controllerLoader = new ControllerLoader(dir);
+//     it("find controller", function () {
+//         let r1 = controllerLoader.findAction(actionPaths.home.index);
+//         assert.notEqual(r1, null);
+//         assert.notEqual(r1.controllerPhysicalPath || "", "");
+//         let r2 = controllerLoader.findAction(`${actionPaths.home.product}/1`);
+//         assert.notEqual(r2, null);
+//         let r3 = controllerLoader.findAction(`${actionPaths.home.product}`);
+//         assert.equal(r3, null);
+//         let r4 = controllerLoader.findAction(`${actionPaths.home.distributor}/a`)
+//         assert.notEqual(r4, null);
+//     })
+// })
 // describe("controller-loader", function () {
 //     let controllerPath = path.join(__dirname, "www/controllers");
 //     assert.ok(fs.existsSync(controllerPath));

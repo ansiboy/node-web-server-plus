@@ -8,7 +8,8 @@
     "dependencies": {
         "is-class": "0.0.5",
         "log4js": "^6.1.2",
-        "maishu-node-web-server": "^1.5.0",
+        "maishu-node-web-server": "^1.8.1",
+        "maishu-node-web-server-mvc": "^1.1.0",
         "mime": "^2.4.4",
         "reflect-metadata": "^0.1.13",
         "remove": "^0.1.5",
