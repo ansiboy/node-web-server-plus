@@ -1,8 +1,8 @@
 import { Settings } from "./types";
 import {
-    WebServer, Settings as WebServerSettings, VirtualDirectory, ProxyConfig, pathConcat, StaticFileProcessor, HeadersProcessor
+    WebServer, Settings as WebServerSettings, pathConcat, StaticFileProcessor, HeadersProcessor
 } from "maishu-node-web-server";
-// import { MVCRequestProcessor, MVCConfig, HeadersRequestProcessor, Headers } from "./request-processors";
+
 import * as fs from "fs";
 import * as errors from "./errors";
 import { MVCRequestProcessor } from "maishu-node-web-server-mvc";
@@ -33,8 +33,8 @@ export function startServer(settings: Settings) {
     }
 
     let server = new WebServer(r);
-    if (settings.requestResultTransforms)
-        server.contentTransforms.push(...settings.requestResultTransforms);
+    // if (settings.requestResultTransforms)
+    //     server.contentTransforms.push(...settings.requestResultTransforms);
 
     if (settings.controllerDirectory) {
         var mvcProcessor = new MVCRequestProcessor({

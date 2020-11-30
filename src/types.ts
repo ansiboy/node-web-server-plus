@@ -39,8 +39,8 @@ export interface Settings {
     virtualPaths?: { [virtualPath: string]: string },
     logLevel?: LogLevel,
     serverContextData?: any,
-    fileProcessors?: { [fileExtention: string]: FileProcessor },
-    requestResultTransforms?: ContentTransformFunc[],
+    // fileProcessors?: { [fileExtention: string]: FileProcessor },
+    // requestResultTransforms?: ContentTransformFunc[],
 }
 
 export interface ControllerInfo {
