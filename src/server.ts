@@ -1,6 +1,6 @@
 import { Settings } from "./types";
 import {
-    WebServer, Settings as WebServerSettings, pathConcat, StaticFileProcessor, HeadersProcessor
+    WebServer, Settings as WebServerSettings, pathConcat, StaticFileProcessor, HeadersProcessor, VirtualDirectory
 } from "maishu-node-web-server";
 
 import * as fs from "fs";
@@ -9,21 +9,23 @@ import { MVCRequestProcessor } from "maishu-node-web-server-mvc";
 
 export function startServer(settings: Settings) {
 
-    if (!settings.rootPath && !fs.existsSync(settings.rootPath))
-        throw errors.physicalPathNotExists(settings.rootPath);
+    if (settings.rootDirectory == null)
+        throw errors.arugmentFieldNull("rootDirectory", "settings");
 
-    if (settings.staticRootDirectory == null && settings.rootPath != null) {
-        let staticPath = pathConcat(settings.rootPath, "static");
-        if (fs.existsSync(staticPath)) {
-            settings.staticRootDirectory = pathConcat(settings.rootPath, "static");
-        }
+    if (typeof settings.rootDirectory == "string" && !fs.existsSync(settings.rootDirectory))
+        throw errors.physicalPathNotExists(settings.rootDirectory);
+
+    var rootDirectory = typeof settings.rootDirectory == "string" ? new VirtualDirectory(settings.rootDirectory) : settings.rootDirectory;
+    if (settings.staticRootDirectory == null) {
+        let staticRootDirectory = rootDirectory.findDirectory("static");
+        if (staticRootDirectory)
+            settings.staticRootDirectory = staticRootDirectory;
     }
 
-    if (settings.controllerDirectory == null && settings.rootPath != null) {
-        let controllerPath = pathConcat(settings.rootPath, "controllers");
-        if (fs.existsSync(controllerPath)) {
-            settings.controllerDirectory = pathConcat(settings.rootPath, "controllers");
-        }
+    if (settings.controllerDirectory == null) {
+        let controllerDirectory = rootDirectory.findDirectory("controllers");
+        if (controllerDirectory)
+            settings.controllerDirectory = controllerDirectory;
     }
 
     let r: WebServerSettings = {
@@ -61,10 +63,11 @@ export function startServer(settings: Settings) {
 
     if (settings.virtualPaths) {
         for (let virtualPath in settings.virtualPaths) {
+            let physicalPath = settings.virtualPaths[virtualPath];
             if (virtualPath[0] != "/")
                 virtualPath = "/" + virtualPath;
 
-            server.websiteDirectory.setPath(virtualPath, settings.virtualPaths[virtualPath]);
+            server.websiteDirectory.setPath(virtualPath, physicalPath);
         }
     }
 

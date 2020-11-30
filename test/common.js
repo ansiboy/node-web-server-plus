@@ -7,7 +7,7 @@ const out_1 = require("../out");
 exports.websitePhysicalPath = path.join(__dirname, "www");
 function createWebserver(settings) {
     let defaultSettings = {
-        rootPath: __dirname,
+        rootDirectory: __dirname,
         staticRootDirectory: path.join(__dirname, "www"),
         controllerDirectory: path.join(__dirname, "www", "controllers"),
     };

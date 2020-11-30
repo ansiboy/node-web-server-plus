@@ -6,7 +6,7 @@ import { startServer, Settings } from "../out";
 export let websitePhysicalPath = path.join(__dirname, "www");
 export function createWebserver(settings?: Partial<Settings>) {
     let defaultSettings: Settings = {
-        rootPath: __dirname,
+        rootDirectory: __dirname,
         staticRootDirectory: path.join(__dirname, "www"),
         controllerDirectory: path.join(__dirname, "www", "controllers"),
     }
