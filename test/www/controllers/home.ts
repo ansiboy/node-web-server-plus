@@ -1,7 +1,6 @@
-import { controller, action, createParameterDecorator, routeData } from '../../../out'
+import { controller, action, createParameterDecorator, routeData, ContentResult } from '../../../out'
 import { ConnectionOptions } from 'tls';
 import { actionPaths } from '../actionPaths';
-import { ContentResult } from '../../../out/action-results';
 
 // function connection() {
 

@@ -1,4 +1,4 @@
-import Browser = require('zombie');
+import Browser = require("zombie");
 import * as fs from "fs";
 import * as path from "path";
 import { startServer, Settings } from "../out";

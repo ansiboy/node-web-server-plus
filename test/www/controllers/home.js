@@ -23,7 +23,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const out_1 = require("../../../out");
 const actionPaths_1 = require("../actionPaths");
-const action_results_1 = require("../../../out/action-results");
 // function connection() {
 // }
 // function createParameterDecorator<T>(createParameter: () => T, disposeParameter: (parameter: T) => void) {
@@ -62,7 +61,7 @@ class HomeController {
         return data;
     }
     content() {
-        return new action_results_1.ContentResult("Hello World", {});
+        return new out_1.ContentResult("Hello World", {});
     }
 };
 __decorate([

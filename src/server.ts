@@ -1,11 +1,12 @@
 import { Settings } from "./types";
 import {
-    WebServer, Settings as WebServerSettings, pathConcat, StaticFileProcessor, HeadersProcessor, VirtualDirectory
+    WebServer, Settings as WebServerSettings, StaticFileProcessor, HeadersProcessor, VirtualDirectory
 } from "maishu-node-web-server";
 
 import * as fs from "fs";
 import * as errors from "./errors";
 import { MVCRequestProcessor } from "maishu-node-web-server-mvc";
+import { JavaScriptProcessor } from "./processors/java-script-processor";
 
 export function startServer(settings: Settings) {
 
@@ -35,18 +36,20 @@ export function startServer(settings: Settings) {
     }
 
     let server = new WebServer(r);
-    // if (settings.requestResultTransforms)
-    //     server.contentTransforms.push(...settings.requestResultTransforms);
 
+
+    let staticFileProcessor = server.requestProcessors.filter(o => o instanceof StaticFileProcessor)[0];
+    console.assert(staticFileProcessor != null, "Can not find static file processor");
+    let staticFileProcessorIndex = server.requestProcessors.indexOf(staticFileProcessor);
+
+    var javaScriptProcessor = new JavaScriptProcessor();
+    server.requestProcessors.splice(staticFileProcessorIndex, 0, javaScriptProcessor);
+    
     if (settings.controllerDirectory) {
-        var mvcProcessor = new MVCRequestProcessor({
+        let mvcProcessor = new MVCRequestProcessor({
             controllersDirectory: settings.controllerDirectory,
             serverContextData: settings.serverContextData,
         });
-
-        var staticFileProcessor = server.requestProcessors.filter(o => o instanceof StaticFileProcessor)[0];
-        console.assert(staticFileProcessor != null, "Can not find static file processor");
-        var staticFileProcessorIndex = server.requestProcessors.indexOf(staticFileProcessor);
         server.requestProcessors.splice(staticFileProcessorIndex, 0, mvcProcessor);
     }
 
@@ -74,42 +77,4 @@ export function startServer(settings: Settings) {
     return server;
 }
 
-
-// export let defaultRequestProcessorTypes = [HeadersRequestProcessor, MVCRequestProcessor, ...WebServer.defaultRequestProcessorTypes];
-// export function createequestProcessorConfigs(settings: Pick<Settings, "controllerDirectory" | "proxy" | "fileProcessors" | "headers" | "logLevel" | "serverContextData">) {
-//     let requestProcessorConfigs = {} as any;
-//     let proxyConfig: ProxyConfig = {
-//         proxyTargets: settings.proxy || {},
-//     };
-//     requestProcessorConfigs[ProxyRequestProcessor.name] = proxyConfig;
-
-//     let controllersDirecotry: VirtualDirectory;
-//     if (settings.controllerDirectory == null) {
-//         controllersDirecotry = new VirtualDirectory(__dirname);
-//     }
-//     else if (typeof settings.controllerDirectory == "string") {
-//         controllersDirecotry = new VirtualDirectory(settings.controllerDirectory);
-//     }
-//     else {
-//         controllersDirecotry = settings.controllerDirectory;
-//     }
-
-//     let mvcConfig: MVCConfig = {
-//         controllersDirecotry,
-//         serverContextData: settings.serverContextData,//{ data: settings.serverContextData, logLevel: settings.logLevel || "all" },
-//     }
-//     requestProcessorConfigs[MVCRequestProcessor.name] = mvcConfig;
-
-//     let headers: Headers = settings.headers || {};
-//     requestProcessorConfigs[HeadersRequestProcessor.name] = headers;
-
-//     let staticConfig: StaticFileProcessorConfig = {
-//         fileProcessors: Object.assign({
-//             "less": textFileProcessor
-//         }, settings.fileProcessors)
-//     }
-//     requestProcessorConfigs[StaticFileRequestProcessor.name] = staticConfig;
-
-//     return requestProcessorConfigs;
-// }
 

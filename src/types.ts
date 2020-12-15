@@ -1,5 +1,5 @@
 import http = require('http');
-import { VirtualDirectory, FileProcessor, RequestContext, LogLevel, ProxyItem, ContentTransformFunc } from 'maishu-node-web-server';
+import { VirtualDirectory, RequestContext, Settings as WebServerSettings } from 'maishu-node-web-server';
 
 export interface MVCRequestContext<T = {}> extends RequestContext {
     data?: T,
@@ -7,41 +7,15 @@ export interface MVCRequestContext<T = {}> extends RequestContext {
 
 export type ServerContext<T = {}> = MVCRequestContext<T>;
 
-
-
-// export interface ProxyItem {
-//     targetUrl: string,
-//     rewrite?: [string, string],
-//     headers?: { [name: string]: string } | ((req: http.IncomingMessage) => { [name: string]: string } | Promise<{ [name: string]: string }>),
-
-// }
-
-
-// export interface ProxyPipe {
-//     onRequest?: (args: { req: http.IncomingMessage }, data: Buffer) => Promise<Buffer | null | undefined | void>,
-//     onResponse?: (args: { req: http.IncomingMessage, res: http.IncomingMessage }, data: Buffer) => Promise<Buffer | null | undefined | void>,
-//     next?: ProxyPipe,
-// }
-
-export interface Settings {
-    port?: number,
-    bindIP?: string,
-    controllerDirectory?: string | VirtualDirectory,
+export type Settings = WebServerSettings & {
     staticRootDirectory?: string | VirtualDirectory,
-    proxy?: { [path_pattern: string]: string | ProxyItem },
-
+    controllerDirectory?: string | VirtualDirectory,
     /** 项目根目录 */
-    rootDirectory: string | VirtualDirectory,
-
-    serverName?: string,
-    /** 设置默认的 Http Header */
-    headers?: { [name: string]: string }
-    virtualPaths?: { [virtualPath: string]: string },
-    logLevel?: LogLevel,
+    rootDirectory?: string | VirtualDirectory,
     serverContextData?: any,
-    // fileProcessors?: { [fileExtention: string]: FileProcessor },
-    // requestResultTransforms?: ContentTransformFunc[],
-}
+    headers?: { [name: string]: string },
+    virtualPaths?: { [virtualPath: string]: string },
+};
 
 export interface ControllerInfo {
     type: ControllerType<any>,
