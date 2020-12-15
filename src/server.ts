@@ -7,6 +7,7 @@ import * as fs from "fs";
 import * as errors from "./errors";
 import { MVCRequestProcessor } from "maishu-node-web-server-mvc";
 import { JavaScriptProcessor } from "./processors/java-script-processor";
+import { Json5Processor } from "./processors/json5-processor";
 
 export function startServer(settings: Settings) {
 
@@ -44,7 +45,10 @@ export function startServer(settings: Settings) {
 
     var javaScriptProcessor = new JavaScriptProcessor();
     server.requestProcessors.splice(staticFileProcessorIndex, 0, javaScriptProcessor);
-    
+
+    var json5Processor = new Json5Processor();
+    server.requestProcessors.splice(staticFileProcessorIndex, 0, json5Processor);
+
     if (settings.controllerDirectory) {
         let mvcProcessor = new MVCRequestProcessor({
             controllersDirectory: settings.controllerDirectory,
