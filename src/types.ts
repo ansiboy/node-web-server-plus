@@ -1,4 +1,4 @@
-import http = require('http');
+import * as http from 'http';
 import { VirtualDirectory, RequestContext, Settings as WebServerSettings } from 'maishu-node-web-server';
 
 export interface MVCRequestContext<T = {}> extends RequestContext {

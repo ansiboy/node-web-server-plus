@@ -1,6 +1,6 @@
-import { createWebserver, createBrowser } from "./common"
-import { actionPaths } from "./www/actionPaths";
-import { HomeController } from "./www/controllers/home";
+import { createWebserver, createBrowser } from "./common.js"
+import { actionPaths } from "./www/actionPaths.js";
+import { HomeController } from "./www/controllers/home.js";
 import * as assert from "assert";
 
 describe("action results", function () {

@@ -1,4 +1,4 @@
-import { createWebserver, createBrowser } from "./common"
+import { createWebserver, createBrowser } from "./common.js"
 import * as assert from "assert";
 
 describe("start server", function () {

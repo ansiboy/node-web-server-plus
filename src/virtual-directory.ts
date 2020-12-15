@@ -1,4 +1,4 @@
-import * as errors from "./errors";
+import * as errors from "./errors.js";
 import * as fs from "fs";
 import { VirtualDirectory, pathConcat } from "maishu-node-web-server";
 

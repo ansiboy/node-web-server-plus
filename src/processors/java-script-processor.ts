@@ -1,23 +1,25 @@
 import { RequestContext, RequestProcessor, RequestResult } from "maishu-node-web-server";
-import * as errors from "../errors";
+import * as errors from "../errors.js";
 import * as fs from "fs";
-import babel = require("@babel/core");
+import * as babel from "@babel/core";
 
 export class JavaScriptProcessor implements RequestProcessor {
 
-    private _babelOptions: { [key: string]: babel.TransformOptions } = {
-        "\S+.ts.js": {
+    babelOptions: { [key: string]: babel.TransformOptions } = {
+        "\\S+.ts.js": {
             plugins: [
                 "@babel/plugin-transform-typescript",
                 "@babel/plugin-transform-modules-amd"
             ]
         },
-        "\S+.js": {
+        "\\S+.js": {
             plugins: [
                 "@babel/plugin-transform-modules-amd"
             ]
         }
     };
+
+    skipPaths = ["\\S+node_modules\\S+", "\\S+lib\\S+"];
 
     async execute(ctx: RequestContext): Promise<RequestResult | null> {
         if (ctx.virtualPath.endsWith(".js") == false)
@@ -28,19 +30,27 @@ export class JavaScriptProcessor implements RequestProcessor {
             virtualPath = virtualPath.substr(0, virtualPath.length - 3);
         }
 
-        let physicalPath = ctx.rootDirectory.findFile(ctx.virtualPath);
+        let physicalPath = ctx.rootDirectory.findFile(virtualPath);
         if (physicalPath == null)
-            throw errors.pageNotFound(ctx.virtualPath);
+            throw errors.pageNotFound(virtualPath);
 
         let buffer = fs.readFileSync(physicalPath);
         let code = buffer.toString();
         let option: babel.TransformOptions | undefined;
 
-        // 非 node_modules 的 js 才做转换
-        if (virtualPath.indexOf("node_modules") < 0) {
+        let skip = false;
+        for (let i = 0; i < this.skipPaths.length; i++) {
+            let regex = new RegExp(this.skipPaths[i]);
+            if (regex.test(ctx.virtualPath)) {
+                skip = true;
+                break;
+            }
+        }
+
+        if (!skip) {
             for (let key in this.babelOptions) {
                 let regex = new RegExp(key);
-                if (regex.test(virtualPath)) {
+                if (regex.test(ctx.virtualPath)) {
                     option = this.babelOptions[key];
                     break;
                 }
@@ -55,11 +65,4 @@ export class JavaScriptProcessor implements RequestProcessor {
         const encoding = 'UTF-8';
         return { content: code, headers: { "content-type": `application/x-javascript; charset=${encoding}` } };
     }
-
-    get babelOptions() {
-        return this._babelOptions;
-    }
-
-
-
 }

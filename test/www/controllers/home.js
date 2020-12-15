@@ -20,16 +20,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const out_1 = require("../../../out");
-const actionPaths_1 = require("../actionPaths");
+const out = __importStar(require("../../../out/index.js"));
+const actionPaths_js_1 = require("../actionPaths.js");
+const { controller, action, createParameterDecorator, routeData, ContentResult } = out;
 // function connection() {
 // }
 // function createParameterDecorator<T>(createParameter: () => T, disposeParameter: (parameter: T) => void) {
 //     return function (target: Object, propertyKey: string | symbol, parameterIndex: number) {
 //     }
 // }
-let connection = out_1.createParameterDecorator(function () {
+let connection = createParameterDecorator(function () {
     return __awaiter(this, void 0, void 0, function* () {
         debugger;
         return {};
@@ -61,51 +69,51 @@ class HomeController {
         return data;
     }
     content() {
-        return new out_1.ContentResult("Hello World", {});
+        return new ContentResult("Hello World", {});
     }
 };
 __decorate([
-    out_1.action(actionPaths_1.actionPaths.home.index),
-    __param(0, connection), __param(1, out_1.routeData),
+    action(actionPaths_js_1.actionPaths.home.index),
+    __param(0, connection), __param(1, routeData),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "index", null);
 __decorate([
-    out_1.action(),
-    __param(0, out_1.routeData),
+    action(),
+    __param(0, routeData),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "test", null);
 __decorate([
-    out_1.action(`${actionPaths_1.actionPaths.home.distributor}/*`),
+    action(`${actionPaths_js_1.actionPaths.home.distributor}/*`),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "distributor", null);
 __decorate([
-    out_1.action(`${actionPaths_1.actionPaths.home.product}/:id`),
-    __param(0, out_1.routeData),
+    action(`${actionPaths_js_1.actionPaths.home.product}/:id`),
+    __param(0, routeData),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "product", null);
 __decorate([
-    out_1.action(`${actionPaths_1.actionPaths.home.redirect}/:module(/*)`),
-    __param(0, out_1.routeData),
+    action(`${actionPaths_js_1.actionPaths.home.redirect}/:module(/*)`),
+    __param(0, routeData),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "redirect", null);
 __decorate([
-    out_1.action(actionPaths_1.actionPaths.home.content),
+    action(actionPaths_js_1.actionPaths.home.content),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], HomeController.prototype, "content", null);
 HomeController = __decorate([
-    out_1.controller()
+    controller()
     /** 主页模块 */
 ], HomeController);
 exports.HomeController = HomeController;

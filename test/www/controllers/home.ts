@@ -1,6 +1,9 @@
-import { controller, action, createParameterDecorator, routeData, ContentResult } from '../../../out'
+
+import * as out from '../../../out/index.js';
 import { ConnectionOptions } from 'tls';
-import { actionPaths } from '../actionPaths';
+import { actionPaths } from '../actionPaths.js';
+
+const { controller, action, createParameterDecorator, routeData, ContentResult } = out;
 
 // function connection() {
 

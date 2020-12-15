@@ -1,5 +1,5 @@
-import { createWebserver, createBrowser } from "./common";
-import { HomeController } from "./www/controllers/home";
+import { createWebserver, createBrowser } from "./common.js";
+import { HomeController } from "./www/controllers/home.js";
 import * as assert from "assert";
 
 describe("mvc-request-processor", function () {

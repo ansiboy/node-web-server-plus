@@ -8,11 +8,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const out_1 = require("../out");
-const path = require("path");
-const assert = require("assert");
-const fs = require("fs");
+const index_js_1 = require("../out/index.js");
+const path = __importStar(require("path"));
+const assert = __importStar(require("assert"));
+const fs = __importStar(require("fs"));
 const maishu_node_web_server_1 = require("maishu-node-web-server");
 describe("virtual-directory", function () {
     describe("create virtual directory", function () {
@@ -20,7 +27,7 @@ describe("virtual-directory", function () {
         let c = path.join(__dirname, "www/public/c");
         it("directores", function () {
             return __awaiter(this, void 0, void 0, function* () {
-                let dir = out_1.createVirtualDirecotry(b, c);
+                let dir = index_js_1.createVirtualDirecotry(b, c);
                 let dirs = dir.directories();
                 let names1 = fs.readdirSync(b).filter(n => fs.statSync(maishu_node_web_server_1.pathConcat(b, n)).isDirectory());
                 let names2 = fs.readdirSync(c).filter(n => fs.statSync(maishu_node_web_server_1.pathConcat(c, n)).isDirectory());
@@ -28,7 +35,7 @@ describe("virtual-directory", function () {
             });
         });
         it("files", function () {
-            let dir = out_1.createVirtualDirecotry(b, c);
+            let dir = index_js_1.createVirtualDirecotry(b, c);
             let files = {};
             fs.readdirSync(b).filter(n => fs.statSync(maishu_node_web_server_1.pathConcat(b, n)).isFile())
                 .forEach(n => {

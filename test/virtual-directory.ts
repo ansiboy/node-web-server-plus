@@ -1,8 +1,9 @@
-import { createVirtualDirecotry, } from "../out";
+import { createVirtualDirecotry, } from "../out/index.js";
 import * as path from "path";
 import * as assert from "assert";
 import * as fs from "fs";
 import { pathConcat } from "maishu-node-web-server";
+import { fileURLToPath } from "url";
 
 describe("virtual-directory", function () {
 

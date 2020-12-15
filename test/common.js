@@ -1,8 +1,18 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const Browser = require("zombie");
-const fs = require("fs");
-const path = require("path");
+const zombie_1 = __importDefault(require("zombie"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 const out_1 = require("../out");
 exports.websitePhysicalPath = path.join(__dirname, "www");
 function createWebserver(settings) {
@@ -18,7 +28,7 @@ function createWebserver(settings) {
 }
 exports.createWebserver = createWebserver;
 function createBrowser() {
-    return new Browser();
+    return new zombie_1.default();
 }
 exports.createBrowser = createBrowser;
 function readFile(physicalPath) {
