@@ -2,6 +2,7 @@ import { RequestContext, RequestProcessor, RequestResult } from "maishu-node-web
 import * as errors from "../errors.js";
 import * as fs from "fs";
 import * as babel from "@babel/core";
+import { commonjsToAmd } from "./js-transform.js";
 
 export class JavaScriptProcessor implements RequestProcessor {
 
@@ -19,7 +20,7 @@ export class JavaScriptProcessor implements RequestProcessor {
         }
     };
 
-    skipPaths = ["\\S+node_modules\\S+", "\\S+lib\\S+"];
+    ignorePaths = ["\\S+node_modules\\S+", "\\S+lib\\S+"];
 
     async execute(ctx: RequestContext): Promise<RequestResult | null> {
         if (ctx.virtualPath.endsWith(".js") == false)
@@ -39,8 +40,8 @@ export class JavaScriptProcessor implements RequestProcessor {
         let option: babel.TransformOptions | undefined;
 
         let skip = false;
-        for (let i = 0; i < this.skipPaths.length; i++) {
-            let regex = new RegExp(this.skipPaths[i]);
+        for (let i = 0; i < this.ignorePaths.length; i++) {
+            let regex = new RegExp(this.ignorePaths[i]);
             if (regex.test(ctx.virtualPath)) {
                 skip = true;
                 break;
@@ -58,8 +59,7 @@ export class JavaScriptProcessor implements RequestProcessor {
         }
 
         if (option) {
-            let r = babel.transform(code, option);
-            code = r?.code || "/** Babel transform code fail. */";
+            code = commonjsToAmd(code);
         }
 
         const encoding = 'UTF-8';

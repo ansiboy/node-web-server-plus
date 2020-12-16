@@ -18,40 +18,18 @@ module.exports = function (grunt) {
     require('load-grunt-tasks')(grunt);
 
     grunt.initConfig({
-        babel: {
-            options: {
-                sourceMap: false,
-                presets: [
-                    ['@babel/preset-env', {
-                        targets: {
-                            "chrome": "58",
-                            "ie": "11"
-                        }
-                    }],
-                ],
-                "plugins": [
-                    "@babel/plugin-transform-typescript"
-                ]
-            },
-            dist: {
-                files: [{
-                    expand: true,
-                    cwd: 'test',
-                    src: ['**/*.ts'],
-                    dest: 'test_out',
-                    ext: ".js"
-                }]
-            },
-        },
         shell: {
             src: {
                 command: `tsc -p src`
             },
-            test: {
-                command: "babel test -d test_out"
+            babel: {
+                command: "babel src -d out --extensions .ts"
+            },
+            webpack: {
+                command: "webpack"
             }
-        },
+        }
     });
 
-    grunt.registerTask('default', ['shell']);
+    grunt.registerTask('default', ['shell:src', "shell:webpack"]);
 }

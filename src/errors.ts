@@ -9,9 +9,9 @@ export function postDataNotJSON(data: string) {
     return err;
 }
 
-export function arugmentNull(name: string) {
+export function argumentNull(name: string) {
     let error = new Error(`Argument ${name} can not be null or empty.`)
-    error.name = arugmentNull.name
+    error.name = argumentNull.name
     return error
 }
 

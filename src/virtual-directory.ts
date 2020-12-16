@@ -4,7 +4,7 @@ import { VirtualDirectory, pathConcat } from "maishu-node-web-server";
 
 export function createVirtualDirecotry(...physicalPaths: string[]) {
     if (physicalPaths == null || physicalPaths.length == 0)
-        throw errors.arugmentNull("physicalPaths");
+        throw errors.argumentNull("physicalPaths");
 
     let root = new VirtualDirectory(physicalPaths[0]);
     if (physicalPaths.length == 1)
