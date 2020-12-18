@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as babel from "@babel/core";
 
 import { commonjsToAmd } from "./js-transform.js";
+import { transformTS } from "./transform/transform-ts.js";
 
 export class JavaScriptProcessor implements RequestProcessor {
 
@@ -98,10 +99,11 @@ export class JavaScriptProcessor implements RequestProcessor {
         }
 
         if (options) {
-            let isTS = physicalPath.endsWith(".ts" || physicalPath.endsWith(".tsx"));
+            let isTS = physicalPath.endsWith(".ts") || physicalPath.endsWith(".tsx");
             if (isTS) {
-                let r = babel.transform(code, options);
-                code = r?.code || "/** Babel transform code fail. */";
+                // let r = babel.transform(code, options);
+                // code = r?.code || "/** Babel transform code fail. */";
+                code = transformTS(code, options);
             }
             else {
                 code = commonjsToAmd(code, options);
