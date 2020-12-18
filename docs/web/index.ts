@@ -3,5 +3,5 @@ import * as path from "path";
 
 startServer({
     port: 1234,
-    controllerDirectory: path.join(__dirname, "controllers")
+    rootDirectory: __dirname
 })
