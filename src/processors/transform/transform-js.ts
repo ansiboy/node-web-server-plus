@@ -6,14 +6,14 @@ import {
 
     VariableDeclaration, VariableDeclarator, ImportNamespaceSpecifier
 } from "@babel/types";
-import * as errors from "../errors";
-import { NodeConverter } from "./transform/node-converter";
+import * as errors from "../../errors";
+import { NodeConverter } from "./node-converter";
 
 /**
  * 将 commonjs 代码转换为 amd
  * @param originalCode commonjs 代码
  */
-export function commonjsToAmd(originalCode: string, options: babel.TransformOptions) {
+export function transformJS(originalCode: string, options: babel.TransformOptions) {
     options = options || {};
     options.plugins = options.plugins || [];
 

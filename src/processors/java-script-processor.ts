@@ -3,7 +3,7 @@ import * as errors from "../errors.js";
 import * as fs from "fs";
 import * as babel from "@babel/core";
 
-import { commonjsToAmd } from "./js-transform.js";
+import { transformJS } from "./transform/transform-js.js";
 import { transformTS } from "./transform/transform-ts.js";
 
 export class JavaScriptProcessor implements RequestProcessor {
@@ -106,7 +106,7 @@ export class JavaScriptProcessor implements RequestProcessor {
                 code = transformTS(code, options);
             }
             else {
-                code = commonjsToAmd(code, options);
+                code = transformJS(code, options);
             }
         }
 
