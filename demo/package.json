@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@types/react": "^17.0.0",
+    "@types/requirejs": "^2.1.32",
     "maishu-chitu": "^3.27.0",
     "maishu-chitu-react": "^1.27.0",
     "react": "^17.0.1",
