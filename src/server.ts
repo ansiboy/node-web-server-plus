@@ -6,6 +6,7 @@ import {
 import { MVCRequestProcessor } from "maishu-node-web-server-mvc";
 import { JavaScriptProcessor } from "./processors/java-script-processor";
 import { Json5Processor } from "./processors/json5-processor";
+import { LessProcessor } from "./processors/less-processor";
 
 export function startServer(settings: Settings) {
 
@@ -46,6 +47,9 @@ export function startServer(settings: Settings) {
 
     var json5Processor = new Json5Processor();
     server.requestProcessors.splice(staticFileProcessorIndex, 0, json5Processor);
+
+    var lessProcessor = new LessProcessor();
+    server.requestProcessors.splice(staticFileProcessorIndex, 0, lessProcessor);
 
     if (settings.controllerDirectory) {
         let mvcProcessor = new MVCRequestProcessor({
