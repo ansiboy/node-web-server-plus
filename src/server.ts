@@ -7,36 +7,32 @@ import { MVCRequestProcessor } from "maishu-node-web-server-mvc";
 import { JavaScriptProcessor } from "./processors/java-script-processor";
 import { Json5Processor } from "./processors/json5-processor";
 import { LessProcessor } from "./processors/less-processor";
+import * as errors from "./errors";
+import * as fs from "fs";
 
 export function startServer(settings: Settings) {
 
-    // if (settings.rootDirectory == null)
-    //     throw errors.arugmentFieldNull("rootDirectory", "settings");
+    if (settings.rootDirectory == null)
+        throw errors.arugmentFieldNull("rootDirectory", "settings");
 
-    // if (typeof settings.rootDirectory == "string" && !fs.existsSync(settings.rootDirectory))
-    //     throw errors.physicalPathNotExists(settings.rootDirectory);
+    if (typeof settings.rootDirectory == "string" && !fs.existsSync(settings.rootDirectory))
+        throw errors.physicalPathNotExists(settings.rootDirectory);
 
-    // var rootDirectory = typeof settings.rootDirectory == "string" ? new VirtualDirectory(settings.rootDirectory) : settings.rootDirectory;
-    // if (settings.staticRootDirectory == null) {
-    //     let staticRootDirectory = rootDirectory.findDirectory("static");
-    //     if (staticRootDirectory)
-    //         settings.staticRootDirectory = staticRootDirectory;
-    // }
+    var rootDirectory = typeof settings.rootDirectory == "string" ? new VirtualDirectory(settings.rootDirectory) : settings.rootDirectory;
+    if (settings.websiteDirectory == null) {
+        let staticRootDirectory = rootDirectory.findDirectory("static");
+        if (staticRootDirectory)
+            settings.websiteDirectory = staticRootDirectory;
+    }
 
-    // if (settings.controllerDirectory == null) {
-    //     let controllerDirectory = rootDirectory.findDirectory("controllers");
-    //     if (controllerDirectory)
-    //         settings.controllerDirectory = controllerDirectory;
-    // }
+    if (settings.controllerDirectory == null) {
+        let controllerDirectory = rootDirectory.findDirectory("controllers");
+        if (controllerDirectory)
+            settings.controllerDirectory = controllerDirectory;
+    }
 
-    // let r: WebServerSettings = {
-    //     port: settings.port,
-    //     bindIP: settings.bindIP,
-    //     websiteDirectory: settings.staticRootDirectory,
-    // }
 
     let server = new WebServer(settings);
-
 
     let staticFileProcessor = server.requestProcessors.filter(o => o instanceof StaticFileProcessor)[0];
     console.assert(staticFileProcessor != null, "Can not find static file processor");

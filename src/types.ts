@@ -9,6 +9,8 @@ export type ServerContext<T = {}> = MVCRequestContext<T>;
 
 export type Settings = WebServerSettings & {
     controllerDirectory?: string | VirtualDirectory,
+    /** 项目根目录 */
+    rootDirectory?: string | VirtualDirectory,
     serverContextData?: any,
     headers?: { [name: string]: string },
     virtualPaths?: { [virtualPath: string]: string },
