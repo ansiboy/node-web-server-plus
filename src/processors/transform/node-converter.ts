@@ -2,17 +2,13 @@ import { Program, Node, Statement, StringLiteral, VariableDeclarator } from "@ba
 import * as errors from "../../errors";
 
 export abstract class NodeConverter {
-    transform(node: Node): Node | null {
+    transform(node: Node): Node {
         if (node == null) throw errors.argumentNull("node");
         switch (node.type) {
             case "Program":
-                let statements: Statement[] = [];
                 for (let i = 0; i < node.body.length; i++) {
-                    let statement = this.transform(node.body[i]) as Statement;
-                    if (statement != null)
-                        statements.push(statement);
+                    node.body[i] = this.transform(node.body[i]) as Statement;
                 }
-
                 break;
             case "ImportDeclaration":
                 node.source = this.transform(node.source) as StringLiteral;
