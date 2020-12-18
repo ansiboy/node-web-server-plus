@@ -52,10 +52,15 @@ export class JavaScriptProcessor implements RequestProcessor {
             return null;
 
         let jsVirtualPath = ctx.virtualPath;
+        let jsxVirtualPath = ctx.virtualPath.substr(0, ctx.virtualPath.length - ".js".length) + ".jsx";
         let tsVirtualPath = ctx.virtualPath.substr(0, ctx.virtualPath.length - ".js".length) + ".ts";
         let tsxVirtualPath = ctx.virtualPath.substr(0, ctx.virtualPath.length - ".js".length) + ".tsx";
 
         let physicalPath = ctx.rootDirectory.findFile(jsVirtualPath);
+        if (physicalPath == null) {
+            physicalPath = ctx.rootDirectory.findFile(jsxVirtualPath);
+        }
+
         if (physicalPath == null) {
             physicalPath = ctx.rootDirectory.findFile(tsVirtualPath);
         }
@@ -65,7 +70,7 @@ export class JavaScriptProcessor implements RequestProcessor {
         }
 
         if (physicalPath == null) {
-            throw errors.pageNotFound(`${jsVirtualPath} ${tsVirtualPath} ${tsxVirtualPath}`);
+            throw errors.pageNotFound(`${jsxVirtualPath} ${jsVirtualPath} ${tsVirtualPath} ${tsxVirtualPath}`);
         }
 
 
