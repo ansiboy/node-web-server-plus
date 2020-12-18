@@ -5,7 +5,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "program": "${workspaceRoot}/test/temp.js"
+            "program": "${workspaceRoot}/demo/index.js"
         }
     ]
 }

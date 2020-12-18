@@ -12,8 +12,12 @@ import * as errors from "../errors";
  * 将 commonjs 代码转换为 amd
  * @param originalCode commonjs 代码
  */
-export function commonjsToAmd(originalCode: string) {
-    let ast = babel.parseSync(originalCode, { plugins: ["@babel/transform-react-jsx"] }) as Node;
+export function commonjsToAmd(originalCode: string, options: babel.TransformOptions) {
+    options = options || {};
+    options.plugins = options.plugins || [];
+    
+    let ast = babel.parseSync(originalCode, options) as Node;
+
     let g = new RequireToImport();
     ast = g.transform(ast);
     let program = (ast as any as babel.types.File).program;
@@ -45,29 +49,29 @@ export function commonjsToAmd(originalCode: string) {
         program.body.unshift(...g.improts);
     }
 
-    let options = {
-        plugins: [
-            ["@babel/transform-modules-amd", { noInterop: true }],
-        ] as Array<any>
-    };
+    // let options = {
+    //     plugins: [
+    //         ["@babel/transform-modules-amd", { noInterop: true }],
+    //     ] as Array<any>
+    // };
 
-    let isTaro = isTaroProgram(program);
-    if (isTaro) {
-        options.plugins.push([
-            "@babel/transform-react-jsx", {
-                "pragma": "Nerv.createElement",
-                "pragmaFrag": "Nerv.Fragment"
-            }
-        ])
-    }
-    else {
-        options.plugins.push([
-            "@babel/transform-react-jsx", {
-                "pragma": "React.createElement",
-                "pragmaFrag": "React.Fragment"
-            }
-        ])
-    }
+    // let isTaro = isTaroProgram(program);
+    // if (isTaro) {
+    //     options.plugins.push([
+    //         "@babel/transform-react-jsx", {
+    //             "pragma": "Nerv.createElement",
+    //             "pragmaFrag": "Nerv.Fragment"
+    //         }
+    //     ])
+    // }
+    // else {
+    //     options.plugins.push([
+    //         "@babel/transform-react-jsx", {
+    //             "pragma": "React.createElement",
+    //             "pragmaFrag": "React.Fragment"
+    //         }
+    //     ])
+    // }
 
     let r = babel.transformFromAstSync(ast, undefined, options);
     let code = r?.code || "/** Babel transform code fail. */";
