@@ -20,7 +20,7 @@ var argv = require('yargs')
         }
 
         if (!path.isAbsolute(argv.d))
-            argv.d = path.join(__dirname, argv.d);
+            argv.d = path.join(__dirname, "../", argv.d);
 
         if (!fs.existsSync(argv.d))
             throw new Error(`路径 ${argv.d} 不存在`);
@@ -29,12 +29,7 @@ var argv = require('yargs')
     })
     .argv;
 
-console.log(argv.d)
 let rootPath = argv.d;
-if (!path.isAbsolute(rootPath)) {
-    rootPath = path.join(__dirname, rootPath);
-}
-
 startServer({
     rootDirectory: rootPath,
     port: argv.p,
