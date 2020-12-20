@@ -42,8 +42,8 @@ describe("java-script-processor", function () {
             let context = {
                 req: null,
                 res: null,
-                virtualPath: "/common.ts.js",
-                rootDirectory: new out_1.VirtualDirectory(path.join(__dirname, "../")),
+                virtualPath: "sample.js",
+                rootDirectory: new out_1.VirtualDirectory(__dirname),
                 logLevel: "all"
             };
             let r = yield t.execute(context);

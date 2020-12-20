@@ -10,4 +10,7 @@
         "moduleResolution": "Node",
         "esModuleInterop": true
     },
+    "exclude": [
+        "transforms/sample.ts"
+    ]
 }

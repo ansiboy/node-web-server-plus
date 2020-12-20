@@ -1,7 +1,7 @@
 import Browser from "zombie";
 import * as fs from "fs";
 import * as path from "path";
-import { startServer, Settings } from "../out";
+import { startServer, Settings } from "../../out";
 
 export let websitePhysicalPath = path.join(__dirname, "www");
 export function createWebserver(settings?: Partial<Settings>) {

@@ -22,8 +22,8 @@ describe("java-script-processor", function () {
         let context: RequestContext = {
             req: null,
             res: null,
-            virtualPath: "/common.ts.js",
-            rootDirectory: new VirtualDirectory(path.join(__dirname, "../")),
+            virtualPath: "sample.js",
+            rootDirectory: new VirtualDirectory(__dirname),
             logLevel: "all"
         };
         let r = await t.execute(context);

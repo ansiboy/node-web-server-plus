@@ -18,7 +18,7 @@ exports.websitePhysicalPath = path.join(__dirname, "www");
 function createWebserver(settings) {
     let defaultSettings = {
         rootDirectory: __dirname,
-        staticRootDirectory: path.join(__dirname, "www"),
+        websiteDirectory: path.join(__dirname, "www"),
         controllerDirectory: path.join(__dirname, "www", "controllers"),
     };
     settings = Object.assign(settings || {}, defaultSettings);
