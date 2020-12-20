@@ -23,7 +23,10 @@ export function startServer(settings: Settings) {
 
     var rootDirectory = typeof settings.rootDirectory == "string" ? new VirtualDirectory(settings.rootDirectory) : settings.rootDirectory;
     if (settings.websiteDirectory == null) {
-        let staticRootDirectory = rootDirectory.findDirectory("static");
+        let staticRootDirectory = rootDirectory.findDirectory("public");
+        if (!staticRootDirectory)
+            staticRootDirectory = rootDirectory.findDirectory("static");
+
         if (staticRootDirectory)
             settings.websiteDirectory = staticRootDirectory;
     }

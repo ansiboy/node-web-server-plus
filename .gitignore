@@ -4,3 +4,4 @@ dist
 out
 !docs/**
 test_out
+demo*

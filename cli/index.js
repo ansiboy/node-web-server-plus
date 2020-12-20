@@ -1,40 +1,58 @@
 #!/usr/bin/env node
 
-const { DataSourceSelectArguments } = require('maishu-toolkit');
 const yargs = require("yargs");
 const path = require("path");
 const fs = require("fs");
-const { startServer } = require("../out");
+const nwsp = require("../out");
 
-var argv = require('yargs')
-    .describe({ p: "服务器端口" })
-    .describe({ d: "文档夹路径" }).demandOption(["d"])
-    .default({ p: 9868 })
-    .usage("Usage: $0 -d <website path> [options] ")
-    .check((argv, options) => {
-        argv.d = typeof argv.d == "string" ? argv.d : "";
-        argv.p = typeof argv.p == "number" ? argv.p : Number.parseInt(argv.p);
+let defaultPort = 9868;
+let defaultIP = "127.0.0.1";
 
-        if (!argv.d) {
-            throw new Error("文件夹路径不允许为空")
-        }
+function main() {
 
-        if (!path.isAbsolute(argv.d))
-            argv.d = path.join(__dirname, "../", argv.d);
+    var argv = yargs
+        .describe({ p: "服务器端口" })
+        .describe({ i: "服务器 IP" })
+        .describe({ d: "文档夹路径" }).demandOption(["d"])
+        // .default({ p: 9868 })
+        .usage("Usage: nwsp -d <website path> -p <port>")
+        .check((argv) => {
 
-        if (!fs.existsSync(argv.d))
-            throw new Error(`路径 ${argv.d} 不存在`);
+            if (argv.d != undefined && typeof argv.d != "string")
+                throw new Error("文件夹路径不正确");
 
-        return true;
-    })
-    .argv;
+            if (argv.i != undefined && typeof argv.i != "string")
+                throw new Error("服务器 IP 不正确")
 
-let rootPath = argv.d;
-startServer({
-    rootDirectory: rootPath,
-    port: argv.p,
-    virtualPaths: {
-        "node_modules": path.join(rootPath, "node_modules")
+            if (!argv.d) {
+                throw new Error("文件夹路径不允许为空")
+            }
+
+            if (!path.isAbsolute(argv.d))
+                argv.d = path.join(__dirname, "../", argv.d);
+
+            if (!fs.existsSync(argv.d))
+                throw new Error(`路径 ${argv.d} 不存在`);
+
+            return true;
+        })
+        .argv;
+
+    const configName = "nwsp-config.json";
+    let configPath = path.join(argv.d, configName);
+    console.log(configPath);
+    /** @type {nwsp.Settings} */
+    let settings = {};
+    if (fs.existsSync(configPath)) {
+        settings = require(configPath);
     }
-});
+
+    settings.rootDirectory = argv.d;
+    settings.port = argv.p || settings.port || defaultPort;
+    settings.bindIP = argv.i || settings.bindIP || defaultIP;
+
+    nwsp.startServer(settings);
+}
+
+main();
 
