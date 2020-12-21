@@ -50,7 +50,7 @@
     "homepage": "https://github.com/ansiboy/node-mvc#readme",
     "license": "MIT",
     "main": "out/index.js",
-    "name": "maishu-node-mvc",
+    "name": "maishu-nwsp",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/ansiboy/node-mvc.git"
