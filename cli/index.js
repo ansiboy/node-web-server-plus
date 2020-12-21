@@ -29,7 +29,7 @@ function main() {
             }
 
             if (!path.isAbsolute(argv.d))
-                argv.d = path.join(__dirname, "../", argv.d);
+                argv.d = path.join(process.cwd(), "../", argv.d);
 
             if (!fs.existsSync(argv.d))
                 throw new Error(`路径 ${argv.d} 不存在`);
