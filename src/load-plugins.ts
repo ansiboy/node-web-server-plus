@@ -44,7 +44,7 @@ export function loadPlugins(rootDirectory: VirtualDirectory, logger: Logger, web
             continue;
         }
 
-        mod.default(webServer);
+        mod.default(webServer, rootDirectory);
     }
 
 }
