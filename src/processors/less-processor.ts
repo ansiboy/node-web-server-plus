@@ -7,11 +7,13 @@ import * as errors from "../errors";
 export class LessProcessor implements RequestProcessor {
     async execute(ctx: RequestContext): Promise<RequestResult | null> {
         let ext = path.extname(ctx.virtualPath);
-        if (ext != ".css")
+        if (ext != ".css" && ext != ".less")
             return null;
 
 
-        let virtualPath = ctx.virtualPath.substr(0, ctx.virtualPath.length - ".css".length) + ".less";
+        let virtualPath = ext == ".css" ?
+            ctx.virtualPath.substr(0, ctx.virtualPath.length - ".css".length) + ".less"
+            : ctx.virtualPath;
 
         let physicalPath = ctx.rootDirectory.findFile(virtualPath);
         if (physicalPath == null || !fs.existsSync(physicalPath))
