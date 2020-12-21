@@ -18,12 +18,18 @@ export class JavaScriptProcessor implements RequestProcessor {
             ],
             plugins: [
                 "@babel/plugin-transform-typescript",
-                "@babel/plugin-transform-modules-amd"
+                // "@babel/plugin-transform-modules-amd"
             ]
         },
         "\\S+.js$": {
+            "presets": [
+                ["@babel/preset-env", {
+                    "targets": { chrome: 58 }
+                }],
+                // "@babel/plugin-transform-typescript"
+            ],
             plugins: [
-                "@babel/plugin-transform-modules-amd"
+                // "@babel/plugin-transform-modules-amd"
             ]
         },
         "\\S+.tsx$": {
@@ -39,9 +45,15 @@ export class JavaScriptProcessor implements RequestProcessor {
             ]
         },
         "\\S+.jsx$": {
+            "presets": [
+                ["@babel/preset-env", {
+                    "targets": { chrome: 58 }
+                }],
+                // "@babel/plugin-transform-typescript"
+            ],
             plugins: [
                 ["@babel/plugin-transform-react-jsx", { "pragma": "React.createElement", "pragmaFrag": "React.Fragment" }],
-                "@babel/plugin-transform-modules-amd"
+                // "@babel/plugin-transform-modules-amd"
             ]
         },
     };
@@ -49,7 +61,8 @@ export class JavaScriptProcessor implements RequestProcessor {
     ignorePaths = ["\\S+node_modules\\S+", "\\S+lib\\S+"];
 
     async execute(ctx: RequestContext): Promise<RequestResult | null> {
-        if (!ctx.virtualPath.endsWith(".js"))
+        if (!ctx.virtualPath.endsWith(".js") && !ctx.virtualPath.endsWith(".ts") &&
+            !ctx.virtualPath.endsWith(".jsx") && !ctx.virtualPath.endsWith(".tsx"))
             return null;
 
         let jsVirtualPath = ctx.virtualPath;
