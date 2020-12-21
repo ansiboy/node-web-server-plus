@@ -1,11 +1,9 @@
 import { Settings } from "./types";
 import {
-    WebServer, StaticFileProcessor, HeadersProcessor, VirtualDirectory,
+    WebServer, HeadersProcessor, VirtualDirectory,
     getLogger,
-    RequestProcessor
 } from "maishu-node-web-server";
 
-import { MVCRequestProcessor } from "maishu-node-web-server-mvc";
 import { JavaScriptProcessor } from "./processors/java-script-processor";
 import { Json5Processor } from "./processors/json5-processor";
 import { LessProcessor } from "./processors/less-processor";
@@ -54,13 +52,13 @@ export function startServer(settings: Settings) {
     var lessProcessor = new LessProcessor();
     server.requestProcessors.add(lessProcessor);
 
-    if (settings.controllerDirectory) {
-        let mvcProcessor = new MVCRequestProcessor({
-            controllersDirectory: settings.controllerDirectory,
-            serverContextData: settings.serverContextData,
-        });
-        server.requestProcessors.add(mvcProcessor);
-    }
+    // if (settings.controllerDirectory) {
+    //     let mvcProcessor = new MVCRequestProcessor({
+    //         controllersDirectory: settings.controllerDirectory,
+    //         serverContextData: settings.serverContextData,
+    //     });
+    //     server.requestProcessors.add(mvcProcessor);
+    // }
 
     if (settings.headers) {
         var headersProcessor = server.requestProcessors.find(HeadersProcessor);
