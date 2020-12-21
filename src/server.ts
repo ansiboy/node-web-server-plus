@@ -13,7 +13,6 @@ import * as errors from "./errors";
 import * as fs from "fs";
 import { loadPlugins } from "./load-plugins";
 
-const configName = "nwsp-config.json";
 
 export function startServer(settings: Settings) {
     if (settings.rootDirectory == null)
@@ -23,9 +22,9 @@ export function startServer(settings: Settings) {
         throw errors.physicalPathNotExists(settings.rootDirectory);
 
     let rootDirectory = typeof settings.rootDirectory == "string" ? new VirtualDirectory(settings.rootDirectory) : settings.rootDirectory;
-    let configPath = rootDirectory.findFile(configName);
-    if (configPath) {
-        let obj = require(configPath);
+
+    let obj = loadConfigFromFile(rootDirectory);
+    if (obj) {
         Object.assign(settings, obj);
     }
 
@@ -101,6 +100,26 @@ export function startServer(settings: Settings) {
     }
 
     return server;
+}
+
+function loadConfigFromFile(rootDirectory: VirtualDirectory): Settings | null {
+    const jsonConfigName = "nwsp-config.json";
+    const jsConfigName = "nwsp-config.js";
+
+    let configPath = rootDirectory.findFile(jsonConfigName);
+    if (configPath) {
+        let obj = require(configPath);
+        return obj;
+    }
+
+    configPath = rootDirectory.findFile(jsConfigName);
+    if (configPath) {
+        let obj = require(configPath);
+        return obj;
+    }
+
+    return null;
+
 }
 
 
