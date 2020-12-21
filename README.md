@@ -5,7 +5,6 @@
 1. 提供命令行启动
 1. 集成了 Babel，把 ts，js 转换为 amd js
 1. 集成了 [MVC](https://github.com/ansiboy/node-web-server-mvc) 功能
-1. 集成了 JSON5，JSON5 转 JSON
 1. 集成了 Less，Less 转 CSS
 1. 提供了插件加载机制
 
@@ -72,16 +71,106 @@ index.html 文件
 nwsp -d demo
 ```
 
-在浏览器输入 http://127.0.0.1:9868 可以看到 
+在浏览器输入 http://127.0.0.1:9868 可以看到
 
 ```
 Hello World
 ```
 
-## ts 文件的转换
+## TS 文件的转换
 
+文件夹如下
 
+```
+demo
+├── public
+|   └── index.html
+|   └── index.ts
+```
 
+index.html 文件
 
+```html
+<html>
+  <head></head>
+  <body>
+    <script src="./index.ts"></script>
+  </body>
+</html>
+```
+
+index.ts 文件
+
+```ts
+let hello: string = 'Hello'
+let world: string = 'World'
+document.body.innerHTML = hello + ' ' + world
+```
+
+运行命令
+
+```
+nwsp -d demo
+```
+
+在浏览器输入 http://127.0.0.1:9868 可以看到
+
+```
+Hello World
+```
+
+在浏览器输入 http://127.0.0.1:9868/index.ts 可以看到
+
+```js
+'use strict'
+
+let hello = 'Hello'
+let world = 'World'
+document.body.innerHTML = hello + ' ' + world
+```
+
+## LESS 文件转换
+
+文件夹如下
+
+```
+demo
+├── public
+|   └── index.html
+|   └── index.less
+```
+
+index.html 文件内容如下：
+
+```html
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="./index.less" />
+  </head>
+  <body>
+    <h1>Hello World</h1>
+  </body>
+</html>
+```
+
+index.less 文件内容如下：
+
+```less
+@color: red;
+
+h1 {
+  color: @color;
+}
+```
+
+运行命令
+
+```
+nwsp -d demo
+```
+
+在浏览器输入 http://127.0.0.1:9868 可以看到红色的 ”Hello World“
+
+<div style="color:red">Hello World</div>
 
 
