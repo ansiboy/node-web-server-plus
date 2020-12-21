@@ -38,14 +38,14 @@ function main() {
         })
         .argv;
 
-    const configName = "nwsp-config.json";
-    let configPath = path.join(argv.d, configName);
-    console.log(configPath);
+    // const configName = "nwsp-config.json";
+    // let configPath = path.join(argv.d, configName);
+    // console.log(configPath);
     /** @type {nwsp.Settings} */
     let settings = {};
-    if (fs.existsSync(configPath)) {
-        settings = require(configPath);
-    }
+    // if (fs.existsSync(configPath)) {
+    //     settings = require(configPath);
+    // }
 
     settings.rootDirectory = argv.d;
     settings.port = argv.p || settings.port || defaultPort;

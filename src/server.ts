@@ -1,7 +1,8 @@
 import { Settings } from "./types";
 import {
     WebServer, StaticFileProcessor, HeadersProcessor, VirtualDirectory,
-    getLogger
+    getLogger,
+    RequestProcessor
 } from "maishu-node-web-server";
 
 import { MVCRequestProcessor } from "maishu-node-web-server-mvc";
@@ -10,18 +11,24 @@ import { Json5Processor } from "./processors/json5-processor";
 import { LessProcessor } from "./processors/less-processor";
 import * as errors from "./errors";
 import * as fs from "fs";
-import * as path from "path";
 import { loadPlugins } from "./load-plugins";
 
-export function startServer(settings: Settings) {
+const configName = "nwsp-config.json";
 
+export function startServer(settings: Settings) {
     if (settings.rootDirectory == null)
         throw errors.arugmentFieldNull("rootDirectory", "settings");
 
     if (typeof settings.rootDirectory == "string" && !fs.existsSync(settings.rootDirectory))
         throw errors.physicalPathNotExists(settings.rootDirectory);
 
-    var rootDirectory = typeof settings.rootDirectory == "string" ? new VirtualDirectory(settings.rootDirectory) : settings.rootDirectory;
+    let rootDirectory = typeof settings.rootDirectory == "string" ? new VirtualDirectory(settings.rootDirectory) : settings.rootDirectory;
+    let configPath = rootDirectory.findFile(configName);
+    if (configPath) {
+        let obj = require(configPath);
+        Object.assign(settings, obj);
+    }
+
     if (settings.websiteDirectory == null) {
         let staticRootDirectory = rootDirectory.findDirectory("public");
         if (!staticRootDirectory)
@@ -37,12 +44,7 @@ export function startServer(settings: Settings) {
             settings.controllerDirectory = controllerDirectory;
     }
 
-
     let server = new WebServer(settings);
-
-    // let staticFileProcessor = server.requestProcessors.find(StaticFileProcessor);
-    // console.assert(staticFileProcessor != null, "Can not find static file processor");
-    // let staticFileProcessorIndex = server.requestProcessors.add(staticFileProcessor);
 
     var javaScriptProcessor = new JavaScriptProcessor();
     server.requestProcessors.add(javaScriptProcessor);
@@ -85,6 +87,18 @@ export function startServer(settings: Settings) {
     let logger = getLogger(pkg.name, settings.log?.level)
     loadPlugins(rootDirectory, logger, server);
 
+    if (settings.processors != null) {
+        for (let i = 0; i < server.requestProcessors.length; i++) {
+            let requestProcessor = server.requestProcessors.item(i);
+            let name = requestProcessor.constructor.name;
+            let processorProperties = settings.processors[name];
+            for (let prop in processorProperties) {
+                if ((requestProcessor as any)[prop]) {
+                    (requestProcessor as any)[prop] = processorProperties[prop];
+                }
+            }
+        }
+    }
 
     return server;
 }

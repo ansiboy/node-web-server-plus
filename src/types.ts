@@ -14,6 +14,8 @@ export type Settings = WebServerSettings & {
     serverContextData?: any,
     headers?: { [name: string]: string },
     virtualPaths?: { [virtualPath: string]: string },
+    /** 请求处理选项配置 */
+    processors?: { [name: string]: any }
 };
 
 export interface ControllerInfo {
