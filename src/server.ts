@@ -1,47 +1,36 @@
 import { Settings } from "./types";
 import {
     WebServer, HeadersProcessor, VirtualDirectory,
-    getLogger,
+    getLogger, StaticFileProcessor, processorPriorities
 } from "maishu-node-web-server";
 
-import { JavaScriptProcessor } from "./processors/java-script-processor";
+import { JavaScriptProcessor } from "maishu-nws-js";
 import { Json5Processor } from "./processors/json5-processor";
 import { LessProcessor } from "./processors/less-processor";
 import * as errors from "./errors";
 import * as fs from "fs";
 import { loadPlugins } from "./load-plugins";
-
+import { MVCRequestProcessor } from "maishu-nws-mvc";
 
 export function startServer(settings: Settings) {
-    if (settings.rootDirectory == null)
+    if (settings.websiteDirectory == null)
         throw errors.arugmentFieldNull("rootDirectory", "settings");
 
-    if (typeof settings.rootDirectory == "string" && !fs.existsSync(settings.rootDirectory))
-        throw errors.physicalPathNotExists(settings.rootDirectory);
-
-    let rootDirectory = typeof settings.rootDirectory == "string" ? new VirtualDirectory(settings.rootDirectory) : settings.rootDirectory;
-
-    let obj = loadConfigFromFile(rootDirectory);
-    if (obj) {
-        Object.assign(settings, obj);
-    }
-
-    if (settings.websiteDirectory == null) {
-        let staticRootDirectory = rootDirectory.findDirectory("public");
-        if (!staticRootDirectory)
-            staticRootDirectory = rootDirectory.findDirectory("static");
-
-        if (staticRootDirectory)
-            settings.websiteDirectory = staticRootDirectory;
-    }
-
-    if (settings.controllerDirectory == null) {
-        let controllerDirectory = rootDirectory.findDirectory("controllers");
-        if (controllerDirectory)
-            settings.controllerDirectory = controllerDirectory;
-    }
+    if (typeof settings.websiteDirectory == "string" && !fs.existsSync(settings.websiteDirectory))
+        throw errors.physicalPathNotExists(settings.websiteDirectory);
 
     let server = new WebServer(settings);
+    let rootDirectory = server.websiteDirectory;
+
+
+
+    let staticFileProcessor = server.requestProcessors.find(StaticFileProcessor);
+    console.assert(staticFileProcessor != null);
+    let staticDir = rootDirectory.findDirectory("public") || rootDirectory.findDirectory("static");
+    let nodeModulesDir = rootDirectory.findDirectory("node_modules");
+    if (staticDir != null && nodeModulesDir != null) {
+        staticDir.setPath("node_modules", nodeModulesDir.physicalPath);
+    }
 
     var javaScriptProcessor = new JavaScriptProcessor();
     server.requestProcessors.add(javaScriptProcessor);
@@ -52,13 +41,49 @@ export function startServer(settings: Settings) {
     var lessProcessor = new LessProcessor();
     server.requestProcessors.add(lessProcessor);
 
-    // if (settings.controllerDirectory) {
-    //     let mvcProcessor = new MVCRequestProcessor({
-    //         controllersDirectory: settings.controllerDirectory,
-    //         serverContextData: settings.serverContextData,
-    //     });
-    //     server.requestProcessors.add(mvcProcessor);
-    // }
+    staticFileProcessor.options.directoryPath = rootDirectory.findDirectory("public") != null ? "public" : "static";
+    javaScriptProcessor.options.directoryPath = staticFileProcessor.options.directoryPath;
+    lessProcessor.options.directoryPath = staticFileProcessor.options.directoryPath;
+
+    javaScriptProcessor.options.babel = {
+        "\\S+.js$": {
+            "presets": [
+                ["@babel/preset-env", {
+                    "targets": { chrome: 58 }
+                }],
+            ],
+            plugins: [
+                ["@babel/plugin-transform-modules-amd", { noInterop: true }]
+            ]
+        },
+        "\\S+.ts$": {
+            "presets": [
+                ["@babel/preset-env", {
+                    "targets": { chrome: 58 }
+                }]
+            ],
+            plugins: [
+                ["@babel/plugin-proposal-decorators", { legacy: true }],
+                ["@babel/plugin-transform-typescript", { isTSX: false }],
+                ["@babel/plugin-transform-react-jsx", { "pragma": "React.createElement", "pragmaFrag": "React.Fragment" }],
+                ["@babel/plugin-transform-modules-amd", { noInterop: true }],
+            ]
+        },
+        "\\S+.tsx$": {
+            "presets": [
+                ["@babel/preset-env", {
+                    "targets": { chrome: 58 }
+                }]
+            ],
+            plugins: [
+                ["@babel/plugin-proposal-decorators", { legacy: true }],
+                ["@babel/plugin-transform-typescript", { isTSX: true }],
+                ["@babel/plugin-transform-react-jsx", { "pragma": "React.createElement", "pragmaFrag": "React.Fragment" }],
+                ["@babel/plugin-transform-modules-amd", { noInterop: true }],
+
+            ]
+        },
+    }
 
     if (settings.headers) {
         var headersProcessor = server.requestProcessors.find(HeadersProcessor);
@@ -77,6 +102,13 @@ export function startServer(settings: Settings) {
 
             server.websiteDirectory.setPath(virtualPath, physicalPath);
         }
+    }
+
+    let mvcProcessor = new MVCRequestProcessor();
+    mvcProcessor.priority = processorPriorities.HeadersRequestProcessor + 10;
+    server.requestProcessors.add(mvcProcessor);
+    if (settings.controllerDirectory) {
+        mvcProcessor.options.controllersDirectories = [settings.controllerDirectory];
     }
 
     let packagePath = "../package.json";
@@ -100,24 +132,5 @@ export function startServer(settings: Settings) {
     return server;
 }
 
-function loadConfigFromFile(rootDirectory: VirtualDirectory): Settings | null {
-    const jsonConfigName = "nwsp-config.json";
-    const jsConfigName = "nwsp-config.js";
-
-    let configPath = rootDirectory.findFile(jsonConfigName);
-    if (configPath) {
-        let obj = require(configPath);
-        return obj;
-    }
-
-    configPath = rootDirectory.findFile(jsConfigName);
-    if (configPath) {
-        let obj = require(configPath);
-        return obj;
-    }
-
-    return null;
-
-}
 
 

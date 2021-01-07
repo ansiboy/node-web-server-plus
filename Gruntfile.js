@@ -31,5 +31,5 @@ module.exports = function (grunt) {
         }
     });
 
-    grunt.registerTask('default', ['shell:src', "shell:webpack"]);
+    grunt.registerTask('default', ["shell:src"]);
 }

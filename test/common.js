@@ -17,11 +17,12 @@ const out_1 = require("../out");
 exports.websitePhysicalPath = path.join(__dirname, "www");
 function createWebserver(settings) {
     let defaultSettings = {
-        rootDirectory: __dirname,
+        // rootDirectory: __dirname,
         websiteDirectory: path.join(__dirname, "www"),
+        staticPath: "public",
         controllerDirectory: path.join(__dirname, "www", "controllers"),
     };
-    settings = Object.assign(settings || {}, defaultSettings);
+    settings = Object.assign(defaultSettings, settings || {});
     let w = out_1.startServer(settings);
     console.log(`Web server port is ${w.port}.`);
     return w;

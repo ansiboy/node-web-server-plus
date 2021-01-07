@@ -14,7 +14,6 @@ function main() {
         .describe({ p: "服务器端口" })
         .describe({ i: "服务器 IP" })
         .describe({ d: "文档夹路径" }).demandOption(["d"])
-        // .default({ p: 9868 })
         .usage("Usage: nwsp -d <website path> -p <port>")
         .check((argv) => {
 
@@ -29,7 +28,7 @@ function main() {
             }
 
             if (!path.isAbsolute(argv.d))
-                argv.d = path.join(process.cwd(), "../", argv.d);
+                argv.d = path.join(process.cwd(), argv.d);
 
             if (!fs.existsSync(argv.d))
                 throw new Error(`路径 ${argv.d} 不存在`);
@@ -38,16 +37,10 @@ function main() {
         })
         .argv;
 
-    // const configName = "nwsp-config.json";
-    // let configPath = path.join(argv.d, configName);
-    // console.log(configPath);
     /** @type {nwsp.Settings} */
     let settings = {};
-    // if (fs.existsSync(configPath)) {
-    //     settings = require(configPath);
-    // }
 
-    settings.rootDirectory = argv.d;
+    settings.websiteDirectory = argv.d;
     settings.port = argv.p || settings.port || defaultPort;
     settings.bindIP = argv.i || settings.bindIP || defaultIP;
 

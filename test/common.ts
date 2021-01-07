@@ -6,12 +6,13 @@ import { startServer, Settings } from "../out";
 export let websitePhysicalPath = path.join(__dirname, "www");
 export function createWebserver(settings?: Partial<Settings>) {
     let defaultSettings: Settings = {
-        rootDirectory: __dirname,
+        // rootDirectory: __dirname,
         websiteDirectory: path.join(__dirname, "www"),
+        staticPath: "public",
         controllerDirectory: path.join(__dirname, "www", "controllers"),
     }
 
-    settings = Object.assign(settings || {}, defaultSettings);
+    settings = Object.assign(defaultSettings, settings || {},);
 
     let w = startServer(settings as Settings);
     console.log(`Web server port is ${w.port}.`);
