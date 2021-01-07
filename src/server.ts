@@ -107,9 +107,8 @@ export function startServer(settings: Settings) {
     let mvcProcessor = new MVCRequestProcessor();
     mvcProcessor.priority = processorPriorities.HeadersRequestProcessor + 10;
     server.requestProcessors.add(mvcProcessor);
-    if (settings.controllerDirectory) {
-        mvcProcessor.options.controllersDirectories = [settings.controllerDirectory];
-    }
+    settings.controllerDirectory = settings.controllerDirectory || "controllers";
+    mvcProcessor.options.controllersDirectories = [settings.controllerDirectory];
 
     let packagePath = "../package.json";
     let pkg = require(packagePath);

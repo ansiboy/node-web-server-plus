@@ -119,3 +119,9 @@ export function virtualPathConfigError(virtualPath: string, physicalPath: string
     return error;
 }
 
+export function virutalDirectoryNotExists(virtualPath: string) {
+    let msg = `Virtual directory '${virtualPath}' is not exists`;
+    let error = new Error(msg);
+    error.name = virutalDirectoryNotExists.name;
+    return error;
+}
