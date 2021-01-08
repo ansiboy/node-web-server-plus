@@ -57,7 +57,7 @@ export class LessProcessor implements RequestProcessor {
                 break;
             case ".scss":
                 let out = originalCode ? this.parseScss(originalCode, physicalPath) : "";
-                content = out.css.toString();
+                content = typeof out == "string" ? out : out.css.toString();
                 break;
             default:
                 content = originalCode;
