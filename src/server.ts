@@ -109,6 +109,7 @@ export function startServer(settings: Settings) {
     server.requestProcessors.add(mvcProcessor);
     settings.controllerDirectory = settings.controllerDirectory || "controllers";
     mvcProcessor.options.controllersDirectories = [settings.controllerDirectory];
+    mvcProcessor.contextData = settings.serverContextData;
 
     let packagePath = "../package.json";
     let pkg = require(packagePath);
