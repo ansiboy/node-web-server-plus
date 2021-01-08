@@ -1,6 +1,6 @@
 import { Settings } from "./types";
 import {
-    WebServer, HeadersProcessor, VirtualDirectory,
+    WebServer, HeadersProcessor,
     getLogger, StaticFileProcessor, processorPriorities
 } from "maishu-node-web-server";
 
