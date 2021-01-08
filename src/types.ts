@@ -1,5 +1,5 @@
 import * as http from 'http';
-import { VirtualDirectory, RequestContext, Settings as WebServerSettings } from 'maishu-node-web-server';
+import { VirtualDirectory, RequestContext, Settings as WebServerSettings, ProxyProcessor } from 'maishu-node-web-server';
 
 export interface MVCRequestContext<T = {}> extends RequestContext {
     data?: T,
@@ -15,7 +15,8 @@ export type Settings = WebServerSettings & {
     headers?: { [name: string]: string },
     virtualPaths?: { [virtualPath: string]: string },
     /** 请求处理选项配置 */
-    processors?: { [name: string]: any }
+    processors?: { [name: string]: any },
+    proxy?: ProxyProcessor["options"]["proxyTargets"];
 };
 
 export interface ControllerInfo {

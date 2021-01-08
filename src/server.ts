@@ -1,7 +1,7 @@
 import { Settings } from "./types";
 import {
     WebServer, HeadersProcessor,
-    getLogger, StaticFileProcessor, processorPriorities
+    getLogger, StaticFileProcessor, processorPriorities, ProxyProcessor
 } from "maishu-node-web-server";
 
 import { JavaScriptProcessor } from "maishu-nws-js";
@@ -102,6 +102,11 @@ export function startServer(settings: Settings) {
 
             server.websiteDirectory.setPath(virtualPath, physicalPath);
         }
+    }
+
+    if (settings.proxy) {
+        let proxyProcessor = server.requestProcessors.find(ProxyProcessor);
+        proxyProcessor.options.proxyTargets = settings.proxy;
     }
 
     let mvcProcessor = new MVCRequestProcessor();
