@@ -10,4 +10,5 @@ export { Json5Processor } from "./processors/json5-processor";
 
 export { startServer } from "./server";
 export { Settings } from "./types";
+export * from "maishu-nws-mvc";
 
