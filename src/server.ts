@@ -110,7 +110,7 @@ export function startServer(settings: Settings) {
     }
 
     let mvcProcessor = new MVCRequestProcessor();
-    mvcProcessor.priority = processorPriorities.HeadersRequestProcessor + 10;
+    mvcProcessor.priority = processorPriorities.ProxyRequestProcessor + 10;
     server.requestProcessors.add(mvcProcessor);
     settings.controllerDirectory = settings.controllerDirectory || "controllers";
     mvcProcessor.options.controllersDirectories = [settings.controllerDirectory];

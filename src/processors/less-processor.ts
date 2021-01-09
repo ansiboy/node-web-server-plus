@@ -9,13 +9,14 @@ interface Options {
     directoryPath?: string | null
 }
 
+let cssExtNames = [".css", ".less", ".scss"];
 export class LessProcessor implements RequestProcessor {
 
     options: Options = {};
 
     async execute(ctx: RequestContext): Promise<RequestResult | null> {
         let ext = path.extname(ctx.virtualPath);
-        if (ext != ".css" && ext != ".less" && ext != ".scss")
+        if (cssExtNames.indexOf(ext) < 0)
             return null;
 
 
@@ -72,7 +73,7 @@ export class LessProcessor implements RequestProcessor {
 
     private cutExtName(filePath: string) {
         let ext = path.extname(filePath);
-        while (ext) {
+        while (cssExtNames.indexOf(ext) >= 0) {
             filePath = filePath.substr(0, filePath.length - ext.length);
             ext = path.extname(filePath);
         }
