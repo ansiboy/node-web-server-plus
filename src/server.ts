@@ -1,7 +1,7 @@
 import { Settings } from "./types";
 import {
     WebServer, HeadersProcessor,
-    getLogger, StaticFileProcessor, processorPriorities, ProxyProcessor
+    getLogger, StaticFileProcessor, processorPriorities, ProxyProcessor, RequestProcessor
 } from "maishu-node-web-server";
 
 import { JavaScriptProcessor } from "maishu-nws-js";
@@ -12,7 +12,15 @@ import * as fs from "fs";
 import { loadPlugins } from "./load-plugins";
 import { MVCRequestProcessor } from "maishu-nws-mvc";
 
-export function startServer(settings: Settings) {
+export function startServer(settings: Settings, mode?: "static" | "mvc") {
+
+    let packagePath = "../package.json";
+    let pkg = require(packagePath);
+    let logger = getLogger(pkg.name, settings.log?.level);
+
+    mode = mode || "mvc";
+    logger.info(`${startServer.name}: Current mode is ${mode}.`)
+
     if (settings.websiteDirectory == null)
         throw errors.arugmentFieldNull("rootDirectory", "settings");
 
@@ -22,15 +30,8 @@ export function startServer(settings: Settings) {
     let server = new WebServer(settings);
     let rootDirectory = server.websiteDirectory;
 
-
-
     let staticFileProcessor = server.requestProcessors.find(StaticFileProcessor);
     console.assert(staticFileProcessor != null);
-    let staticDir = rootDirectory.findDirectory("public") || rootDirectory.findDirectory("static");
-    let nodeModulesDir = rootDirectory.findDirectory("node_modules");
-    if (staticDir != null && nodeModulesDir != null) {
-        staticDir.setPath("node_modules", nodeModulesDir.physicalPath);
-    }
 
     var javaScriptProcessor = new JavaScriptProcessor();
     server.requestProcessors.add(javaScriptProcessor);
@@ -40,10 +41,6 @@ export function startServer(settings: Settings) {
 
     var lessProcessor = new LessProcessor();
     server.requestProcessors.add(lessProcessor);
-
-    staticFileProcessor.options.directoryPath = rootDirectory.findDirectory("public") != null ? "public" : "static";
-    javaScriptProcessor.options.directoryPath = staticFileProcessor.options.directoryPath;
-    lessProcessor.options.directoryPath = staticFileProcessor.options.directoryPath;
 
     javaScriptProcessor.options.babel = {
         "\\S+.js$": {
@@ -116,9 +113,7 @@ export function startServer(settings: Settings) {
     mvcProcessor.options.controllersDirectories = [settings.controllerDirectory];
     mvcProcessor.contextData = settings.serverContextData;
 
-    let packagePath = "../package.json";
-    let pkg = require(packagePath);
-    let logger = getLogger(pkg.name, settings.log?.level)
+
     loadPlugins(rootDirectory, logger, server);
 
     if (settings.processors != null) {
@@ -133,6 +128,20 @@ export function startServer(settings: Settings) {
             }
         }
     }
+
+    if (mode == "mvc") {
+        let staticDir = rootDirectory.findDirectory("public") || rootDirectory.findDirectory("static");
+        let nodeModulesDir = rootDirectory.findDirectory("node_modules");
+        if (staticDir != null && nodeModulesDir != null) {
+            staticDir.setPath("node_modules", nodeModulesDir.physicalPath);
+        }
+
+        staticFileProcessor.options.directoryPath = rootDirectory.findDirectory("public") != null ? "public" : "static";
+        javaScriptProcessor.options.directoryPath = staticFileProcessor.options.directoryPath;
+        lessProcessor.options.directoryPath = staticFileProcessor.options.directoryPath;
+    }
+
+
 
     return server;
 }

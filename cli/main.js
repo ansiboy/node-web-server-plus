@@ -1,21 +1,22 @@
-#!/usr/bin/env node
-
 const yargs = require("yargs");
 const path = require("path");
 const fs = require("fs");
-const nwsp = require("../out");
+const { startServer } = require("../out/index");
 
 let defaultPort = 9868;
 let defaultIP = "127.0.0.1";
 
-function main() {
-
-    var argv = yargs
+function main(mode) {
+    var q = yargs
         .describe({ p: "服务器端口" })
         .describe({ i: "服务器 IP" })
-        .describe({ d: "文档夹路径" }).demandOption(["d"])
-        .usage("Usage: nwsp -d <website path> -p <port>")
+        .describe({ m: "模式, mvc 或 static" })
+        .usage("Usage: nwsp <website path> -p <port> -i <ip>")
         .check((argv) => {
+
+            if (argv._ != null && argv._[0] != null) {
+                argv.d = argv._[0]
+            }
 
             if (argv.d != undefined && typeof argv.d != "string")
                 throw new Error("文件夹路径不正确");
@@ -27,6 +28,10 @@ function main() {
                 throw new Error("文件夹路径不允许为空")
             }
 
+            if (argv.m != undefined && (argv.m != "mvc" && argv.m != "static")) {
+                throw new Error("模式为 mvc 或 static")
+            }
+
             if (!path.isAbsolute(argv.d))
                 argv.d = path.join(process.cwd(), argv.d);
 
@@ -34,8 +39,11 @@ function main() {
                 throw new Error(`路径 ${argv.d} 不存在`);
 
             return true;
-        })
-        .argv;
+        });
+
+
+
+    var argv = q.argv;
 
     /** @type {nwsp.Settings} */
     let settings = {};
@@ -44,8 +52,7 @@ function main() {
     settings.port = argv.p || settings.port || defaultPort;
     settings.bindIP = argv.i || settings.bindIP || defaultIP;
 
-    nwsp.startServer(settings);
+    let w = startServer(settings, mode);
 }
 
-main();
-
+module.exports.main = main;
