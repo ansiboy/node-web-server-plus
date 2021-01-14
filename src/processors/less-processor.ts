@@ -20,15 +20,12 @@ export class LessProcessor implements RequestProcessor {
             return null;
 
 
-        // let virtualPath = ext == ".css" ?
-        //     ctx.virtualPath.substr(0, ctx.virtualPath.length - ".css".length) + ".less"
-        //     : ctx.virtualPath;
         let fileName = this.cutExtName(ctx.virtualPath);
         let lessFilePath = fileName + ".less";
         let cssFilePath = fileName + ".css";
         let scssFilePath = fileName + ".scss";
 
-        let dir: VirtualDirectory | null = ctx.rootDirectory;// = this.options.directoryPath ? ctx.rootDirectory.findDirectory(this.options.directoryPath) : ctx.rootDirectory;
+        let dir: VirtualDirectory | null = ctx.rootDirectory;
         if (this.options.directoryPath != null) {
             dir = ctx.rootDirectory.findDirectory(this.options.directoryPath);
             if (dir == null)
@@ -57,7 +54,7 @@ export class LessProcessor implements RequestProcessor {
                 content = output.css;
                 break;
             case ".scss":
-                let out = originalCode ? this.parseScss(originalCode, physicalPath) : "";
+                let out = originalCode ? this.parseScss(originalCode, physicalPath, ctx.rootDirectory) : "";
                 content = typeof out == "string" ? out : out.css.toString();
                 break;
             default:
@@ -89,10 +86,26 @@ export class LessProcessor implements RequestProcessor {
         return output;
     }
 
-    private parseScss(originalCode: string, physicalPath: string) {
-        let output = scss.renderSync({
-            data: originalCode
-        });
+    private parseScss(originalCode: string, physicalPath: string, rootDirectory: VirtualDirectory,) {
+        let dirPath: string | null = null;
+        if (this.options.directoryPath) {
+            let dir = rootDirectory.findDirectory(this.options.directoryPath);
+            if (dir)
+                dirPath = dir.physicalPath;
+        }
+        else {
+            dirPath = rootDirectory.physicalPath;
+        }
+
+        let options: scss.SyncOptions = { data: originalCode, includePaths: [] };
+        if (dirPath != null) {
+            options.includePaths?.push(dirPath);
+        }
+
+        let dir = path.dirname(physicalPath);
+        options.includePaths?.push(dir);
+
+        let output = scss.renderSync(options);
 
         return output;
     }
