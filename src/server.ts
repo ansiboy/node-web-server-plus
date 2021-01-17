@@ -32,6 +32,8 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
 
     let staticFileProcessor = server.requestProcessors.find(StaticFileProcessor);
     console.assert(staticFileProcessor != null);
+    staticFileProcessor.options.contentTypes[".svg"] = "image/svg+xml";
+    logger.info(staticFileProcessor.contentTypes);
 
     var javaScriptProcessor = new JavaScriptProcessor();
     server.requestProcessors.add(javaScriptProcessor);
