@@ -46,7 +46,8 @@
     },
     "files": [
         "dist",
-        "out"
+        "out",
+        "cli"
     ],
     "homepage": "https://github.com/ansiboy/node-mvc#readme",
     "license": "MIT",
@@ -61,7 +62,7 @@
         "test": "mocha"
     },
     "types": "out/index.d.ts",
-    "version": "2.10.2",
+    "version": "2.12.0",
     "bin": {
         "node-static": "./cli/static.js",
         "node-mvc": "./cli/mvc.js"
