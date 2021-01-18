@@ -33,6 +33,7 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
     let staticFileProcessor = server.requestProcessors.find(StaticFileProcessor);
     console.assert(staticFileProcessor != null);
     staticFileProcessor.options.contentTypes[".svg"] = "image/svg+xml";
+    staticFileProcessor.options.contentTypes[".webp"] = "image/webp";
     logger.info(staticFileProcessor.contentTypes);
 
     var javaScriptProcessor = new JavaScriptProcessor();
