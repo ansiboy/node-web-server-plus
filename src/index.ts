@@ -1,7 +1,7 @@
 export {
     LogLevel, getLogger, pathConcat, WebServer, VirtualDirectory,
     StaticFileProcessor, ProxyProcessor, HeadersProcessor, RequestProcessor, RequestContext,
-    RequestResult
+    RequestResult, processorPriorities
 } from "maishu-node-web-server";
 
 export { JavaScriptProcessor } from "maishu-nws-js";
