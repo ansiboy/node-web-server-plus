@@ -4,7 +4,7 @@ const fs = require("fs");
 const { startServer } = require("../out/index");
 
 let defaultPort = 9868;
-let defaultIP = "127.0.0.1";
+// let defaultIP = "127.0.0.1";
 
 function main(mode) {
     var q = yargs
@@ -50,7 +50,9 @@ function main(mode) {
 
     settings.websiteDirectory = argv.d;
     settings.port = argv.p || settings.port || defaultPort;
-    settings.bindIP = argv.i || settings.bindIP || defaultIP;
+    settings.bindIP = argv.i || settings.bindIP;
+
+    console.log(`${settings.bindIP || ""}:${settings.port}`);
 
     let w = startServer(settings, mode);
 }
