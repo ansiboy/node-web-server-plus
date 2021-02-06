@@ -1,7 +1,7 @@
 import * as http from 'http';
 import { VirtualDirectory, RequestContext, Settings as WebServerSettings, ProxyProcessor } from 'maishu-node-web-server';
 
-export interface MVCRequestContext<T = {}> extends RequestContext {
+interface MVCRequestContext<T = {}> extends RequestContext {
     data?: T,
 }
 
@@ -11,7 +11,13 @@ export type Settings = WebServerSettings & {
     controllerDirectory?: string,
     /** 静态文件夹路径 */
     staticPath?: string,
+
+    /** @deprecated 使用 contextData 替代 */
     serverContextData?: any,
+
+    /** 上下文数据 */
+    contextData?: any,
+
     headers?: { [name: string]: string },
     virtualPaths?: { [virtualPath: string]: string },
     /** 请求处理选项配置 */

@@ -114,7 +114,7 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
     server.requestProcessors.add(mvcProcessor);
     settings.controllerDirectory = settings.controllerDirectory || "controllers";
     mvcProcessor.options.controllersDirectories = [settings.controllerDirectory];
-    mvcProcessor.contextData = settings.serverContextData;
+    mvcProcessor.contextData = settings.contextData || settings.serverContextData;
 
 
     loadPlugins(rootDirectory, logger, server);
