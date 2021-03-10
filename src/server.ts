@@ -32,8 +32,8 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
 
     let staticFileProcessor = server.requestProcessors.find(StaticFileProcessor);
     console.assert(staticFileProcessor != null);
-    staticFileProcessor.options.contentTypes[".svg"] = "image/svg+xml";
-    staticFileProcessor.options.contentTypes[".webp"] = "image/webp";
+    staticFileProcessor.contentTypes[".svg"] = "image/svg+xml";
+    staticFileProcessor.contentTypes[".webp"] = "image/webp";
     logger.info(staticFileProcessor.contentTypes);
 
     var javaScriptProcessor = new JavaScriptProcessor();
@@ -106,14 +106,14 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
 
     if (settings.proxy) {
         let proxyProcessor = server.requestProcessors.find(ProxyProcessor);
-        proxyProcessor.options.proxyTargets = settings.proxy;
+        proxyProcessor.proxyTargets = settings.proxy;
     }
 
     let mvcProcessor = new MVCRequestProcessor();
     mvcProcessor.priority = processorPriorities.ProxyRequestProcessor + 10;
     server.requestProcessors.add(mvcProcessor);
     settings.controllerDirectory = settings.controllerDirectory || "controllers";
-    mvcProcessor.options.controllersDirectories = [settings.controllerDirectory];
+    mvcProcessor.controllerDirectories = [settings.controllerDirectory];
     mvcProcessor.contextData = settings.contextData || settings.serverContextData;
 
 
@@ -139,9 +139,9 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
             staticDir.setPath("node_modules", nodeModulesDir.physicalPath);
         }
 
-        staticFileProcessor.options.directoryPath = rootDirectory.findDirectory("public") != null ? "public" : "static";
-        javaScriptProcessor.options.directoryPath = staticFileProcessor.options.directoryPath;
-        lessProcessor.options.directoryPath = staticFileProcessor.options.directoryPath;
+        staticFileProcessor.staticPath = rootDirectory.findDirectory("public") != null ? "public" : "static";
+        javaScriptProcessor.options.directoryPath = staticFileProcessor.staticPath === null ? undefined : staticFileProcessor.staticPath;
+        lessProcessor.options.directoryPath = staticFileProcessor.staticPath;
     }
 
 
