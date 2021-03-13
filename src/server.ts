@@ -31,10 +31,7 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
     let rootDirectory = server.websiteDirectory;
 
     let staticFileProcessor = server.requestProcessors.find(StaticFileProcessor);
-    console.assert(staticFileProcessor != null);
-    staticFileProcessor.contentTypes[".svg"] = "image/svg+xml";
-    staticFileProcessor.contentTypes[".webp"] = "image/webp";
-    logger.info(staticFileProcessor.contentTypes);
+
 
     var javaScriptProcessor = new JavaScriptProcessor();
     server.requestProcessors.add(javaScriptProcessor);
@@ -45,7 +42,7 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
     var lessProcessor = new LessProcessor();
     server.requestProcessors.add(lessProcessor);
 
-    javaScriptProcessor.options.babel = {
+    javaScriptProcessor.babelOptions = {
         "\\S+.js$": {
             "presets": [
                 ["@babel/preset-env", {
@@ -140,8 +137,8 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
         }
 
         staticFileProcessor.staticPath = rootDirectory.findDirectory("public") != null ? "public" : "static";
-        javaScriptProcessor.options.directoryPath = staticFileProcessor.staticPath === null ? undefined : staticFileProcessor.staticPath;
-        lessProcessor.options.directoryPath = staticFileProcessor.staticPath;
+        javaScriptProcessor.directoryPath = staticFileProcessor.staticPath === null ? undefined : staticFileProcessor.staticPath;
+        lessProcessor.directoryPath = staticFileProcessor.staticPath;
     }
 
 

@@ -22,7 +22,7 @@ export type Settings = WebServerSettings & {
     virtualPaths?: { [virtualPath: string]: string },
     /** 请求处理选项配置 */
     processors?: { [name: string]: any },
-    proxy?: ProxyProcessor["options"]["proxyTargets"];
+    proxy?: ProxyProcessor["proxyTargets"];
 };
 
 export interface ControllerInfo {

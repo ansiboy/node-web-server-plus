@@ -12,7 +12,7 @@ interface Options {
 let cssExtNames = [".css", ".less", ".scss"];
 export class LessProcessor implements RequestProcessor {
 
-    options: Options = {};
+    private options: Options = {};
 
     async execute(ctx: RequestContext): Promise<RequestResult | null> {
         let ext = path.extname(ctx.virtualPath);
@@ -66,6 +66,13 @@ export class LessProcessor implements RequestProcessor {
             content: content,
             headers: { "Content-Type": "text/css; charset=UTF-8" }
         };
+    }
+
+    get directoryPath() {
+        return this.options.directoryPath;
+    }
+    set directoryPath(value) {
+        this.options.directoryPath = value;
     }
 
     private cutExtName(filePath: string) {
