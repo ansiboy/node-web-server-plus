@@ -34,14 +34,6 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
 
 
     var javaScriptProcessor = new JavaScriptProcessor();
-    server.requestProcessors.add(javaScriptProcessor);
-
-    var json5Processor = new Json5Processor();
-    server.requestProcessors.add(json5Processor);
-
-    var lessProcessor = new LessProcessor();
-    server.requestProcessors.add(lessProcessor);
-
     javaScriptProcessor.babelOptions = {
         "\\S+.js$": {
             "presets": [
@@ -82,6 +74,16 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
         },
     }
 
+    server.requestProcessors.add(javaScriptProcessor);
+
+    var json5Processor = new Json5Processor();
+    server.requestProcessors.add(json5Processor);
+
+    var lessProcessor = new LessProcessor();
+    server.requestProcessors.add(lessProcessor);
+
+
+
     if (settings.headers) {
         var headersProcessor = server.requestProcessors.find(HeadersProcessor);
         console.assert(headersProcessor != null, "Can not find headers processor.");
@@ -120,7 +122,20 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
         for (let i = 0; i < server.requestProcessors.length; i++) {
             let requestProcessor = server.requestProcessors.item(i);
             let name = requestProcessor.constructor.name;
-            let processorProperties = settings.processors[name];
+            let shortName: string | null = null;
+            if (name.endsWith("Processor")) {
+                shortName = name.substr(0, name.length - "Processor".length);
+            }
+
+            let processorProperties: any | null = null; //= settings.processors[name];
+            if (shortName != null) {
+                processorProperties = settings.processors[shortName];
+            }
+            if (processorProperties == null) {
+                processorProperties = settings.processors[name];
+            }
+
+            processorProperties = processorProperties || {};
             for (let prop in processorProperties) {
                 if ((requestProcessor as any)[prop]) {
                     (requestProcessor as any)[prop] = processorProperties[prop];
