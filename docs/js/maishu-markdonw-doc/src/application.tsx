@@ -2,7 +2,7 @@ import { Application, Page } from "maishu-chitu";
 import * as marked from "marked";
 import "../js/highlight/highlight.pack";
 import "../js/marked";
-import { pathContact } from "maishu-toolkit/out/path";
+import { pathConcat } from "maishu-toolkit";
 import "../js/highlight/styles/rainbow.css";
 import "../css/bootstrap.css";
 import "../css/site.css";
@@ -49,7 +49,7 @@ class MyApplication extends Application {
                         let arr = path.split("/");
                         arr.pop();
                         let directoryPath = arr.join("/");
-                        samplePath = pathContact("/", directoryPath, samplePath);
+                        samplePath = pathConcat("/", directoryPath, samplePath);
                         superLoadjs.apply(app, [samplePath]).then(mod => {
                             let func = mod.default || mod;
                             if (func == null)
@@ -69,7 +69,7 @@ class MyApplication extends Application {
                             let arr = path.split("/");
                             arr.pop();
                             let directoryPath = arr.join("/");
-                            let codePath = pathContact("/", directoryPath, name);
+                            let codePath = pathConcat("/", directoryPath, name);
                             fetch(codePath).then(r => {
                                 return r.text();
                             }).then(text => {
