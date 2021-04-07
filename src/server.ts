@@ -27,7 +27,11 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
     if (typeof settings.websiteDirectory == "string" && !fs.existsSync(settings.websiteDirectory))
         throw errors.physicalPathNotExists(settings.websiteDirectory);
 
-    let server = new WebServer(settings);
+    let server = new WebServer({
+        port: settings.port, bindIP: settings.bindIP, log: settings.log,
+        websiteDirectory: settings.websiteDirectory, processors: settings.processors,
+        virtualPaths: settings.virtualPaths,
+    });
     let rootDirectory = server.websiteDirectory;
 
     let staticFileProcessor = server.requestProcessors.find(StaticFileProcessor);
