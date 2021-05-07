@@ -3,7 +3,7 @@ import less = require("less");
 import * as fs from "fs";
 import * as path from "path";
 import * as errors from "../errors";
-import * as scss from "node-sass";
+import * as scss from "sass";
 
 interface Options {
     directoryPath?: string | null
@@ -104,7 +104,7 @@ export class LessProcessor implements RequestProcessor {
             dirPath = rootDirectory.physicalPath;
         }
 
-        let options: scss.SyncOptions = { data: originalCode, includePaths: [] };
+        let options: scss.Options = { data: originalCode, includePaths: [] };
         if (dirPath != null) {
             options.includePaths?.push(dirPath);
         }
