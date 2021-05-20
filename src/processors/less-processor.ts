@@ -61,7 +61,7 @@ export class LessProcessor implements RequestProcessor {
                 content = originalCode;
         }
 
-        content = `Physical Path: ${physicalPath} \r\n${content}`;
+        content = `/* Physical Path: ${physicalPath} */ \r\n${content}`;
 
         return {
             content: content,

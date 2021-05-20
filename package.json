@@ -62,7 +62,7 @@
         "test": "mocha"
     },
     "types": "out/index.d.ts",
-    "version": "2.19.2",
+    "version": "2.19.3",
     "bin": {
         "node-static": "./cli/static.js",
         "node-mvc": "./cli/mvc.js"
