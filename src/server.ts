@@ -9,6 +9,7 @@ import { Json5Processor } from "./processors/json5-processor";
 import { LessProcessor } from "./processors/less-processor";
 import * as errors from "./errors";
 import * as fs from "fs";
+import * as http from "http";
 import { loadPlugins } from "./load-plugins";
 import { MVCRequestProcessor } from "maishu-nws-mvc";
 
@@ -91,6 +92,14 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
         for (let key in settings.headers) {
             headersProcessor.headers[key] = settings.headers[key];
         }
+
+        let outputError = server.outputError;
+        server.outputError = function (err: Error | string, res: http.ServerResponse) {
+            for (let key in settings.headers) {
+                res.setHeader(key, settings.headers[key]);
+            }
+            outputError.apply(this, [err, res]);
+        }
     }
 
     if (settings.virtualPaths) {
@@ -142,6 +151,7 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
                 }
             }
         }
+
     }
 
     if (mode == "mvc") {
