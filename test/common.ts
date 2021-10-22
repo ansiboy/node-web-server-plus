@@ -9,7 +9,7 @@ export function createWebserver(settings?: Partial<Settings>) {
         // rootDirectory: __dirname,
         websiteDirectory: path.join(__dirname, "www"),
         staticPath: "public",
-        controllerDirectory: path.join(__dirname, "www", "controllers"),
+        // controllerDirectory: path.join(__dirname, "www", "controllers"),
     }
 
     settings = Object.assign(defaultSettings, settings || {},);

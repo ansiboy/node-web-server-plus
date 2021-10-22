@@ -25,4 +25,34 @@ describe("start server", function () {
         let methods = browser.response.headers.get(key2);
         assert.equal(methods, headers[key2])
     })
+
+    it("headers with error", function () {
+        return new Promise(function (resolve, reject) {
+
+            let headers = {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'get, post, put',
+                'Access-Control-Allow-Headers': 'token'
+            }
+            let webServer = createWebserver({
+                headers
+            })
+
+            let browser = createBrowser();
+            let url = `http://127.0.0.1:${webServer.port}/xxxx`;
+            browser.visit(url).catch(err => {
+                let key1: keyof typeof headers = "Access-Control-Allow-Origin";
+                let allowOrign = browser.response.headers.get(key1);
+                assert.equal(allowOrign, headers[key1])
+
+                let key2: keyof typeof headers = "Access-Control-Allow-Methods";
+                let methods = browser.response.headers.get(key2);
+                assert.equal(methods, headers[key2])
+            }).finally(function () {
+                resolve({});
+            })
+
+        })
+
+    })
 })
