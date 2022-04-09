@@ -1,8 +1,5 @@
 import { Settings } from "./types";
-import {
-    WebServer, HeadersProcessor,
-    getLogger, StaticFileProcessor, processorPriorities, ProxyProcessor, RequestProcessor
-} from "maishu-node-web-server";
+import { WebServer, getLogger } from "maishu-node-web-server";
 
 import { JavaScriptProcessor } from "maishu-nws-js";
 import { Json5Processor } from "./processors/json5-processor";
@@ -31,7 +28,7 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
     let server = new WebServer(settings);
     let rootDirectory = server.websiteDirectory;
 
-    let staticFileProcessor = server.requestProcessors.find(StaticFileProcessor);
+    let staticFileProcessor = server.requestProcessors.staticProcessor;//.find(StaticFileProcessor);
 
 
     var javaScriptProcessor = new JavaScriptProcessor();
@@ -75,18 +72,23 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
         },
     }
 
-    server.requestProcessors.add(javaScriptProcessor);
+    server.requestProcessors.fileProcessor.processors[".js"] = javaScriptProcessor;
+    server.requestProcessors.fileProcessor.processors[".jsx"] = javaScriptProcessor;
+    server.requestProcessors.fileProcessor.processors[".ts"] = javaScriptProcessor;
+    server.requestProcessors.fileProcessor.processors[".tsx"] = javaScriptProcessor;
 
     var json5Processor = new Json5Processor();
-    server.requestProcessors.add(json5Processor);
+    server.requestProcessors.fileProcessor.processors[".json"] = json5Processor;
+    server.requestProcessors.fileProcessor.processors[".json5"] = json5Processor;
 
     var lessProcessor = new LessProcessor();
-    server.requestProcessors.add(lessProcessor);
-
+    server.requestProcessors.fileProcessor.processors[".less"] = lessProcessor;
+    server.requestProcessors.fileProcessor.processors[".css"] = lessProcessor;
+    server.requestProcessors.fileProcessor.processors[".scss"] = lessProcessor;
 
 
     if (settings.headers) {
-        var headersProcessor = server.requestProcessors.find(HeadersProcessor);
+        var headersProcessor = server.requestProcessors.headersProcessor;
         console.assert(headersProcessor != null, "Can not find headers processor.");
         headersProcessor.headers = headersProcessor.headers || {};
         for (let key in settings.headers) {
@@ -113,13 +115,12 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
     }
 
     if (settings.proxy) {
-        let proxyProcessor = server.requestProcessors.find(ProxyProcessor);
+        let proxyProcessor = server.requestProcessors.proxyProcessor;
         proxyProcessor.proxyTargets = settings.proxy;
     }
 
     let mvcProcessor = new MVCRequestProcessor();
-    mvcProcessor.priority = processorPriorities.ProxyRequestProcessor + 10;
-    server.requestProcessors.add(mvcProcessor);
+    server.requestProcessors.fileProcessor.processors[""] = mvcProcessor;
     settings.controllerDirectory = settings.controllerDirectory || "controllers";
     mvcProcessor.controllerDirectories = [settings.controllerDirectory];
     mvcProcessor.contextData = settings.contextData || settings.serverContextData;
@@ -128,15 +129,16 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
     loadPlugins(rootDirectory, logger, server);
 
     if (settings.processors != null) {
-        for (let i = 0; i < server.requestProcessors.length; i++) {
-            let requestProcessor = server.requestProcessors.item(i);
+        let requestProcessors = server.requestProcessors.items;
+        for (let i = 0; i < requestProcessors.length; i++) {
+            let requestProcessor = requestProcessors[i];
             let name = requestProcessor.constructor.name;
             let shortName: string | null = null;
             if (name.endsWith("Processor")) {
                 shortName = name.substr(0, name.length - "Processor".length);
             }
 
-            let processorProperties: any | null = null; //= settings.processors[name];
+            let processorProperties: any | null = null; 
             if (shortName != null) {
                 processorProperties = settings.processors[shortName];
             }
