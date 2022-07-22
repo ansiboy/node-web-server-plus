@@ -1,5 +1,9 @@
-const { startServer } = require("../out");
-const path = require("path");
+import { startServer } from "../out/index.js";
+import * as path from "path";
+import { fileURLToPath } from "url";
+
+let filePath = fileURLToPath(import.meta.url);
+let __dirname = path.dirname(filePath);
 
 let server = startServer({
     websiteDirectory: __dirname,

@@ -1,8 +1,8 @@
 import { RequestContext, RequestProcessor, RequestResult, VirtualDirectory } from "maishu-node-web-server";
-import less = require("less");
+import * as less from "less";
 import * as fs from "fs";
 import * as path from "path";
-import * as errors from "../errors";
+import * as errors from "../errors.js";
 import * as scss from "sass";
 
 interface Options {

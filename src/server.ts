@@ -1,23 +1,23 @@
-import { Settings } from "./types";
+import { Settings } from "./types.js";
 import { WebServer, getLogger } from "maishu-node-web-server";
 
 import { JavaScriptProcessor } from "maishu-nws-js";
-import { Json5Processor } from "./processors/json5-processor";
-import { LessProcessor } from "./processors/less-processor";
-import * as errors from "./errors";
+import { Json5Processor } from "./processors/json5-processor.js";
+import { LessProcessor } from "./processors/less-processor.js";
+import * as errors from "./errors.js";
 import * as fs from "fs";
 import * as http from "http";
-import { loadPlugins } from "./load-plugins";
+import { loadPlugins } from "./load-plugins.js";
 import { MVCRequestProcessor } from "maishu-nws-mvc";
 
-export function startServer(settings: Settings, mode?: "static" | "mvc") {
+export async function startServer(settings: Settings, mode?: "static" | "mvc") {
 
-    let packagePath = "../package.json";
-    let pkg = require(packagePath);
+
+    let pkg = await import("../package.json");
     let logger = getLogger(pkg.name, settings.log?.level);
+    logger.info(`${startServer.name}: Current mode is ${mode}.`);
 
     mode = mode || "mvc";
-    logger.info(`${startServer.name}: Current mode is ${mode}.`)
 
     if (settings.websiteDirectory == null)
         throw errors.arugmentFieldNull("rootDirectory", "settings");
@@ -138,7 +138,7 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
                 shortName = name.substr(0, name.length - "Processor".length);
             }
 
-            let processorProperties: any | null = null; 
+            let processorProperties: any | null = null;
             if (shortName != null) {
                 processorProperties = settings.processors[shortName];
             }
@@ -167,8 +167,6 @@ export function startServer(settings: Settings, mode?: "static" | "mvc") {
         javaScriptProcessor.directoryPath = staticFileProcessor.staticPath === null ? undefined : staticFileProcessor.staticPath;
         lessProcessor.directoryPath = staticFileProcessor.staticPath;
     }
-
-
 
     return server;
 }

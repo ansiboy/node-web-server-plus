@@ -1,4 +1,4 @@
-import { ControllerType } from "./types";
+import { ControllerType } from "./types.js";
 
 
 

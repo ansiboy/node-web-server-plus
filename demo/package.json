@@ -8,5 +8,6 @@
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "requirejs": "^2.3.6"
-  }
+  },
+  "type": "module"
 }

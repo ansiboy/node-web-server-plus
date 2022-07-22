@@ -1,5 +1,5 @@
 import { RequestContext, RequestProcessor, RequestResult } from "maishu-node-web-server";
-import * as errors from "../errors";
+import * as errors from "../errors.js";
 import * as fs from "fs";
 import * as JSON5 from "json5";
 import * as path from "path";
